@@ -61,5 +61,14 @@
       "category": "image",
       "icon": "image-scale-set-mid",
       "show": true
+    },
+    {
+      "id": 8,
+      "name": "半透黑底抠透明区域",
+      "description": "设定半透明黑色地图，抠出来一个圆角矩形的透明区域",
+      "path": "tools/image-mid-transparent.html",
+      "category": "image",
+      "icon": "image-mid-transparent",
+      "show": true
     }
   ]
