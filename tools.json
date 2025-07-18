@@ -43,5 +43,14 @@
       "category": "image",
       "icon": "image-alpha-2-0",
       "show": true
+    },
+    {
+      "id": 6,
+      "name": "裁剪最大透明区",
+      "description": "选择图片，裁剪最大透明区域",
+      "path": "tools/image-crop-max-alpha.html",
+      "category": "image",
+      "icon": "image-crop-max-alpha",
+      "show": true
     }
   ]

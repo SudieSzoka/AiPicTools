@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像透明区域裁剪工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .upload-area {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 30px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .drop-zone {
+            width: 100%;
+            height: 200px;
+            border: 3px dashed #3498db;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            background: #f8fafc;
+        }
+        
+        .drop-zone:hover, .drop-zone.dragover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+        }
+        
+        .drop-zone i {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .drop-zone p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .preview-area {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 30px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+        }
+        
+        .image-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .image-box {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            background: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%),
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        
+        .image-box img {
+            display: block;
+            max-width: 100%;
+            max-height: 300px;
+            margin: 0 auto;
+        }
+        
+        .image-label {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 8px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .info-area {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 25px;
+            margin-top: 20px;
+            max-width: 1000px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-card {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .info-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .info-card p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .upload-area, .preview-area {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- COMMON_HEADER -->
+<!-- 固定页头 -->
+<header class="page-header">
+    <div class="header-container">
+        <div class="header-inner">
+            <!-- Logo -->
+            <div class="logo">
+                <a href="../index.html" class="logo-link">我的工具站</a>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
+                <div class="nav-list">
+                    <a href="../index.html" class="nav-link">首页</a>
+                    <a href="../index.html#tools" class="nav-link">所有工具</a>
+                    
+                    <!-- 常用工具下拉菜单 -->
+                    <div class="dropdown">
+                        <button class="dropdown-toggle">
+                            常用工具
+                            <i class="dropdown-icon" data-lucide="chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="pdf-converter.html" class="dropdown-item">PDF转换器</a>
+                            <a href="image-compressor.html" class="dropdown-item">图片压缩</a>
+                            <a href="text-editor.html" class="dropdown-item">文本编辑器</a>
+                            <a href="code-formatter.html" class="dropdown-item">代码格式化</a>
+                            <a href="color-picker.html" class="dropdown-item">颜色选择器</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- END_COMMON_HEADER -->
+    <div class="container">
+        <header>
+            <h1>图像透明区域裁剪工具</h1>
+            <p class="subtitle">上传带有透明背景的PNG图像，自动裁剪掉多余的透明区域，优化图像尺寸并保留透明通道</p>
+        </header>
+        
+        <div class="content">
+            <div class="upload-area">
+                <div class="drop-zone" id="dropZone">
+                    <i>📁</i>
+                    <p>拖放图像文件到此处<br>或点击选择文件</p>
+                </div>
+                <input type="file" id="fileInput" accept="image/png" class="hidden">
+                <button id="processBtn" class="button" disabled>
+                    <span>裁剪透明区域</span>
+                </button>
+                
+                <div id="statusArea" class="status info hidden">
+                    请上传PNG格式的图像文件
+                </div>
+            </div>
+            
+            <div class="preview-area">
+                <div class="preview-title">
+                    <h2>预览结果</h2>
+                    <button id="downloadBtn" class="button" disabled>
+                        <span>下载裁剪图像</span>
+                    </button>
+                </div>
+                
+                <div class="image-container">
+                    <div class="image-box">
+                        <img id="originalPreview" src="" alt="原始图像预览">
+                        <div class="image-label">原始图像</div>
+                    </div>
+                    
+                    <div class="image-box">
+                        <img id="croppedPreview" src="" alt="裁剪后图像预览">
+                        <div class="image-label">裁剪后图像</div>
+                    </div>
+                </div>
+                
+                <div id="resultInfo" class="status hidden">
+                    <!-- 裁剪结果信息将显示在这里 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const processBtn = document.getElementById('processBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const originalPreview = document.getElementById('originalPreview');
+            const croppedPreview = document.getElementById('croppedPreview');
+            const statusArea = document.getElementById('statusArea');
+            const resultInfo = document.getElementById('resultInfo');
+            
+            let originalImage = null;
+            let croppedImageDataUrl = null;
+            
+            // 点击拖放区域触发文件选择
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // 拖放功能处理
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropZone.classList.add('dragover');
+            }
+            
+            function unhighlight() {
+                dropZone.classList.remove('dragover');
+            }
+            
+            // 处理文件拖放
+            dropZone.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+            
+            // 处理文件选择
+            fileInput.addEventListener('change', () => {
+                handleFiles(fileInput.files);
+            });
+            
+            function handleFiles(files) {
+                if (files.length === 0) return;
+                
+                const file = files[0];
+                if (!file.type.match('image.*')) {
+                    showStatus('请选择图像文件', 'error');
+                    return;
+                }
+                
+                if (!file.type.match('image/png')) {
+                    showStatus('请选择PNG格式的图像文件', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        originalPreview.src = e.target.result;
+                        processBtn.disabled = false;
+                        showStatus('图像已加载，点击"裁剪透明区域"按钮进行处理', 'success');
+                        resultInfo.classList.add('hidden');
+                        downloadBtn.disabled = true;
+                        croppedPreview.src = '';
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // 裁剪图像处理
+            processBtn.addEventListener('click', () => {
+                if (!originalImage) return;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 设置canvas尺寸与图像相同
+                canvas.width = originalImage.width;
+                canvas.height = originalImage.height;
+                
+                // 绘制图像到canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(originalImage, 0, 0);
+                
+                // 获取图像数据
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // 寻找非透明区域的边界
+                let minX = canvas.width;
+                let minY = canvas.height;
+                let maxX = 0;
+                let maxY = 0;
+                
+                // 遍历所有像素，找到非透明像素的边界
+                for (let y = 0; y < canvas.height; y++) {
+                    for (let x = 0; x < canvas.width; x++) {
+                        const idx = (y * canvas.width + x) * 4;
+                        const alpha = data[idx + 3];
+                        
+                        // 如果像素不是完全透明的
+                        if (alpha > 0) {
+                            if (x < minX) minX = x;
+                            if (y < minY) minY = y;
+                            if (x > maxX) maxX = x;
+                            if (y > maxY) maxY = y;
+                        }
+                    }
+                }
+                
+                // 计算裁剪区域
+                const width = maxX - minX + 1;
+                const height = maxY - minY + 1;
+                
+                // 检查图像是否完全透明
+                if (width <= 0 || height <= 0) {
+                    showStatus('图像完全透明，无法裁剪', 'error');
+                    return;
+                }
+                
+                // 创建裁剪后的canvas
+                const croppedCanvas = document.createElement('canvas');
+                croppedCanvas.width = width;
+                croppedCanvas.height = height;
+                
+                const croppedCtx = croppedCanvas.getContext('2d');
+                
+                // 设置背景为透明
+                croppedCtx.clearRect(0, 0, width, height);
+                
+                // 将原始图像中非透明区域绘制到新canvas
+                croppedCtx.drawImage(
+                    originalImage,
+                    minX, minY, width, height,
+                    0, 0, width, height
+                );
+                
+                // 获取裁剪后图像的数据URL
+                croppedImageDataUrl = croppedCanvas.toDataURL('image/png');
+                croppedPreview.src = croppedImageDataUrl;
+                downloadBtn.disabled = false;
+                
+                // 显示裁剪信息
+                const originalSize = formatBytes(originalImage.src.length * 0.75); // 近似计算
+                const croppedSize = formatBytes(croppedImageDataUrl.length * 0.75);
+                
+                const sizeReduction = Math.round(
+                    (1 - croppedImageDataUrl.length / originalImage.src.length) * 100
+                );
+                
+                resultInfo.innerHTML = `
+                    <p>原始尺寸: ${originalImage.width}×${originalImage.height} (${originalSize})</p>
+                    <p>裁剪尺寸: ${width}×${height} (${croppedSize})</p>
+                    <p>尺寸减少: ${sizeReduction}%</p>
+                `;
+                resultInfo.classList.remove('hidden');
+                resultInfo.className = 'status success';
+                
+                showStatus(`透明区域裁剪完成！尺寸减少 ${sizeReduction}%`, 'success');
+            });
+            
+            // 下载裁剪后的图像
+            downloadBtn.addEventListener('click', () => {
+                if (!croppedImageDataUrl) return;
+                
+                const link = document.createElement('a');
+                link.href = croppedImageDataUrl;
+                link.download = 'cropped-image.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            // 辅助函数：显示状态信息
+            function showStatus(message, type = 'info') {
+                statusArea.textContent = message;
+                statusArea.className = `status ${type}`;
+                statusArea.classList.remove('hidden');
+            }
+            
+            // 辅助函数：格式化字节大小
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+        });
+    </script>
+<!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
+<footer class="page-footer">
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
+</footer>
+<!-- END_COMMON_FOOTER -->
+</body>
+</html>
