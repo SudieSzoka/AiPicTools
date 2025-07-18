@@ -34,5 +34,14 @@
       "category": "image",
       "icon": "image-crop",
       "show": true
+    },
+    {
+      "id": 5,
+      "name": "图片去背景",
+      "description": "选择图片，去除RGB均小于指定值的区域",
+      "path": "tools/image-alpha-2-0.html",
+      "category": "image",
+      "icon": "image-alpha-2-0",
+      "show": true
     }
   ]
