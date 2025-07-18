@@ -52,5 +52,14 @@
       "category": "image",
       "icon": "image-crop-max-alpha",
       "show": true
+    },
+    {
+      "id": 7,
+      "name": "图片缩放并居中",
+      "description": "批量等比例缩放图片，并居中显示",
+      "path": "tools/image-scale-set-mid.html",
+      "category": "image",
+      "icon": "image-scale-set-mid",
+      "show": true
     }
   ]
