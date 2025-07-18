@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像元素提取工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preview-section {
+            flex: 2;
+            min-width: 500px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            color: #ff7e5f;
+        }
+        
+        .upload-area {
+            border: 3px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #ff7e5f;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .upload-area i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            color: #ff7e5f;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        
+        #file-input {
+            display: none;
+        }
+        
+        .filter-controls {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        label {
+            width: 120px;
+            font-weight: 500;
+        }
+        
+        input[type="number"] {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            width: 100px;
+        }
+        
+        input[type="number"]:focus {
+            outline: 2px solid #ff7e5f;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .process-btn {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+        }
+        
+        .download-btn {
+            background: linear-gradient(to right, #1a2a6c, #3a7bd5);
+            color: white;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(to right, #606c88, #3f4c6b);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .icons-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .icon-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .icon-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .icon-preview {
+            width: 100%;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .icon-preview img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        .icon-info {
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .icon-size {
+            font-weight: 600;
+            color: #ff7e5f;
+        }
+        
+        .icon-download {
+            display: block;
+            padding: 5px;
+            background: rgba(255, 126, 95, 0.2);
+            color: #ff7e5f;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .icon-download:hover {
+            background: rgba(255, 126, 95, 0.4);
+        }
+        
+        .no-icons {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            opacity: 0.7;
+            grid-column: 1 / -1;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .canvas-container {
+            display: none;
+        }
+        
+        .statistics {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff7e5f;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .preview-section, .controls {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- COMMON_HEADER -->
+<!-- 固定页头 -->
+<header class="page-header">
+    <div class="header-container">
+        <div class="header-inner">
+            <!-- Logo -->
+            <div class="logo">
+                <a href="../index.html" class="logo-link">我的工具站</a>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
+                <div class="nav-list">
+                    <a href="../index.html" class="nav-link">首页</a>
+                    <a href="../index.html#tools" class="nav-link">所有工具</a>
+                    
+                    <!-- 常用工具下拉菜单 -->
+                    <div class="dropdown">
+                        <button class="dropdown-toggle">
+                            常用工具
+                            <i class="dropdown-icon" data-lucide="chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="pdf-converter.html" class="dropdown-item">PDF转换器</a>
+                            <a href="image-compressor.html" class="dropdown-item">图片压缩</a>
+                            <a href="text-editor.html" class="dropdown-item">文本编辑器</a>
+                            <a href="code-formatter.html" class="dropdown-item">代码格式化</a>
+                            <a href="color-picker.html" class="dropdown-item">颜色选择器</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- END_COMMON_HEADER -->
+    <div class="container">
+        <header>
+            <h1>图像元素提取工具</h1>
+            <p class="subtitle">上传大图自动提取所有小图标元素，支持预览和筛选。基于Canvas实现，无需服务器处理，所有操作均在浏览器中完成。</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="controls">
+                <h2 class="section-title">图像处理控制</h2>
+                
+                <div class="upload-area" id="drop-area">
+                    <i>📁</i>
+                    <p class="upload-text">拖放图像文件到此处或点击上传</p>
+                    <p>支持PNG、JPG格式</p>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
+                
+                <div class="filter-controls">
+                    <h3>筛选设置</h3>
+                    <div class="filter-row">
+                        <label for="min-width">最小宽度:</label>
+                        <input type="number" id="min-width" min="0" value="10">
+                        <span>像素</span>
+                    </div>
+                    <div class="filter-row">
+                        <label for="min-height">最小高度:</label>
+                        <input type="number" id="min-height" min="0" value="10">
+                        <span>像素</span>
+                    </div>
+                    <div class="filter-row">
+                        <label>提取模式:</label>
+                        <select id="extraction-mode">
+                            <option value="alpha">使用透明度通道</option>
+                            <option value="grayscale">使用灰度阈值</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="process-btn" class="process-btn" disabled>提取图标</button>
+                    <button id="download-all" class="download-btn" disabled>下载全部</button>
+                    <button id="reset-btn" class="reset-btn">重置</button>
+                </div>
+                
+                <div class="statistics">
+                    <div class="stat-item">
+                        <div>检测到图标</div>
+                        <div id="total-icons" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>当前显示</div>
+                        <div id="displayed-icons" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>处理时间</div>
+                        <div id="process-time" class="stat-value">0ms</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <h2 class="section-title">图标预览</h2>
+                <div class="icons-container" id="icons-container">
+                    <div class="no-icons">上传图像并点击"提取图标"按钮开始处理</div>
+                </div>
+                <div class="status" id="status">就绪</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="canvas-container">
+        <canvas id="source-canvas"></canvas>
+        <canvas id="mask-canvas"></canvas>
+    </div>
+    
+    <script>
+        // 全局变量
+        let originalImage = null;
+        let extractedIcons = [];
+        let processing = false;
+        
+        // DOM元素
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const processBtn = document.getElementById('process-btn');
+        const downloadAllBtn = document.getElementById('download-all');
+        const resetBtn = document.getElementById('reset-btn');
+        const minWidthInput = document.getElementById('min-width');
+        const minHeightInput = document.getElementById('min-height');
+        const iconsContainer = document.getElementById('icons-container');
+        const statusElement = document.getElementById('status');
+        const totalIconsElement = document.getElementById('total-icons');
+        const displayedIconsElement = document.getElementById('displayed-icons');
+        const processTimeElement = document.getElementById('process-time');
+        const extractionModeSelect = document.getElementById('extraction-mode');
+        
+        // 事件监听
+        dropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        processBtn.addEventListener('click', processImage);
+        downloadAllBtn.addEventListener('click', downloadAllIcons);
+        resetBtn.addEventListener('click', resetApp);
+        minWidthInput.addEventListener('change', filterIcons);
+        minHeightInput.addEventListener('change', filterIcons);
+        
+        // 拖放功能
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#ff7e5f';
+            dropArea.style.backgroundColor = 'rgba(255, 126, 95, 0.1)';
+        });
+        
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            dropArea.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+        });
+        
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            dropArea.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+        
+        // 处理文件选择
+        function handleFileSelect() {
+            if (!fileInput.files || !fileInput.files[0]) return;
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    processBtn.disabled = false;
+                    statusElement.textContent = `已加载图像: ${file.name} (${originalImage.width}×${originalImage.height}像素)`;
+                };
+                originalImage.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        // 处理图像并提取图标
+        function processImage() {
+            if (!originalImage || processing) return;
+            
+            processing = true;
+            statusElement.textContent = "正在处理图像...";
+            processBtn.disabled = true;
+            
+            // 记录开始时间
+            const startTime = performance.now();
+            
+            // 创建Canvas
+            const sourceCanvas = document.getElementById('source-canvas');
+            const maskCanvas = document.getElementById('mask-canvas');
+            
+            const width = originalImage.width;
+            const height = originalImage.height;
+            
+            sourceCanvas.width = width;
+            sourceCanvas.height = height;
+            maskCanvas.width = width;
+            maskCanvas.height = height;
+            
+            const sourceCtx = sourceCanvas.getContext('2d');
+            const maskCtx = maskCanvas.getContext('2d');
+            
+            // 绘制原始图像
+            sourceCtx.clearRect(0, 0, width, height);
+            sourceCtx.drawImage(originalImage, 0, 0);
+            
+            // 获取图像数据
+            const imageData = sourceCtx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            // 创建掩码
+            maskCtx.clearRect(0, 0, width, height);
+            
+            // 检查是否使用透明度通道
+            const useAlpha = extractionModeSelect.value === 'alpha';
+            let hasTransparency = false;
+            
+            if (useAlpha) {
+                // 检查是否有透明度
+                for (let i = 3; i < data.length; i += 4) {
+                    if (data[i] < 255) {
+                        hasTransparency = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 创建二值掩码
+            const maskData = maskCtx.createImageData(width, height);
+            const maskPixels = maskData.data;
+            
+            if (useAlpha && hasTransparency) {
+                // 使用透明度通道
+                for (let i = 0; i < data.length; i += 4) {
+                    const alpha = data[i + 3];
+                    const value = alpha > 1 ? 255 : 0;
+                    
+                    maskPixels[i] = value;     // R
+                    maskPixels[i + 1] = value; // G
+                    maskPixels[i + 2] = value; // B
+                    maskPixels[i + 3] = 255;   // A
+                }
+            } else {
+                // 使用灰度阈值
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    
+                    // 计算灰度
+                    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    const value = gray > 1 ? 255 : 0;
+                    
+                    maskPixels[i] = value;     // R
+                    maskPixels[i + 1] = value; // G
+                    maskPixels[i + 2] = value; // B
+                    maskPixels[i + 3] = 255;   // A
+                }
+            }
+            
+            maskCtx.putImageData(maskData, 0, 0);
+            
+            // 查找轮廓
+            extractedIcons = findConnectedComponents(sourceCanvas, maskCanvas);
+            
+            // 记录结束时间
+            const endTime = performance.now();
+            const processTime = Math.round(endTime - startTime);
+            
+            // 更新状态
+            statusElement.textContent = `处理完成! 找到 ${extractedIcons.length} 个图标 (${processTime}ms)`;
+            totalIconsElement.textContent = extractedIcons.length;
+            processTimeElement.textContent = `${processTime}ms`;
+            
+            // 启用下载按钮
+            downloadAllBtn.disabled = false;
+            processing = false;
+            
+            // 筛选并显示图标
+            filterIcons();
+        }
+        
+        // 查找连通组件
+        function findConnectedComponents(sourceCanvas, maskCanvas) {
+            const width = maskCanvas.width;
+            const height = maskCanvas.height;
+            
+            const maskCtx = maskCanvas.getContext('2d');
+            const maskData = maskCtx.getImageData(0, 0, width, height);
+            const pixels = maskData.data;
+            
+            // 创建访问标记数组
+            const visited = new Array(height);
+            for (let y = 0; y < height; y++) {
+                visited[y] = new Array(width).fill(false);
+            }
+            
+            const components = [];
+            
+            // 洪水填充函数
+            function floodFill(x, y) {
+                const stack = [{x, y}];
+                const component = {
+                    minX: x, 
+                    maxX: x, 
+                    minY: y, 
+                    maxY: y,
+                    pixels: []
+                };
+                
+                while (stack.length > 0) {
+                    const p = stack.pop();
+                    const px = p.x;
+                    const py = p.y;
+                    
+                    if (px < 0 || px >= width || py < 0 || py >= height || visited[py][px]) {
+                        continue;
+                    }
+                    
+                    // 检查是否为前景（白色）
+                    const idx = (py * width + px) * 4;
+                    if (pixels[idx] === 255) {
+                        visited[py][px] = true;
+                        component.pixels.push({x: px, y: py});
+                        
+                        // 更新边界
+                        if (px < component.minX) component.minX = px;
+                        if (px > component.maxX) component.maxX = px;
+                        if (py < component.minY) component.minY = py;
+                        if (py > component.maxY) component.maxY = py;
+                        
+                        // 检查四个方向
+                        stack.push({x: px + 1, y: py});
+                        stack.push({x: px - 1, y: py});
+                        stack.push({x: px, y: py + 1});
+                        stack.push({x: px, y: py - 1});
+                    }
+                }
+                
+                return component;
+            }
+            
+            // 遍历所有像素
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (!visited[y][x]) {
+                        const idx = (y * width + x) * 4;
+                        
+                        // 如果是白色像素且未访问过
+                        if (pixels[idx] === 255) {
+                            const component = floodFill(x, y);
+                            
+                            // 计算宽度和高度
+                            const w = component.maxX - component.minX + 1;
+                            const h = component.maxY - component.minY + 1;
+                            
+                            // 裁剪图标
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = w;
+                            tempCanvas.height = h;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            
+                            tempCtx.drawImage(
+                                sourceCanvas,
+                                component.minX, component.minY, w, h,
+                                0, 0, w, h
+                            );
+                            
+                            // 保存图标数据
+                            components.push({
+                                x: component.minX,
+                                y: component.minY,
+                                width: w,
+                                height: h,
+                                dataURL: tempCanvas.toDataURL('image/png')
+                            });
+                        } else {
+                            visited[y][x] = true;
+                        }
+                    }
+                }
+            }
+            
+            return components;
+        }
+        
+        // 筛选图标
+        function filterIcons() {
+            if (extractedIcons.length === 0) return;
+            
+            const minWidth = parseInt(minWidthInput.value) || 0;
+            const minHeight = parseInt(minHeightInput.value) || 0;
+            
+            const filteredIcons = extractedIcons.filter(icon => 
+                icon.width >= minWidth && icon.height >= minHeight
+            );
+            
+            // 更新显示数量
+            displayedIconsElement.textContent = filteredIcons.length;
+            
+            // 显示图标
+            displayIcons(filteredIcons);
+        }
+        
+        // 显示图标
+        function displayIcons(icons) {
+            iconsContainer.innerHTML = '';
+            
+            if (icons.length === 0) {
+                iconsContainer.innerHTML = '<div class="no-icons">没有找到符合条件的图标</div>';
+                return;
+            }
+            
+            icons.forEach((icon, index) => {
+                const iconCard = document.createElement('div');
+                iconCard.className = 'icon-card';
+                
+                iconCard.innerHTML = `
+                    <div class="icon-preview">
+                        <img src="${icon.dataURL}" alt="图标 ${index + 1}">
+                    </div>
+                    <div class="icon-info">
+                        <div class="icon-size">${icon.width}×${icon.height}px</div>
+                        <div>位置: (${icon.x}, ${icon.y})</div>
+                    </div>
+                    <a href="${icon.dataURL}" download="icon_${index+1}.png" class="icon-download">下载</a>
+                `;
+                
+                iconsContainer.appendChild(iconCard);
+            });
+        }
+        
+        // 下载所有图标
+        function downloadAllIcons() {
+            if (extractedIcons.length === 0) return;
+            
+            // 筛选当前显示的图标
+            const minWidth = parseInt(minWidthInput.value) || 0;
+            const minHeight = parseInt(minHeightInput.value) || 0;
+            
+            const filteredIcons = extractedIcons.filter(icon => 
+                icon.width >= minWidth && icon.height >= minHeight
+            );
+            
+            // 逐个下载
+            filteredIcons.forEach((icon, index) => {
+                const link = document.createElement('a');
+                link.href = icon.dataURL;
+                link.download = `icon_${index+1}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            statusElement.textContent = `已下载 ${filteredIcons.length} 个图标`;
+        }
+        
+        // 重置应用
+        function resetApp() {
+            originalImage = null;
+            extractedIcons = [];
+            fileInput.value = '';
+            processBtn.disabled = true;
+            downloadAllBtn.disabled = true;
+            minWidthInput.value = '10';
+            minHeightInput.value = '10';
+            extractionModeSelect.value = 'alpha';
+            iconsContainer.innerHTML = '<div class="no-icons">上传图像并点击"提取图标"按钮开始处理</div>';
+            statusElement.textContent = '就绪';
+            totalIconsElement.textContent = '0';
+            displayedIconsElement.textContent = '0';
+            processTimeElement.textContent = '0ms';
+        }
+    </script>
+<!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
+<footer class="page-footer">
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
+</footer>
+<!-- END_COMMON_FOOTER -->
+</body>
+</html>

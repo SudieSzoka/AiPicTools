@@ -1,0 +1,38 @@
+[
+    {
+      "id": 1,
+      "name": "图片自动分割",
+      "description": "将图片自动分割为小图片",
+      "path": "tools/image-auto-split-small.html",
+      "category": "image",
+      "icon": "image-split-small",
+      "show": true
+    },
+    {
+      "id": 2,
+      "name": "图片缩放",
+      "description": "批量等比例缩放图片",
+      "path": "tools/image-scale.html",
+      "category": "image",
+      "icon": "scale",
+      "show": true
+    },
+    {
+      "id": 3,
+      "name": "图片网格排列",
+      "description": "选择多张图片，每行设定等数量排列",
+      "path": "tools/image-align.html",
+      "category": "image",
+      "icon": "image-align ",
+      "show": true
+    },
+    {
+      "id": 4,
+      "name": "图片裁剪",
+      "description": "选择图片，进行自由裁剪",
+      "path": "tools/image-crop.html",
+      "category": "image",
+      "icon": "image-crop",
+      "show": true
+    }
+  ]
