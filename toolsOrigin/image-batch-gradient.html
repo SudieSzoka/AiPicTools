@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量图片渐变背景处理工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(30, 30, 40, 0.7);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(20, 20, 30, 0.9);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fafafa;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #fafafa;
+            margin-top: 5px;
+        }
+        
+        .content {
+            display: flex;
+            padding: 20px;
+            gap: 30px;
+        }
+        
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(25, 25, 35, 0.7);
+            border-radius: 10px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .control-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #3498db;
+            font-size: 18px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        label {
+            font-size: 14px;
+            min-width: 120px;
+            color: #fafafa;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: rgba(100, 100, 120, 0.3);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2ecc71;
+            transform: scale(1.1);
+        }
+        
+        input[type="number"] {
+            width: 100px;
+            padding: 8px 10px;
+            border: none;
+            background: rgba(40, 40, 50, 0.8);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            outline: none;
+            border: 1px solid rgba(100, 100, 120, 0.5);
+        }
+        
+        select {
+            width: 100px;
+            padding: 8px 10px;
+            border: none;
+            background: rgba(40, 40, 50, 0.8);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            border: 1px solid rgba(100, 100, 120, 0.5);
+        }
+        
+        .file-upload {
+            border: 2px dashed rgba(52, 152, 219, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: rgba(40, 40, 50, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .file-upload:hover {
+            border-color: #3498db;
+            background: rgba(40, 40, 50, 0.5);
+        }
+        
+        .file-upload.dragover {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-text {
+            color: #fafafa;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            color: #bdc3c7;
+            font-size: 14px;
+        }
+        
+        .preview-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .preview {
+            flex: 1;
+            position: relative;
+            background: 
+                linear-gradient(45deg, rgba(40, 40, 40, 0.2) 25%, transparent 25%, transparent 75%, rgba(40, 40, 40, 0.2) 75%),
+                linear-gradient(45deg, rgba(40, 40, 40, 0.2) 25%, transparent 25%, transparent 75%, rgba(40, 40, 40, 0.2) 75%),
+                rgba(30, 30, 40, 0.8);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        
+        canvas {
+            background-color: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: rgba(100, 100, 100, 0.5);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-container {
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(100, 100, 120, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #fafafa;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(20, 20, 30, 0.5);
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: rgba(40, 40, 50, 0.3);
+            border-radius: 4px;
+            margin-bottom: 5px;
+            color: #fafafa;
+            font-size: 14px;
+        }
+        
+        .file-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .file-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .file-size {
+            color: #bdc3c7;
+            margin-left: 10px;
+        }
+        
+        .remove-file {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .value-display {
+            min-width: 50px;
+            text-align: right;
+            color: #2ecc71;
+            font-weight: 600;
+        }
+        
+        .gradient-preview {
+            width: 100%;
+            height: 40px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .preview {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>批量图片渐变背景处理工具</h1>
+            <p class="subtitle">为多张图片添加渐变背景，支持批量处理和下载</p>
+        </div>
+        
+        <div class="content">
+            <div class="controls">
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>文件上传</span>
+                    </div>
+                    <div class="file-upload" id="fileUpload">
+                        <input type="file" id="fileInput" class="file-input" multiple accept="image/*">
+                        <div class="upload-text">点击选择图片或拖拽图片到此处</div>
+                        <div class="upload-hint">支持 PNG、JPG、JPEG 格式</div>
+                    </div>
+                    <div class="file-list" id="fileList" style="display: none;"></div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>渐变设置</span>
+                    </div>
+                    <div class="control-row">
+                        <label for="gradientScheme">渐变方案:</label>
+                        <select id="gradientScheme">
+                            <option value="0">蓝色渐变</option>
+                            <option value="1">青色渐变</option>
+                            <option value="2">橙色渐变</option>
+                            <option value="3">紫色渐变</option>
+                            <option value="4">蓝绿渐变</option>
+                            <option value="5">彩虹渐变</option>
+                            <option value="6">深绿渐变</option>
+                            <option value="7">深蓝渐变</option>
+                        </select>
+                    </div>
+                    <div class="gradient-preview" id="gradientPreview"></div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>边缘设置</span>
+                    </div>
+                    <div class="control-row">
+                        <label for="midEdgeX">中景边缘X (px):</label>
+                        <input type="range" id="midEdgeX" min="0" max="100" value="20">
+                        <span class="value-display" id="midEdgeXValue">20</span>
+                    </div>
+                    <div class="control-row">
+                        <label for="midEdgeY">中景边缘Y (px):</label>
+                        <input type="range" id="midEdgeY" min="0" max="100" value="20">
+                        <span class="value-display" id="midEdgeYValue">20</span>
+                    </div>
+                    <div class="control-row">
+                        <label for="backEdgeX">背景边缘X (px):</label>
+                        <input type="range" id="backEdgeX" min="0" max="100" value="20">
+                        <span class="value-display" id="backEdgeXValue">20</span>
+                    </div>
+                    <div class="control-row">
+                        <label for="backEdgeY">背景边缘Y (px):</label>
+                        <input type="range" id="backEdgeY" min="0" max="100" value="20">
+                        <span class="value-display" id="backEdgeYValue">20</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-header">
+                        <span>处理设置</span>
+                    </div>
+                    <div class="control-row">
+                        <label for="edgeRatio">边缘比例:</label>
+                        <input type="range" id="edgeRatio" min="1" max="10" value="3" step="1">
+                        <span class="value-display" id="edgeRatioValue">3%</span>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button id="processBtn" disabled>批量处理</button>
+                    <button id="downloadBtn" disabled>下载所有</button>
+                    <button id="clearBtn">清空文件</button>
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">处理进度: 0%</div>
+                </div>
+            </div>
+            
+            <div class="preview-container">
+                <div class="preview">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 渐变色彩方案
+        const gradColors = [
+            [[214, 233, 255], [214, 229, 255], [209, 214, 255], [221, 209, 255], [243, 209, 255], [255, 204, 245], [255, 204, 223], [255, 200, 199], [255, 216, 199], [255, 221, 199]],
+            [[204, 251, 252], [197, 234, 254], [189, 211, 255]],
+            [[255, 242, 158], [255, 239, 153], [255, 231, 140], [255, 217, 121], [255, 197, 98], [255, 171, 75], [255, 143, 52], [255, 115, 33], [255, 95, 20], [255, 87, 15]],
+            [[211, 89, 255], [228, 99, 255], [255, 123, 247], [255, 154, 218], [255, 185, 208], [255, 209, 214], [255, 219, 219]],
+            [[0, 224, 245], [31, 158, 255], [51, 85, 255]],
+            [[255, 25, 125], [45, 13, 255], [0, 255, 179]],
+            [[0, 176, 158], [19, 77, 93], [16, 23, 31]],
+            [[95, 108, 138], [48, 59, 94], [14, 18, 38]]
+        ];
+
+        // 获取DOM元素
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const fileUpload = document.getElementById('fileUpload');
+        const fileList = document.getElementById('fileList');
+        const gradientScheme = document.getElementById('gradientScheme');
+        const gradientPreview = document.getElementById('gradientPreview');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        // 参数控制元素
+        const midEdgeXSlider = document.getElementById('midEdgeX');
+        const midEdgeYSlider = document.getElementById('midEdgeY');
+        const backEdgeXSlider = document.getElementById('backEdgeX');
+        const backEdgeYSlider = document.getElementById('backEdgeY');
+        const edgeRatioSlider = document.getElementById('edgeRatio');
+
+        const midEdgeXValue = document.getElementById('midEdgeXValue');
+        const midEdgeYValue = document.getElementById('midEdgeYValue');
+        const backEdgeXValue = document.getElementById('backEdgeXValue');
+        const backEdgeYValue = document.getElementById('backEdgeYValue');
+        const edgeRatioValue = document.getElementById('edgeRatioValue');
+
+        // 全局变量
+        let files = [];
+        let processedImages = [];
+        let currentPreviewImage = null;
+
+        // 参数设置
+        let params = {
+            midEdgeX: 20,
+            midEdgeY: 20,
+            backEdgeX: 20,
+            backEdgeY: 20,
+            edgeRatio: 0.03,
+            gradientIndex: 2
+        };
+
+        // 更新渐变预览
+        function updateGradientPreview() {
+            const grad = gradColors[params.gradientIndex];
+            const gradient = ctx.createLinearGradient(0, 0, gradientPreview.offsetWidth, 0);
+            
+            for (let i = 0; i < grad.length; i++) {
+                const color = grad[i];
+                const stop = i / (grad.length - 1);
+                gradient.addColorStop(stop, `rgb(${color[0]}, ${color[1]}, ${color[2]})`);
+            }
+            
+            const previewCtx = gradientPreview.getContext('2d');
+            previewCtx.fillStyle = gradient;
+            previewCtx.fillRect(0, 0, gradientPreview.offsetWidth, gradientPreview.offsetHeight);
+        }
+
+        // 绘制渐变背景
+        function drawGradientBackground(ctx, width, height, gradIndex) {
+            const grad = gradColors[gradIndex];
+            const colorNum = grad.length;
+            const listColorStep = [];
+            
+            for (let j = 0; j < colorNum - 1; j++) {
+                const rStep = grad[j + 1][0] - grad[j][0];
+                const gStep = grad[j + 1][1] - grad[j][1];
+                const bStep = grad[j + 1][2] - grad[j][2];
+                listColorStep.push([rStep, gStep, bStep]);
+            }
+
+            for (let h = 0; h < height; h++) {
+                const percent = h / height * (colorNum - 1);
+                const index = Math.floor(percent);
+                const ratio = percent % 1;
+                const color = [
+                    Math.floor(grad[index][0] + listColorStep[index][0] * ratio),
+                    Math.floor(grad[index][1] + listColorStep[index][1] * ratio),
+                    Math.floor(grad[index][2] + listColorStep[index][2] * ratio)
+                ];
+
+                ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                ctx.fillRect(0, h, width, 1);
+            }
+        }
+
+        // 处理单张图片
+        function processImage(img, gradIndex) {
+            const imgWidth = img.width;
+            const imgHeight = img.height;
+
+            const midExtraX = Math.min(params.midEdgeX, Math.floor(params.edgeRatio * imgWidth));
+            const midExtraY = Math.min(params.midEdgeY, Math.floor(params.edgeRatio * imgHeight));
+            const midW = imgWidth + midExtraX * 2;
+            const midH = imgHeight + midExtraY * 2;
+
+            const backExtraX = Math.min(params.backEdgeX, Math.floor(params.edgeRatio * imgWidth));
+            const backExtraY = Math.min(params.backEdgeY, Math.floor(params.edgeRatio * imgHeight));
+            const backW = midW + backExtraX * 2;
+            const backH = midH + backExtraY * 2;
+
+            // 创建背景画布
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = backW;
+            canvas.height = backH;
+
+            // 绘制渐变背景
+            drawGradientBackground(ctx, backW, backH, gradIndex);
+
+            // 放置原图
+            const left = midExtraX + backExtraX;
+            const top = midExtraY + backExtraY;
+            ctx.drawImage(img, left, top);
+
+            return canvas;
+        }
+
+        // 更新预览
+        function updatePreview() {
+            if (!currentPreviewImage) return;
+
+            const processedCanvas = processImage(currentPreviewImage, params.gradientIndex);
+            const previewCanvas = document.getElementById('canvas');
+            const previewCtx = previewCanvas.getContext('2d');
+
+            // 调整预览画布大小
+            const maxWidth = 600;
+            const maxHeight = 400;
+            const scale = Math.min(maxWidth / processedCanvas.width, maxHeight / processedCanvas.height);
+            
+            previewCanvas.width = processedCanvas.width * scale;
+            previewCanvas.height = processedCanvas.height * scale;
+
+            previewCtx.drawImage(processedCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        }
+
+        // 更新文件列表显示
+        function updateFileList() {
+            if (files.length === 0) {
+                fileList.style.display = 'none';
+                processBtn.disabled = true;
+                downloadBtn.disabled = true;
+                return;
+            }
+
+            fileList.style.display = 'block';
+            fileList.innerHTML = '';
+            processBtn.disabled = false;
+
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const fileName = document.createElement('div');
+                fileName.className = 'file-name';
+                fileName.textContent = file.name;
+                
+                const fileSize = document.createElement('div');
+                fileSize.className = 'file-size';
+                fileSize.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-file';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => removeFile(index);
+                
+                fileItem.appendChild(fileName);
+                fileItem.appendChild(fileSize);
+                fileItem.appendChild(removeBtn);
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        // 移除文件
+        function removeFile(index) {
+            files.splice(index, 1);
+            updateFileList();
+            if (files.length > 0) {
+                loadPreviewImage(files[0]);
+            } else {
+                currentPreviewImage = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // 加载预览图片
+        function loadPreviewImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    currentPreviewImage = img;
+                    updatePreview();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 批量处理图片
+        async function processAllImages() {
+            if (files.length === 0) return;
+
+            progressContainer.style.display = 'block';
+            processedImages = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const progress = ((i + 1) / files.length) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `处理进度: ${Math.round(progress)}% (${i + 1}/${files.length})`;
+
+                await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const processedCanvas = processImage(img, params.gradientIndex);
+                            processedImages.push({
+                                name: file.name.replace(/\.[^/.]+$/, '') + '_gradient.png',
+                                canvas: processedCanvas
+                            });
+                            resolve();
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            downloadBtn.disabled = false;
+            progressContainer.style.display = 'none';
+        }
+
+        // 下载所有处理后的图片
+        function downloadAllImages() {
+            if (processedImages.length === 0) return;
+
+            processedImages.forEach((item, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = item.name;
+                    link.href = item.canvas.toDataURL('image/png');
+                    link.click();
+                }, index * 100);
+            });
+        }
+
+        // 事件监听器
+        fileUpload.addEventListener('click', () => fileInput.click());
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const newFiles = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('image/')
+            );
+            files.push(...newFiles);
+            updateFileList();
+            if (files.length > 0 && !currentPreviewImage) {
+                loadPreviewImage(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const newFiles = Array.from(e.target.files);
+            files.push(...newFiles);
+            updateFileList();
+            if (files.length > 0 && !currentPreviewImage) {
+                loadPreviewImage(files[0]);
+            }
+        });
+
+        // 参数控制事件
+        gradientScheme.addEventListener('change', () => {
+            params.gradientIndex = parseInt(gradientScheme.value);
+            updateGradientPreview();
+            updatePreview();
+        });
+
+        midEdgeXSlider.addEventListener('input', () => {
+            params.midEdgeX = parseInt(midEdgeXSlider.value);
+            midEdgeXValue.textContent = params.midEdgeX;
+            updatePreview();
+        });
+
+        midEdgeYSlider.addEventListener('input', () => {
+            params.midEdgeY = parseInt(midEdgeYSlider.value);
+            midEdgeYValue.textContent = params.midEdgeY;
+            updatePreview();
+        });
+
+        backEdgeXSlider.addEventListener('input', () => {
+            params.backEdgeX = parseInt(backEdgeXSlider.value);
+            backEdgeXValue.textContent = params.backEdgeX;
+            updatePreview();
+        });
+
+        backEdgeYSlider.addEventListener('input', () => {
+            params.backEdgeY = parseInt(backEdgeYSlider.value);
+            backEdgeYValue.textContent = params.backEdgeY;
+            updatePreview();
+        });
+
+        edgeRatioSlider.addEventListener('input', () => {
+            params.edgeRatio = parseInt(edgeRatioSlider.value) / 100;
+            edgeRatioValue.textContent = parseInt(edgeRatioSlider.value) + '%';
+            updatePreview();
+        });
+
+        processBtn.addEventListener('click', processAllImages);
+        downloadBtn.addEventListener('click', downloadAllImages);
+        clearBtn.addEventListener('click', () => {
+            files = [];
+            processedImages = [];
+            currentPreviewImage = null;
+            updateFileList();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            downloadBtn.disabled = true;
+        });
+
+        // 初始化
+        function init() {
+            updateGradientPreview();
+            gradientScheme.value = params.gradientIndex;
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html> 

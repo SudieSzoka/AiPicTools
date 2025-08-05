@@ -70,5 +70,14 @@
       "category": "image",
       "icon": "image-mid-transparent",
       "show": true
+    },
+    {
+      "id": 9,
+      "name": "批量图片渐变背景",
+      "description": "为多张图片添加渐变背景，支持批量处理和下载",
+      "path": "tools/image-batch-gradient.html",
+      "category": "image",
+      "icon": "image-batch-gradient",
+      "show": true
     }
   ]
