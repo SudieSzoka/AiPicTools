@@ -10,13 +10,15 @@ FOOTER_PATH = "footer.html"   # 脚部模板文件
 COMMON_CSS_PATH = "common.css" # 公共样式文件
 THEMES_DIR = "themes"         # 主题目录
 
-def inject_templates(theme="default", add_css=True):
+def inject_templates(theme="default", add_css=True, add_favicon=True, add_password_protection=False):
     """
     从源目录读取HTML文件，注入模板后保存到输出目录
     
     参数:
     theme: 使用的主题名称 (default, dark, minimal 等)
     add_css: 是否自动添加公共CSS链接
+    add_favicon: 是否自动添加favicon链接
+    add_password_protection: 是否添加密码保护功能
     """
     # 确保输出目录存在
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -87,11 +89,43 @@ def inject_templates(theme="default", add_css=True):
                     head_match.group(0) + css_link
                 )
         
+        # 添加favicon链接
+        if add_favicon:
+            head_match = re.search(r'(<head[^>]*>)', content, re.IGNORECASE)
+            if head_match:
+                favicon_link = '\n  <link rel="icon" type="image/png" href="/icon/aipictools.png">'
+                content = content.replace(
+                    head_match.group(0), 
+                    head_match.group(0) + favicon_link
+                )
+        
+        # 添加密码保护功能
+        if add_password_protection:
+            # 在head中添加密码验证脚本
+            head_match = re.search(r'(<head[^>]*>)', content, re.IGNORECASE)
+            if head_match:
+                password_script = '\n  <script src="/password-check.js"></script>'
+                content = content.replace(
+                    head_match.group(0), 
+                    head_match.group(0) + password_script
+                )
+            
+            # 包装body内容到websiteContent div中
+            body_match = re.search(r'(<body[^>]*>)(.*?)(</body>)', content, re.IGNORECASE | re.DOTALL)
+            if body_match:
+                body_open = body_match.group(1)
+                body_content = body_match.group(2)
+                body_close = body_match.group(3)
+                
+                # 包装内容到websiteContent div
+                wrapped_content = f'{body_open}\n  <div id="websiteContent" style="display: none;">\n{body_content}\n  </div>\n{body_close}'
+                content = content.replace(body_match.group(0), wrapped_content)
+        
         # 保存到输出目录
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(content)
         
-        print(f"已处理: {filename} (主题: {theme})")
+        print(f"已处理: {filename} (主题: {theme})" + (" [密码保护已启用]" if add_password_protection else ""))
         processed_count += 1
     
     # 复制公共资源
@@ -158,7 +192,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='HTML模板注入工具')
     parser.add_argument('--theme', default='default', help='使用的主题名称')
     parser.add_argument('--no-css', action='store_true', help='不添加CSS链接')
+    parser.add_argument('--no-favicon', action='store_true', help='不添加favicon链接')
     parser.add_argument('--create-theme', help='创建新主题，格式: 主题名,主色,辅色')
+    parser.add_argument('--password-protection', action='store_true', help='为工具页面添加密码保护功能')
     
     args = parser.parse_args()
     
@@ -171,7 +207,14 @@ if __name__ == "__main__":
         exit()
     
     print("开始处理HTML文件...")
-    processed = inject_templates(theme=args.theme, add_css=not args.no_css)
+    processed = inject_templates(
+        theme=args.theme, 
+        add_css=not args.no_css, 
+        add_favicon=not args.no_favicon,
+        add_password_protection= False
+    )
     print(f"\n操作完成! 已处理 {processed} 个HTML文件。")
     print(f"源目录: {ORIGIN_DIR} → 输出目录: {OUTPUT_DIR}")
     print(f"使用主题: {args.theme}")
+    if args.password_protection:
+        print("密码保护功能已启用")
