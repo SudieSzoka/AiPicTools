@@ -93,17 +93,145 @@
             box-shadow:0 6px 20px rgba(76, 175, 80, 0.4);
         }
         .image-counter{text-align:center;margin-top:10px;color:#666;font-size:14px}
-        .preview-container{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px;max-height:150px;overflow-y:auto;padding:5px}
-        .preview-item{width:60px;height:60px;border-radius:8px;overflow:hidden;position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-        .preview-item img{width:100%;height:100%;object-fit:cover}
-        .preview-item .remove{position:absolute;top:2px;right:2px;background:rgba(255,0,0,0.7);color:white;border-radius:50%;width:18px;height:18px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s}
-        .preview-item:hover .remove{opacity:1}
+        
+        /* 拖拽区域样式 */
+        .drag-drop-area {
+            border: 2px dashed #6e8efb;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8faff;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .drag-drop-area.dragover {
+            border-color: #a777e3;
+            background: #f0f5ff;
+            transform: scale(1.02);
+        }
+        .drag-drop-area:hover {
+            border-color: #a777e3;
+            background: #f0f5ff;
+        }
+        .drag-drop-icon {
+            font-size: 48px;
+            color: #6e8efb;
+            margin-bottom: 15px;
+        }
+        .drag-drop-text {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .drag-drop-hint {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        /* 图片预览容器样式 */
+        .preview-container{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            min-height: 80px;
+        }
+        .preview-item{
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: move;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .preview-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-color: #6e8efb;
+        }
+        .preview-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+        .preview-item img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        .preview-item .remove{
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(255,0,0,0.8);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .preview-item:hover .remove{
+            opacity: 1;
+        }
+        .preview-item .order-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .preview-item .drag-handle {
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            background: rgba(110, 142, 251, 0.8);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .preview-item:hover .drag-handle {
+            opacity: 1;
+        }
+        
         .info-icon{display:inline-block;width:16px;height:16px;background:#e0e7ff;color:#5a7af0;border-radius:50%;text-align:center;line-height:16px;font-size:12px;margin-left:5px;cursor:help}
         
         @media (max-width: 600px) {
             .container { padding: 25px; }
             h1 { font-size: 26px; }
             .controls-grid { grid-template-columns: 1fr; }
+            .preview-item { width: 70px; height: 70px; }
         }
     </style>
 </head>
@@ -155,7 +283,15 @@
 
     <div class="form-group">
         <label>选择图片（可多选）<span class="info-icon" title="支持JPG、PNG格式，最多选择12张图片">i</span></label>
-        <input type="file" id="images" accept="image/*" multiple>
+        
+        <!-- 拖拽上传区域 -->
+        <div class="drag-drop-area" id="dragDropArea">
+            <div class="drag-drop-icon">📁</div>
+            <div class="drag-drop-text">拖拽图片到此处或点击选择文件</div>
+            <div class="drag-drop-hint">支持 JPG、PNG 格式</div>
+        </div>
+        
+        <input type="file" id="images" accept="image/*" multiple style="display: none;">
         <div class="image-counter">已选择 <span id="imageCount">0</span> 张图片</div>
         <div class="preview-container" id="imagePreview"></div>
     </div>
@@ -176,11 +312,11 @@
         <div class="form-group">
             <label>渐变方案</label>
             <select id="gradientSelect">
-                <option value="transparent">纯透明</option>
+                <option value="transparent"selected>纯透明</option>
                 <option value="ocean">海洋蓝</option>
                 <option value="sunset">日落橙</option>
                 <option value="forest">森林绿</option>
-                <option value="purple_dream" selected>梦幻紫</option>
+                <option value="purple_dream">梦幻紫</option>
                 <option value="golden">金色</option>
                 <option value="cool_blue">冷蓝</option>
             </select>
@@ -217,42 +353,151 @@ const gradients = {
     transparent: [[255,255,255,0],[255,255,255,0]]
 };
 
-/* ---------- 图片预览功能 ---------- */
+/* ---------- 拖拽上传功能 ---------- */
+const dragDropArea = document.getElementById('dragDropArea');
 const imageInput = document.getElementById('images');
 const imagePreview = document.getElementById('imagePreview');
 const imageCount = document.getElementById('imageCount');
 const MAX_IMAGES = 999;
 
+// 点击拖拽区域触发文件选择
+dragDropArea.addEventListener('click', () => {
+    imageInput.click();
+});
+
+// 拖拽事件处理
+dragDropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dragDropArea.classList.add('dragover');
+});
+
+dragDropArea.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dragDropArea.classList.remove('dragover');
+});
+
+dragDropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragDropArea.classList.remove('dragover');
+    
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+        file.type.startsWith('image/')
+    );
+    
+    if (files.length > 0) {
+        handleFiles(files);
+    }
+});
+
+// 文件选择处理
 imageInput.addEventListener('change', function() {
+    const files = Array.from(this.files);
+    handleFiles(files);
+});
+
+// 统一的文件处理函数
+function handleFiles(files) {
+    const currentFiles = Array.from(imageInput.files || []);
+    const newFiles = [...currentFiles, ...files].slice(0, MAX_IMAGES);
+    
+    // 更新文件输入
+    const dataTransfer = new DataTransfer();
+    newFiles.forEach(f => dataTransfer.items.add(f));
+    imageInput.files = dataTransfer.files;
+    
+    updateImagePreview(newFiles);
+}
+
+// 更新图片预览
+function updateImagePreview(files) {
     imagePreview.innerHTML = '';
-    const files = Array.from(this.files).slice(0, MAX_IMAGES);
     imageCount.textContent = files.length;
     
-    files.forEach(file => {
+    files.forEach((file, index) => {
         const reader = new FileReader();
         reader.onload = function(e) {
             const previewItem = document.createElement('div');
             previewItem.className = 'preview-item';
+            previewItem.draggable = true;
+            previewItem.dataset.index = index;
             previewItem.innerHTML = `
                 <img src="${e.target.result}" alt="预览">
+                <div class="order-number">${index + 1}</div>
                 <div class="remove">×</div>
+                <div class="drag-handle">⋮⋮</div>
             `;
-            imagePreview.appendChild(previewItem);
+            
+            // 添加拖拽排序功能
+            setupDragAndDrop(previewItem, index);
             
             // 添加删除功能
             previewItem.querySelector('.remove').addEventListener('click', () => {
-                previewItem.remove();
-                // 更新文件列表
-                const newFiles = Array.from(imageInput.files).filter(f => f !== file);
-                const dataTransfer = new DataTransfer();
-                newFiles.forEach(f => dataTransfer.items.add(f));
-                imageInput.files = dataTransfer.files;
-                imageCount.textContent = newFiles.length;
+                removeImage(index);
             });
+            
+            imagePreview.appendChild(previewItem);
         };
         reader.readAsDataURL(file);
     });
-});
+}
+
+// 设置拖拽排序
+function setupDragAndDrop(item, index) {
+    item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', index);
+        item.classList.add('dragging');
+    });
+    
+    item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+    });
+    
+    item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+    
+    item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+        const toIndex = parseInt(item.dataset.index);
+        
+        if (fromIndex !== toIndex) {
+            reorderImages(fromIndex, toIndex);
+        }
+    });
+}
+
+// 重新排序图片
+function reorderImages(fromIndex, toIndex) {
+    const files = Array.from(imageInput.files);
+    const newFiles = [...files];
+    
+    // 移动文件位置
+    const [movedFile] = newFiles.splice(fromIndex, 1);
+    newFiles.splice(toIndex, 0, movedFile);
+    
+    // 更新文件输入
+    const dataTransfer = new DataTransfer();
+    newFiles.forEach(f => dataTransfer.items.add(f));
+    imageInput.files = dataTransfer.files;
+    
+    // 重新渲染预览
+    updateImagePreview(newFiles);
+}
+
+// 删除图片
+function removeImage(index) {
+    const files = Array.from(imageInput.files);
+    const newFiles = files.filter((_, i) => i !== index);
+    
+    // 更新文件输入
+    const dataTransfer = new DataTransfer();
+    newFiles.forEach(f => dataTransfer.items.add(f));
+    imageInput.files = dataTransfer.files;
+    
+    // 重新渲染预览
+    updateImagePreview(newFiles);
+}
 
 /* ---------- 通用监听 ---------- */
 ['spacing','angle','gradientSelect','cols'].forEach(id=>{

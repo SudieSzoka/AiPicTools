@@ -222,6 +222,69 @@
             margin-bottom: 8px;
         }
         
+        .background-settings {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f1f3f4;
+            border-radius: 10px;
+            border: 1px solid #e0e6ed;
+        }
+        
+        .background-settings .panel-title {
+            margin-bottom: 15px;
+        }
+        
+        #imageOpacity {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e0e6ed;
+            outline: none;
+            margin-top: 8px;
+        }
+        
+        #imageOpacity::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        #imageOpacity::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        #opacityValue {
+            display: inline-block;
+            margin-left: 10px;
+            color: #3498db;
+            font-weight: 500;
+            min-width: 40px;
+        }
+        
+        select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        input[type="color"]:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -241,7 +304,7 @@
     <div class="container">
         <header>
             <h1>图片居中缩放工具</h1>
-            <p class="description">上传图片，自动等比例缩放并居中放置在指定大小的透明矩形中</p>
+            <p class="description">上传图片，自动等比例缩放并居中放置在指定大小的画布中，支持透明、纯色、渐变和图片背景</p>
         </header>
         
         <div class="settings-panel">
@@ -271,6 +334,65 @@
                 </div>
             </div>
             
+            <div class="background-settings">
+                <h3 class="panel-title" style="margin-top: 20px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    背景设置
+                </h3>
+                
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="backgroundType">背景类型</label>
+                        <select id="backgroundType" style="width: 100%; padding: 12px 15px; border: 2px solid #e0e6ed; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s;">
+                            <option value="transparent">透明背景</option>
+                            <option value="solid">纯色背景</option>
+                            <option value="gradient">渐变背景</option>
+                            <option value="image">图片背景</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group" id="solidColorGroup" style="display: none;">
+                        <label for="solidColor">背景颜色</label>
+                        <input type="color" id="solidColor" value="#ffffff" style="width: 100%; height: 50px; border: 2px solid #e0e6ed; border-radius: 8px; cursor: pointer;">
+                    </div>
+                    
+                    <div class="setting-group" id="gradientGroup" style="display: none;">
+                        <label for="gradientStart">渐变起始颜色</label>
+                        <input type="color" id="gradientStart" value="#3498db" style="width: 100%; height: 50px; border: 2px solid #e0e6ed; border-radius: 8px; cursor: pointer;">
+                    </div>
+                    
+                    <div class="setting-group" id="gradientEndGroup" style="display: none;">
+                        <label for="gradientEnd">渐变结束颜色</label>
+                        <input type="color" id="gradientEnd" value="#e74c3c" style="width: 100%; height: 50px; border: 2px solid #e0e6ed; border-radius: 8px; cursor: pointer;">
+                    </div>
+                    
+                    <div class="setting-group" id="gradientDirectionGroup" style="display: none;">
+                        <label for="gradientDirection">渐变方向</label>
+                        <select id="gradientDirection" style="width: 100%; padding: 12px 15px; border: 2px solid #e0e6ed; border-radius: 8px; font-size: 1rem;">
+                            <option value="to right">从左到右</option>
+                            <option value="to bottom">从上到下</option>
+                            <option value="45deg">对角线</option>
+                            <option value="to right bottom">左上到右下</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group" id="imageBackgroundGroup" style="display: none;">
+                        <label for="backgroundImage">背景图片</label>
+                        <input type="file" id="backgroundImage" accept="image/*" style="width: 100%; padding: 8px; border: 2px solid #e0e6ed; border-radius: 8px;">
+                    </div>
+                    
+                    <div class="setting-group" id="imageOpacityGroup" style="display: none;">
+                        <label for="imageOpacity">背景图片透明度 (0-100%)</label>
+                        <input type="range" id="imageOpacity" min="0" max="100" value="50" style="width: 100%;">
+                        <span id="opacityValue">50%</span>
+                    </div>
+                </div>
+            </div>
+            
             <div class="file-upload">
                 <div class="upload-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
@@ -284,13 +406,40 @@
             </div>
             
             <p class="info-text">支持多选图片，每张图片将独立处理并生成下载链接</p>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="previewBtn" class="upload-btn" style="background: #e67e22; margin-right: 15px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    预览背景效果
+                </button>
+                
+                <button id="clearBtn" class="upload-btn" style="background: #95a5a6;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <polyline points="10 11 12 13 16 9"></polyline>
+                    </svg>
+                    清除预览
+                </button>
+            </div>
         </div>
         
         <div class="instructions">
             <h3>使用说明：</h3>
             <ol>
                 <li>设置最大尺寸（缩放后图片的宽或高最大值）</li>
-                <li>设置透明画布的宽度和高度</li>
+                <li>设置画布的宽度和高度</li>
+                <li>选择背景类型：
+                    <ul>
+                        <li><strong>透明背景</strong>：保持画布透明</li>
+                        <li><strong>纯色背景</strong>：选择单一颜色作为背景</li>
+                        <li><strong>渐变背景</strong>：选择起始和结束颜色，设置渐变方向</li>
+                        <li><strong>图片背景</strong>：上传背景图片，可调节透明度</li>
+                    </ul>
+                </li>
+                <li>点击"预览背景效果"按钮查看背景设置效果</li>
                 <li>点击"选择图片文件"按钮上传一张或多张图片</li>
                 <li>处理后的图片将显示在下方，点击下载按钮保存</li>
             </ol>
@@ -309,7 +458,180 @@
             const canvasWidthInput = document.getElementById('canvasWidth');
             const canvasHeightInput = document.getElementById('canvasHeight');
             
+            // 背景设置相关元素
+            const backgroundType = document.getElementById('backgroundType');
+            const solidColorGroup = document.getElementById('solidColorGroup');
+            const gradientGroup = document.getElementById('gradientGroup');
+            const gradientEndGroup = document.getElementById('gradientEndGroup');
+            const gradientDirectionGroup = document.getElementById('gradientDirectionGroup');
+            const imageBackgroundGroup = document.getElementById('imageBackgroundGroup');
+            const imageOpacityGroup = document.getElementById('imageOpacityGroup');
+            const imageOpacity = document.getElementById('imageOpacity');
+            const opacityValue = document.getElementById('opacityValue');
+            const backgroundImage = document.getElementById('backgroundImage');
+            
+            // 背景设置事件监听
+            backgroundType.addEventListener('change', toggleBackgroundOptions);
+            imageOpacity.addEventListener('input', updateOpacityValue);
+            backgroundImage.addEventListener('change', handleBackgroundImage);
+            
+            // 预览和清除按钮
+            const previewBtn = document.getElementById('previewBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            previewBtn.addEventListener('click', showBackgroundPreview);
+            clearBtn.addEventListener('click', clearBackgroundPreview);
+            
+            // 初始化背景设置显示
+            toggleBackgroundOptions();
+            
             fileInput.addEventListener('change', handleFileSelect);
+            
+            // 背景设置相关函数
+            function toggleBackgroundOptions() {
+                const type = backgroundType.value;
+                
+                // 隐藏所有选项组
+                solidColorGroup.style.display = 'none';
+                gradientGroup.style.display = 'none';
+                gradientEndGroup.style.display = 'none';
+                gradientDirectionGroup.style.display = 'none';
+                imageBackgroundGroup.style.display = 'none';
+                imageOpacityGroup.style.display = 'none';
+                
+                // 根据选择的类型显示相应选项
+                switch(type) {
+                    case 'solid':
+                        solidColorGroup.style.display = 'block';
+                        break;
+                    case 'gradient':
+                        gradientGroup.style.display = 'block';
+                        gradientEndGroup.style.display = 'block';
+                        gradientDirectionGroup.style.display = 'block';
+                        break;
+                    case 'image':
+                        imageBackgroundGroup.style.display = 'block';
+                        imageOpacityGroup.style.display = 'block';
+                        break;
+                }
+            }
+            
+            function updateOpacityValue() {
+                opacityValue.textContent = imageOpacity.value + '%';
+            }
+            
+            function handleBackgroundImage(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // 可以在这里添加背景图片预览功能
+                    console.log('背景图片已选择:', file.name);
+                }
+            }
+            
+            function showBackgroundPreview() {
+                const canvasWidth = parseInt(canvasWidthInput.value) || 1000;
+                const canvasHeight = parseInt(canvasHeightInput.value) || 800;
+                
+                // 创建预览canvas
+                const previewCanvas = document.createElement('canvas');
+                previewCanvas.width = canvasWidth;
+                previewCanvas.height = canvasHeight;
+                previewCanvas.style.maxWidth = '100%';
+                previewCanvas.style.border = '2px solid #e0e6ed';
+                previewCanvas.style.borderRadius = '8px';
+                
+                const ctx = previewCanvas.getContext('2d');
+                
+                // 绘制背景
+                if (backgroundType.value === 'image') {
+                    const bgImageFile = backgroundImage.files[0];
+                    if (bgImageFile) {
+                        const bgImg = new Image();
+                        bgImg.onload = function() {
+                            const bgScale = Math.max(canvasWidth / bgImg.width, canvasHeight / bgImg.height);
+                            const bgScaledWidth = bgImg.width * bgScale;
+                            const bgScaledHeight = bgImg.height * bgScale;
+                            const bgX = (canvasWidth - bgScaledWidth) / 2;
+                            const bgY = (canvasHeight - bgScaledHeight) / 2;
+                            
+                            const opacity = parseInt(imageOpacity.value) / 100;
+                            ctx.globalAlpha = opacity;
+                            ctx.drawImage(bgImg, bgX, bgY, bgScaledWidth, bgScaledHeight);
+                            ctx.globalAlpha = 1;
+                            
+                            // 显示预览
+                            showPreviewModal(previewCanvas);
+                        };
+                        bgImg.src = URL.createObjectURL(bgImageFile);
+                    } else {
+                        alert('请先选择背景图片');
+                    }
+                } else {
+                    drawBackground(ctx, canvasWidth, canvasHeight);
+                    showPreviewModal(previewCanvas);
+                }
+            }
+            
+            function clearBackgroundPreview() {
+                const modal = document.getElementById('previewModal');
+                if (modal) {
+                    modal.remove();
+                }
+            }
+            
+            function showPreviewModal(canvas) {
+                // 移除已存在的模态框
+                clearBackgroundPreview();
+                
+                const modal = document.createElement('div');
+                modal.id = 'previewModal';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                `;
+                
+                const modalContent = document.createElement('div');
+                modalContent.style.cssText = `
+                    background: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    max-width: 90%;
+                    max-height: 90%;
+                    overflow: auto;
+                    text-align: center;
+                `;
+                
+                const title = document.createElement('h3');
+                title.textContent = '背景预览效果';
+                title.style.marginBottom = '20px';
+                title.style.color = '#2c3e50';
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = '关闭预览';
+                closeBtn.className = 'download-btn';
+                closeBtn.style.marginTop = '20px';
+                closeBtn.onclick = clearBackgroundPreview;
+                
+                modalContent.appendChild(title);
+                modalContent.appendChild(canvas);
+                modalContent.appendChild(closeBtn);
+                modal.appendChild(modalContent);
+                document.body.appendChild(modal);
+                
+                // 点击背景关闭模态框
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        clearBackgroundPreview();
+                    }
+                });
+            }
             
             function handleFileSelect(e) {
                 const files = e.target.files;
@@ -357,14 +679,43 @@
                     canvas.height = canvasHeight;
                     const ctx = canvas.getContext('2d');
                     
-                    // 创建透明背景
-                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                    
-                    // 绘制图片
-                    ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-                    
-                    // 创建预览卡片
-                    createPreviewCard(canvas, fileName);
+                    // 处理背景图片（如果有的话）
+                    const bgImageFile = backgroundImage.files[0];
+                    if (backgroundType.value === 'image' && bgImageFile) {
+                        const bgImg = new Image();
+                        bgImg.onload = function() {
+                            // 绘制背景图片
+                            const bgScale = Math.max(canvasWidth / bgImg.width, canvasHeight / bgImg.height);
+                            const bgScaledWidth = bgImg.width * bgScale;
+                            const bgScaledHeight = bgImg.height * bgScale;
+                            const bgX = (canvasWidth - bgScaledWidth) / 2;
+                            const bgY = (canvasHeight - bgScaledHeight) / 2;
+                            
+                            // 设置透明度
+                            const opacity = parseInt(imageOpacity.value) / 100;
+                            ctx.globalAlpha = opacity;
+                            
+                            // 绘制背景图片
+                            ctx.drawImage(bgImg, bgX, bgY, bgScaledWidth, bgScaledHeight);
+                            
+                            // 重置透明度
+                            ctx.globalAlpha = 1;
+                            
+                            // 绘制主图片
+                            ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                            
+                            // 创建预览卡片
+                            createPreviewCard(canvas, fileName);
+                        };
+                        bgImg.src = URL.createObjectURL(bgImageFile);
+                    } else {
+                        // 绘制背景
+                        drawBackground(ctx, canvasWidth, canvasHeight);
+                        // 绘制主图片
+                        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                        // 创建预览卡片
+                        createPreviewCard(canvas, fileName);
+                    }
                 };
                 
                 img.src = dataUrl;
@@ -397,6 +748,57 @@
                 });
                 
                 previewContainer.appendChild(card);
+            }
+            
+            function drawBackground(ctx, width, height) {
+                const type = backgroundType.value;
+                
+                switch(type) {
+                    case 'transparent':
+                        // 透明背景 - 不绘制任何内容
+                        ctx.clearRect(0, 0, width, height);
+                        break;
+                        
+                    case 'solid':
+                        // 纯色背景
+                        const solidColor = document.getElementById('solidColor').value;
+                        ctx.fillStyle = solidColor;
+                        ctx.fillRect(0, 0, width, height);
+                        break;
+                        
+                    case 'gradient':
+                        // 渐变背景
+                        const gradientStart = document.getElementById('gradientStart').value;
+                        const gradientEnd = document.getElementById('gradientEnd').value;
+                        const gradientDirection = document.getElementById('gradientDirection').value;
+                        
+                        let gradient;
+                        if (gradientDirection === 'to right') {
+                            gradient = ctx.createLinearGradient(0, 0, width, 0);
+                        } else if (gradientDirection === 'to bottom') {
+                            gradient = ctx.createLinearGradient(0, 0, 0, height);
+                        } else if (gradientDirection === '45deg') {
+                            gradient = ctx.createLinearGradient(0, 0, width, height);
+                        } else if (gradientDirection === 'to right bottom') {
+                            gradient = ctx.createLinearGradient(0, 0, width, height);
+                        }
+                        
+                        gradient.addColorStop(0, gradientStart);
+                        gradient.addColorStop(1, gradientEnd);
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, width, height);
+                        break;
+                        
+                    case 'image':
+                        // 图片背景 - 这里只处理非图片背景的情况
+                        // 图片背景在processImage函数中单独处理
+                        ctx.clearRect(0, 0, width, height);
+                        break;
+                        
+                    default:
+                        ctx.clearRect(0, 0, width, height);
+                        break;
+                }
             }
             
             function downloadCanvas(canvas, fileName) {
