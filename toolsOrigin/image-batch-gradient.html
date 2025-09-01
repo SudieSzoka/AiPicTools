@@ -330,6 +330,111 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(40, 40, 50, 0.3);
+            border-radius: 6px;
+        }
+        
+        .color-picker {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .color-position {
+            flex: 1;
+            height: 6px;
+            background: rgba(100, 100, 120, 0.3);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .position-value {
+            min-width: 40px;
+            text-align: center;
+            color: #2ecc71;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .remove-color {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .remove-color:hover {
+            background: #c0392b;
+        }
+        
+        .preview-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(25, 25, 35, 0.7);
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 15px;
+        }
+        
+        .preview-info {
+            color: #bdc3c7;
+            font-size: 14px;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .preview-item {
+            background: rgba(25, 25, 35, 0.8);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .preview-item:hover {
+            background: rgba(35, 35, 45, 0.9);
+            border-color: rgba(52, 152, 219, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .preview-item canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preview-item-name {
+            color: #fafafa;
+            font-size: 12px;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
         @media (max-width: 900px) {
             .content {
                 flex-direction: column;
@@ -377,9 +482,37 @@
                             <option value="5">彩虹渐变</option>
                             <option value="6">深绿渐变</option>
                             <option value="7">深蓝渐变</option>
+                            <option value="custom">自定义渐变</option>
                         </select>
                     </div>
+                    <div class="control-row">
+                        <label for="gradientAngle">渐变角度:</label>
+                        <input type="range" id="gradientAngle" min="0" max="360" value="90" step="1">
+                        <span class="value-display" id="gradientAngleValue">90°</span>
+                    </div>
                     <div class="gradient-preview" id="gradientPreview"></div>
+                    
+                    <!-- 自定义渐变颜色设置 -->
+                    <div id="customGradientContainer" style="display: none;">
+                        <div class="control-header" style="margin-top: 15px;">
+                            <span>自定义渐变颜色</span>
+                            <button id="addColorBtn" style="margin-left: auto; padding: 4px 8px; font-size: 12px;">+</button>
+                        </div>
+                        <div id="colorList">
+                            <div class="color-item">
+                                <input type="color" class="color-picker" value="#d6e9ff">
+                                <input type="range" class="color-position" min="0" max="100" value="0">
+                                <span class="position-value">0%</span>
+                                <button class="remove-color" style="padding: 2px 6px; font-size: 10px;">×</button>
+                            </div>
+                            <div class="color-item">
+                                <input type="color" class="color-picker" value="#ffd6d6">
+                                <input type="range" class="color-position" min="0" max="100" value="100">
+                                <span class="position-value">100%</span>
+                                <button class="remove-color" style="padding: 2px 6px; font-size: 10px;">×</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="control-group">
@@ -434,8 +567,11 @@
             </div>
             
             <div class="preview-container">
-                <div class="preview">
-                    <canvas id="canvas"></canvas>
+                <div class="preview-controls">
+                    <div class="preview-info">实时预览渐变效果</div>
+                </div>
+                <div class="preview-grid" id="previewGrid">
+                    <!-- 预览项目将在这里动态添加 -->
                 </div>
             </div>
         </div>
@@ -455,8 +591,6 @@
         ];
 
         // 获取DOM元素
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
         const fileInput = document.getElementById('fileInput');
         const fileUpload = document.getElementById('fileUpload');
         const fileList = document.getElementById('fileList');
@@ -468,6 +602,7 @@
         const progressContainer = document.getElementById('progressContainer');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
+        const previewGrid = document.getElementById('previewGrid');
 
         // 参数控制元素
         const midEdgeXSlider = document.getElementById('midEdgeX');
@@ -475,12 +610,17 @@
         const backEdgeXSlider = document.getElementById('backEdgeX');
         const backEdgeYSlider = document.getElementById('backEdgeY');
         const edgeRatioSlider = document.getElementById('edgeRatio');
+        const gradientAngleSlider = document.getElementById('gradientAngle');
+        const customGradientContainer = document.getElementById('customGradientContainer');
+        const colorList = document.getElementById('colorList');
+        const addColorBtn = document.getElementById('addColorBtn');
 
         const midEdgeXValue = document.getElementById('midEdgeXValue');
         const midEdgeYValue = document.getElementById('midEdgeYValue');
         const backEdgeXValue = document.getElementById('backEdgeXValue');
         const backEdgeYValue = document.getElementById('backEdgeYValue');
         const edgeRatioValue = document.getElementById('edgeRatioValue');
+        const gradientAngleValue = document.getElementById('gradientAngleValue');
 
         // 全局变量
         let files = [];
@@ -494,30 +634,63 @@
             backEdgeX: 20,
             backEdgeY: 20,
             edgeRatio: 0.03,
-            gradientIndex: 2
+            gradientIndex: 2,
+            gradientAngle: 90,
+            customColors: [
+                { hex: '#d6e9ff', position: 0 },
+                { hex: '#ffd6d6', position: 100 }
+            ]
         };
 
         // 更新渐变预览
         function updateGradientPreview() {
-            const grad = gradColors[params.gradientIndex];
-            const gradient = ctx.createLinearGradient(0, 0, gradientPreview.offsetWidth, 0);
-            
-            for (let i = 0; i < grad.length; i++) {
-                const color = grad[i];
-                const stop = i / (grad.length - 1);
-                gradient.addColorStop(stop, `rgb(${color[0]}, ${color[1]}, ${color[2]})`);
+            const gradIndex = gradientScheme.value;
+            if (gradIndex === 'custom') {
+                customGradientContainer.style.display = 'block';
+                updateCustomGradientPreview();
+            } else {
+                customGradientContainer.style.display = 'none';
+                const grad = gradColors[parseInt(gradIndex)];
+                const colors = grad.map(color => `rgb(${color[0]}, ${color[1]}, ${color[2]})`);
+                gradientPreview.style.background = `linear-gradient(${params.gradientAngle}deg, ${colors.join(', ')})`;
             }
-            
-            const previewCtx = gradientPreview.getContext('2d');
-            previewCtx.fillStyle = gradient;
-            previewCtx.fillRect(0, 0, gradientPreview.offsetWidth, gradientPreview.offsetHeight);
+        }
+
+        // 更新自定义渐变预览
+        function updateCustomGradientPreview() {
+            const colors = [];
+            const colorItems = colorList.children;
+            for (let i = 0; i < colorItems.length; i++) {
+                const colorItem = colorItems[i];
+                const colorValue = colorItem.querySelector('.color-picker').value;
+                const positionValue = colorItem.querySelector('.color-position').value;
+                colors.push(`${colorValue} ${positionValue}%`);
+            }
+            gradientPreview.style.background = `linear-gradient(${params.gradientAngle}deg, ${colors.join(', ')})`;
         }
 
         // 绘制渐变背景
         function drawGradientBackground(ctx, width, height, gradIndex) {
-            const grad = gradColors[gradIndex];
-            const colorNum = grad.length;
-            const listColorStep = [];
+            let grad, colorNum, listColorStep = [];
+            
+            if (gradIndex === 'custom') {
+                // 使用自定义渐变
+                grad = [];
+                const colorItems = colorList.children;
+                for (let i = 0; i < colorItems.length; i++) {
+                    const colorItem = colorItems[i];
+                    const colorHex = colorItem.querySelector('.color-picker').value;
+                    const r = parseInt(colorHex.slice(1, 3), 16);
+                    const g = parseInt(colorHex.slice(3, 5), 16);
+                    const b = parseInt(colorHex.slice(5, 7), 16);
+                    grad.push([r, g, b]);
+                }
+                colorNum = grad.length;
+            } else {
+                // 使用预设渐变
+                grad = gradColors[parseInt(gradIndex)];
+                colorNum = grad.length;
+            }
             
             for (let j = 0; j < colorNum - 1; j++) {
                 const rStep = grad[j + 1][0] - grad[j][0];
@@ -526,19 +699,25 @@
                 listColorStep.push([rStep, gStep, bStep]);
             }
 
-            for (let h = 0; h < height; h++) {
-                const percent = h / height * (colorNum - 1);
-                const index = Math.floor(percent);
-                const ratio = percent % 1;
-                const color = [
-                    Math.floor(grad[index][0] + listColorStep[index][0] * ratio),
-                    Math.floor(grad[index][1] + listColorStep[index][1] * ratio),
-                    Math.floor(grad[index][2] + listColorStep[index][2] * ratio)
-                ];
-
-                ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-                ctx.fillRect(0, h, width, 1);
+            // 根据角度创建渐变
+            const angle = params.gradientAngle;
+            const radians = (angle * Math.PI) / 180;
+            
+            // 创建CSS渐变（更简单的方法）
+            const gradient = ctx.createLinearGradient(
+                0, 0,
+                Math.cos(radians) * width,
+                Math.sin(radians) * height
+            );
+            
+            for (let i = 0; i < colorNum; i++) {
+                const stop = i / (colorNum - 1);
+                const color = `rgb(${grad[i][0]}, ${grad[i][1]}, ${grad[i][2]})`;
+                gradient.addColorStop(stop, color);
             }
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
         }
 
         // 处理单张图片
@@ -573,23 +752,45 @@
             return canvas;
         }
 
-        // 更新预览
-        function updatePreview() {
-            if (!currentPreviewImage) return;
-
-            const processedCanvas = processImage(currentPreviewImage, params.gradientIndex);
-            const previewCanvas = document.getElementById('canvas');
-            const previewCtx = previewCanvas.getContext('2d');
-
-            // 调整预览画布大小
-            const maxWidth = 600;
-            const maxHeight = 400;
-            const scale = Math.min(maxWidth / processedCanvas.width, maxHeight / processedCanvas.height);
+        // 更新预览网格
+        function updatePreviewGrid() {
+            previewGrid.innerHTML = '';
             
-            previewCanvas.width = processedCanvas.width * scale;
-            previewCanvas.height = processedCanvas.height * scale;
-
-            previewCtx.drawImage(processedCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+            files.forEach((file, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                
+                const previewName = document.createElement('div');
+                previewName.className = 'preview-item-name';
+                previewName.textContent = file.name;
+                
+                const previewCanvas = document.createElement('canvas');
+                previewCanvas.width = 180;
+                previewCanvas.height = 120;
+                
+                // 创建临时图片来生成预览
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const processedCanvas = processImage(img, params.gradientIndex);
+                        const previewCtx = previewCanvas.getContext('2d');
+                        const scale = Math.min(180 / processedCanvas.width, 120 / processedCanvas.height);
+                        const scaledWidth = processedCanvas.width * scale;
+                        const scaledHeight = processedCanvas.height * scale;
+                        const offsetX = (180 - scaledWidth) / 2;
+                        const offsetY = (120 - scaledHeight) / 2;
+                        
+                        previewCtx.drawImage(processedCanvas, offsetX, offsetY, scaledWidth, scaledHeight);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                previewItem.appendChild(previewName);
+                previewItem.appendChild(previewCanvas);
+                previewGrid.appendChild(previewItem);
+            });
         }
 
         // 更新文件列表显示
@@ -633,11 +834,11 @@
         function removeFile(index) {
             files.splice(index, 1);
             updateFileList();
+            updatePreviewGrid();
             if (files.length > 0) {
                 loadPreviewImage(files[0]);
             } else {
                 currentPreviewImage = null;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
 
@@ -721,6 +922,7 @@
             );
             files.push(...newFiles);
             updateFileList();
+            updatePreviewGrid();
             if (files.length > 0 && !currentPreviewImage) {
                 loadPreviewImage(files[0]);
             }
@@ -730,6 +932,7 @@
             const newFiles = Array.from(e.target.files);
             files.push(...newFiles);
             updateFileList();
+            updatePreviewGrid();
             if (files.length > 0 && !currentPreviewImage) {
                 loadPreviewImage(files[0]);
             }
@@ -737,39 +940,82 @@
 
         // 参数控制事件
         gradientScheme.addEventListener('change', () => {
-            params.gradientIndex = parseInt(gradientScheme.value);
+            params.gradientIndex = gradientScheme.value;
             updateGradientPreview();
-            updatePreview();
+            updatePreviewGrid();
+        });
+
+        gradientAngleSlider.addEventListener('input', () => {
+            params.gradientAngle = parseInt(gradientAngleSlider.value);
+            gradientAngleValue.textContent = `${params.gradientAngle}°`;
+            updateGradientPreview();
+            updatePreviewGrid();
+        });
+
+        // 自定义渐变颜色管理
+        addColorBtn.addEventListener('click', () => {
+            const colorItem = document.createElement('div');
+            colorItem.className = 'color-item';
+            colorItem.innerHTML = `
+                <input type="color" class="color-picker" value="#d6e9ff">
+                <input type="range" class="color-position" min="0" max="100" value="0">
+                <span class="position-value">0%</span>
+                <button class="remove-color" style="padding: 2px 6px; font-size: 10px;">×</button>
+            `;
+            colorList.appendChild(colorItem);
+            updateCustomGradientPreview();
+            updatePreviewGrid();
+        });
+
+        colorList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-color')) {
+                if (colorList.children.length > 2) { // 保持至少2个颜色
+                    e.target.closest('.color-item').remove();
+                    updateCustomGradientPreview();
+                    updatePreviewGrid();
+                }
+            }
+        });
+
+        colorList.addEventListener('input', (e) => {
+            if (e.target.classList.contains('color-picker') || e.target.classList.contains('color-position')) {
+                const colorItem = e.target.closest('.color-item');
+                const positionInput = colorItem.querySelector('.color-position');
+                const positionValue = colorItem.querySelector('.position-value');
+                positionValue.textContent = `${positionInput.value}%`;
+                updateCustomGradientPreview();
+                updatePreviewGrid();
+            }
         });
 
         midEdgeXSlider.addEventListener('input', () => {
             params.midEdgeX = parseInt(midEdgeXSlider.value);
             midEdgeXValue.textContent = params.midEdgeX;
-            updatePreview();
+            updatePreviewGrid();
         });
 
         midEdgeYSlider.addEventListener('input', () => {
             params.midEdgeY = parseInt(midEdgeYSlider.value);
             midEdgeYValue.textContent = params.midEdgeY;
-            updatePreview();
+            updatePreviewGrid();
         });
 
         backEdgeXSlider.addEventListener('input', () => {
             params.backEdgeX = parseInt(backEdgeXSlider.value);
             backEdgeXValue.textContent = params.backEdgeX;
-            updatePreview();
+            updatePreviewGrid();
         });
 
         backEdgeYSlider.addEventListener('input', () => {
             params.backEdgeY = parseInt(backEdgeYSlider.value);
             backEdgeYValue.textContent = params.backEdgeY;
-            updatePreview();
+            updatePreviewGrid();
         });
 
         edgeRatioSlider.addEventListener('input', () => {
             params.edgeRatio = parseInt(edgeRatioSlider.value) / 100;
             edgeRatioValue.textContent = parseInt(edgeRatioSlider.value) + '%';
-            updatePreview();
+            updatePreviewGrid();
         });
 
         processBtn.addEventListener('click', processAllImages);
@@ -779,14 +1025,19 @@
             processedImages = [];
             currentPreviewImage = null;
             updateFileList();
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updatePreviewGrid();
             downloadBtn.disabled = true;
         });
 
+
+
         // 初始化
         function init() {
-            updateGradientPreview();
             gradientScheme.value = params.gradientIndex;
+            gradientAngleSlider.value = params.gradientAngle;
+            gradientAngleValue.textContent = `${params.gradientAngle}°`;
+            updateGradientPreview();
+            updatePreviewGrid();
         }
 
         window.addEventListener('load', init);

@@ -353,8 +353,8 @@ imageInput.addEventListener('change', function() {
 
 // 统一的文件处理函数
 function handleFiles(files) {
-    const currentFiles = Array.from(imageInput.files || []);
-    const newFiles = [...currentFiles, ...files].slice(0, MAX_IMAGES);
+    // 直接使用新选择的文件，替换现有文件
+    const newFiles = files.slice(0, MAX_IMAGES);
     
     // 更新文件输入
     const dataTransfer = new DataTransfer();
@@ -375,7 +375,7 @@ function updateImagePreview(files) {
             const previewItem = document.createElement('div');
             previewItem.className = 'preview-item';
             previewItem.draggable = true;
-            previewItem.dataset.index = index;
+            previewItem.dataset.fileIndex = index;
             previewItem.innerHTML = `
                 <img src="${e.target.result}" alt="预览">
                 <div class="order-number">${index + 1}</div>
@@ -400,7 +400,10 @@ function updateImagePreview(files) {
 // 设置拖拽排序
 function setupDragAndDrop(item, index) {
     item.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', index);
+        // 记录拖拽项的当前DOM位置
+        const previewItems = imagePreview.querySelectorAll('.preview-item');
+        const currentIndex = Array.from(previewItems).indexOf(item);
+        e.dataTransfer.setData('text/plain', currentIndex);
         item.classList.add('dragging');
     });
     
@@ -415,7 +418,8 @@ function setupDragAndDrop(item, index) {
     item.addEventListener('drop', (e) => {
         e.preventDefault();
         const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-        const toIndex = parseInt(item.dataset.index);
+        const previewItems = imagePreview.querySelectorAll('.preview-item');
+        const toIndex = Array.from(previewItems).indexOf(item);
         
         if (fromIndex !== toIndex) {
             reorderImages(fromIndex, toIndex);
@@ -425,34 +429,79 @@ function setupDragAndDrop(item, index) {
 
 // 重新排序图片
 function reorderImages(fromIndex, toIndex) {
-    const files = Array.from(imageInput.files);
-    const newFiles = [...files];
+    // 直接操作DOM，移动预览项
+    const previewItems = imagePreview.querySelectorAll('.preview-item');
+    const items = Array.from(previewItems);
     
-    // 移动文件位置
-    const [movedFile] = newFiles.splice(fromIndex, 1);
-    newFiles.splice(toIndex, 0, movedFile);
+    if (fromIndex < toIndex) {
+        // 向后移动
+        for (let i = fromIndex; i < toIndex; i++) {
+            imagePreview.insertBefore(items[i + 1], items[i]);
+        }
+    } else {
+        // 向前移动
+        for (let i = fromIndex; i > toIndex; i--) {
+            imagePreview.insertBefore(items[i], items[i - 1]);
+        }
+    }
+    
+    // 更新序号显示
+    updateOrderNumbers();
+    
+    // 更新文件顺序以匹配DOM顺序
+    updateFileOrder();
+}
+
+// 更新序号显示
+function updateOrderNumbers() {
+    const previewItems = imagePreview.querySelectorAll('.preview-item');
+    previewItems.forEach((item, index) => {
+        item.querySelector('.order-number').textContent = index + 1;
+    });
+}
+
+// 更新文件顺序以匹配DOM顺序
+function updateFileOrder() {
+    const previewItems = imagePreview.querySelectorAll('.preview-item');
+    const currentFiles = Array.from(imageInput.files);
+    const newOrder = [];
+    
+    // 按照DOM顺序重新排列文件
+    previewItems.forEach((item, index) => {
+        const fileIndex = parseInt(item.dataset.fileIndex);
+        if (currentFiles[fileIndex]) {
+            newOrder.push(currentFiles[fileIndex]);
+        }
+    });
     
     // 更新文件输入
     const dataTransfer = new DataTransfer();
-    newFiles.forEach(f => dataTransfer.items.add(f));
+    newOrder.forEach(f => dataTransfer.items.add(f));
     imageInput.files = dataTransfer.files;
     
-    // 重新渲染预览
-    updateImagePreview(newFiles);
+    // 更新所有预览项的fileIndex
+    previewItems.forEach((item, index) => {
+        item.dataset.fileIndex = index;
+    });
 }
 
 // 删除图片
 function removeImage(index) {
-    const files = Array.from(imageInput.files);
-    const newFiles = files.filter((_, i) => i !== index);
-    
-    // 更新文件输入
-    const dataTransfer = new DataTransfer();
-    newFiles.forEach(f => dataTransfer.items.add(f));
-    imageInput.files = dataTransfer.files;
-    
-    // 重新渲染预览
-    updateImagePreview(newFiles);
+    // 直接移除DOM元素
+    const previewItems = imagePreview.querySelectorAll('.preview-item');
+    const itemToRemove = previewItems[index];
+    if (itemToRemove) {
+        itemToRemove.remove();
+        
+        // 更新序号显示
+        updateOrderNumbers();
+        
+        // 更新文件顺序以匹配DOM顺序
+        updateFileOrder();
+        
+        // 更新图片计数
+        imageCount.textContent = imageInput.files.length;
+    }
 }
 
 /* ---------- 通用监听 ---------- */
@@ -487,6 +536,24 @@ function updateGradientPreview(){
 updateGradientPreview();
 
 /* ---------- 主逻辑 ---------- */
+
+// 获取拖拽后的实际图片顺序
+function getActualImageOrder() {
+    const previewItems = imagePreview.querySelectorAll('.preview-item');
+    const actualOrder = [];
+    
+    // 直接按照预览区域的DOM顺序获取文件
+    previewItems.forEach((item, index) => {
+        const fileIndex = parseInt(item.dataset.fileIndex);
+        const files = Array.from(imageInput.files);
+        if (files[fileIndex]) {
+            actualOrder.push(files[fileIndex]);
+        }
+    });
+    
+    return actualOrder;
+}
+
 document.getElementById('generateBtn').addEventListener('click', processImages);
 
 async function processImages(){
@@ -496,7 +563,10 @@ async function processImages(){
         return; 
     }
 
-    const imgs = await Promise.all(files.map(f=>new Promise(res=>{
+    // 获取拖拽后的实际顺序（按照预览区域的显示顺序）
+    const actualOrder = getActualImageOrder();
+    
+    const imgs = await Promise.all(actualOrder.map(f=>new Promise(res=>{
         const img = new Image();
         img.onload = ()=>res(img);
         img.src = URL.createObjectURL(f);

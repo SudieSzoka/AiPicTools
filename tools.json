@@ -1,24 +1,6 @@
 [
     {
       "id": 1,
-      "name": "图片自动分割",
-      "description": "将图片自动分割为小图片",
-      "path": "tools/image-auto-split-small.html",
-      "category": "image",
-      "icon": "image-split-small",
-      "show": true
-    },
-    {
-      "id": 2,
-      "name": "图片缩放",
-      "description": "批量等比例缩放图片",
-      "path": "tools/image-scale.html",
-      "category": "image",
-      "icon": "scale",
-      "show": true
-    },
-    {
-      "id": 3,
       "name": "图片网格排列",
       "description": "选择多张图片，每行设定等数量排列",
       "path": "tools/image-align.html",
@@ -27,7 +9,34 @@
       "show": true
     },
     {
+      "id": 2,
+      "name": "图片自动分割",
+      "description": "将图片自动分割为小图片",
+      "path": "tools/image-auto-split-small.html",
+      "category": "image",
+      "icon": "image-split-small",
+      "show": true
+    },
+    {
+      "id": 3,
+      "name": "批量图片渐变背景",
+      "description": "为多张图片添加渐变背景，支持批量处理和下载",
+      "path": "tools/image-batch-gradient.html",
+      "category": "image",
+      "icon": "image-batch-gradient",
+      "show": true
+    },
+    {
       "id": 4,
+      "name": "图片缩放",
+      "description": "批量等比例缩放图片",
+      "path": "tools/image-scale.html",
+      "category": "image",
+      "icon": "scale",
+      "show": true
+    },
+    {
+      "id": 5,
       "name": "图片裁剪",
       "description": "选择图片，进行自由裁剪",
       "path": "tools/image-crop.html",
@@ -36,16 +45,16 @@
       "show": true
     },
     {
-      "id": 5,
+      "id": 6,
       "name": "图片去背景",
       "description": "选择图片，去除RGB均小于指定值的区域",
       "path": "tools/image-alpha-2-0.html",
       "category": "image",
       "icon": "image-alpha-2-0",
-      "show": true
+      "show": false
     },
     {
-      "id": 6,
+      "id": 7,
       "name": "裁剪最大透明区",
       "description": "选择图片，裁剪最大透明区域",
       "path": "tools/image-crop-max-alpha.html",
@@ -54,7 +63,7 @@
       "show": true
     },
     {
-      "id": 7,
+      "id": 8,
       "name": "图片缩放并居中",
       "description": "批量等比例缩放图片，并居中显示",
       "path": "tools/image-scale-set-mid.html",
@@ -63,21 +72,12 @@
       "show": true
     },
     {
-      "id": 8,
+      "id": 9,
       "name": "半透黑底抠透明区域",
       "description": "设定半透明黑色地图，抠出来一个圆角矩形的透明区域",
       "path": "tools/image-mid-transparent.html",
       "category": "image",
       "icon": "image-mid-transparent",
-      "show": true
-    },
-    {
-      "id": 9,
-      "name": "批量图片渐变背景",
-      "description": "为多张图片添加渐变背景，支持批量处理和下载",
-      "path": "tools/image-batch-gradient.html",
-      "category": "image",
-      "icon": "image-batch-gradient",
-      "show": true
+      "show": false
     }
   ]

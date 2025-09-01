@@ -323,22 +323,6 @@
             <nav class="nav-desktop">
                 <div class="nav-list">
                     <a href="../index.html" class="nav-link">首页</a>
-                    <a href="../index.html#tools" class="nav-link">所有工具</a>
-                    
-                    <!-- 常用工具下拉菜单 -->
-                    <div class="dropdown">
-                        <button class="dropdown-toggle">
-                            常用工具
-                            <i class="dropdown-icon" data-lucide="chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a href="pdf-converter.html" class="dropdown-item">PDF转换器</a>
-                            <a href="image-compressor.html" class="dropdown-item">图片压缩</a>
-                            <a href="text-editor.html" class="dropdown-item">文本编辑器</a>
-                            <a href="code-formatter.html" class="dropdown-item">代码格式化</a>
-                            <a href="color-picker.html" class="dropdown-item">颜色选择器</a>
-                        </div>
-                    </div>
                 </div>
             </nav>
 
@@ -352,8 +336,8 @@
 <!-- END_COMMON_HEADER -->
     <div class="container">
         <header>
-            <h1>图像元素提取工具</h1>
-            <p class="subtitle">上传大图自动提取所有小图标元素，支持预览和筛选。基于Canvas实现，无需服务器处理，所有操作均在浏览器中完成。</p>
+            <h1>图像元素自动提取工具</h1>
+            <p class="subtitle">上传大图后自动提取所有小图标元素，无需手动操作。支持预览和筛选。基于Canvas实现，无需服务器处理，所有操作均在浏览器中完成。</p>
         </header>
         
         <div class="main-content">
@@ -363,7 +347,7 @@
                 <div class="upload-area" id="drop-area">
                     <i>📁</i>
                     <p class="upload-text">拖放图像文件到此处或点击上传</p>
-                    <p>支持PNG、JPG格式</p>
+                    <p>支持PNG、JPG格式，上传后自动开始处理</p>
                     <input type="file" id="file-input" accept="image/*">
                 </div>
                 
@@ -371,12 +355,12 @@
                     <h3>筛选设置</h3>
                     <div class="filter-row">
                         <label for="min-width">最小宽度:</label>
-                        <input type="number" id="min-width" min="0" value="10">
+                        <input type="number" id="min-width" min="0" value="50">
                         <span>像素</span>
                     </div>
                     <div class="filter-row">
                         <label for="min-height">最小高度:</label>
-                        <input type="number" id="min-height" min="0" value="10">
+                        <input type="number" id="min-height" min="0" value="50">
                         <span>像素</span>
                     </div>
                     <div class="filter-row">
@@ -389,7 +373,6 @@
                 </div>
                 
                 <div class="button-group">
-                    <button id="process-btn" class="process-btn" disabled>提取图标</button>
                     <button id="download-all" class="download-btn" disabled>下载全部</button>
                     <button id="reset-btn" class="reset-btn">重置</button>
                 </div>
@@ -413,7 +396,7 @@
             <div class="preview-section">
                 <h2 class="section-title">图标预览</h2>
                 <div class="icons-container" id="icons-container">
-                    <div class="no-icons">上传图像并点击"提取图标"按钮开始处理</div>
+                    <div class="no-icons">上传图像后会自动开始处理</div>
                 </div>
                 <div class="status" id="status">就绪</div>
             </div>
@@ -434,7 +417,6 @@
         // DOM元素
         const fileInput = document.getElementById('file-input');
         const dropArea = document.getElementById('drop-area');
-        const processBtn = document.getElementById('process-btn');
         const downloadAllBtn = document.getElementById('download-all');
         const resetBtn = document.getElementById('reset-btn');
         const minWidthInput = document.getElementById('min-width');
@@ -449,7 +431,6 @@
         // 事件监听
         dropArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', handleFileSelect);
-        processBtn.addEventListener('click', processImage);
         downloadAllBtn.addEventListener('click', downloadAllIcons);
         resetBtn.addEventListener('click', resetApp);
         minWidthInput.addEventListener('change', filterIcons);
@@ -488,8 +469,9 @@
             reader.onload = function(e) {
                 originalImage = new Image();
                 originalImage.onload = function() {
-                    processBtn.disabled = false;
-                    statusElement.textContent = `已加载图像: ${file.name} (${originalImage.width}×${originalImage.height}像素)`;
+                    statusElement.textContent = `已加载图像: ${file.name} (${originalImage.width}×${originalImage.height}像素)，正在自动处理...`;
+                    // 自动开始处理图像
+                    processImage();
                 };
                 originalImage.src = e.target.result;
             };
@@ -503,7 +485,6 @@
             
             processing = true;
             statusElement.textContent = "正在处理图像...";
-            processBtn.disabled = true;
             
             // 记录开始时间
             const startTime = performance.now();
@@ -783,12 +764,11 @@
             originalImage = null;
             extractedIcons = [];
             fileInput.value = '';
-            processBtn.disabled = true;
             downloadAllBtn.disabled = true;
-            minWidthInput.value = '10';
-            minHeightInput.value = '10';
+            minWidthInput.value = '50';
+            minHeightInput.value = '50';
             extractionModeSelect.value = 'alpha';
-            iconsContainer.innerHTML = '<div class="no-icons">上传图像并点击"提取图标"按钮开始处理</div>';
+            iconsContainer.innerHTML = '<div class="no-icons">上传图像后会自动开始处理</div>';
             statusElement.textContent = '就绪';
             totalIconsElement.textContent = '0';
             displayedIconsElement.textContent = '0';
