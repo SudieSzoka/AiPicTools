@@ -79,5 +79,14 @@
       "category": "image",
       "icon": "image-mid-transparent",
       "show": false
+    },
+    {
+      "id": 10,
+      "name": "视频转帧",
+      "description": "选择视频，转帧",
+      "path": "tools/video-to-frames.html",
+      "category": "video",
+      "icon": "video-to-frames",
+      "show": true
     }
   ]

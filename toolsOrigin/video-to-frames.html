@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频转帧（WebCodecs）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 18px;
+        }
+
+        .desc {
+            text-align: center;
+            color: #666;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f9f9f9;
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        input[type="file"] { display: none; }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 12px 0;
+            align-items: center;
+        }
+
+        label { color: #444; font-weight: 600; }
+
+        input[type="number"] {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 120px;
+        }
+
+        .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.25s;
+        }
+
+        button.secondary { background: #607d8b; }
+        button.warn { background: #e67e22; }
+        button.danger { background: #e74c3c; }
+        button:disabled { background: #bdbdbd; cursor: not-allowed; }
+        button:hover { background: #43a047; }
+        button.secondary:hover { background: #546e7a; }
+        button.warn:hover { background: #d35400; }
+        button.danger:hover { background: #c0392b; }
+
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .info {
+            margin: 8px 0 4px;
+            font-size: 14px;
+            color: #444;
+            background: #f9fafb;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .progress {
+            height: 10px;
+            background: #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress > div {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.2s ease;
+        }
+
+        .preview {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .thumb {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fafafa;
+            text-align: center;
+        }
+        .thumb img { max-width: 100%; border-radius: 4px; display: block; margin: 0 auto 6px; }
+        .thumb span { font-size: 12px; color: #666; }
+
+        .tip { font-size: 12px; color: #777; }
+        .error { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+    </style>
+    <!-- 打包 ZIP 依赖（CDN） -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>视频转帧（WebCodecs）</h1>
+        <div class="desc">上传视频，按帧导出为图片；可设置隔帧、时间区间；结果打包ZIP下载。</div>
+
+        <div class="upload-area" id="uploadArea">
+            <p>点击选择或将视频拖拽到此处</p>
+            <p class="tip">推荐使用 Chrome / Edge 最新版本。支持 MP4、WebM 等常见格式。</p>
+            <input id="fileInput" type="file" accept="video/*">
+        </div>
+
+        <div class="row">
+            <label for="skipInput">隔几帧处理一次：</label>
+            <input id="skipInput" type="number" min="0" step="1" value="0" title="0 表示每帧都转">
+            <span class="tip">0 表示每帧都转；例如 4 表示每隔 4 帧取 1 帧</span>
+        </div>
+
+        <div class="row">
+            <label for="startSec">开始秒：</label>
+            <input id="startSec" type="number" min="0" step="0.001" placeholder="留空=从头">
+            <label for="endSec">结束秒：</label>
+            <input id="endSec" type="number" min="0" step="0.001" placeholder="留空=到结尾">
+            <span class="tip">仅导出该时间区间内的帧</span>
+        </div>
+
+        <div class="row actions">
+            <button id="startBtn" disabled>开始转换</button>
+            <button id="cancelBtn" class="danger" disabled>取消</button>
+            <button id="downloadBtn" class="secondary" disabled>下载 ZIP</button>
+        </div>
+
+        <div class="info" id="videoInfo" style="display:none;"></div>
+        <video id="videoPreview" controls playsinline style="width:100%;max-height:360px;border-radius:8px;background:#000;display:none;"></video>
+        <div class="status" id="status">就绪</div>
+        <div class="progress"><div id="bar"></div></div>
+        <div class="error" id="error" style="display:none;"></div>
+
+        <div class="preview" id="preview"></div>
+    </div>
+
+    <!-- 隐藏视频（用于 captureStream 处理）与画布 -->
+    <video id="video" style="display:none" playsinline muted></video>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const startBtn = document.getElementById('startBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const skipInput = document.getElementById('skipInput');
+        const startSecInput = document.getElementById('startSec');
+        const endSecInput = document.getElementById('endSec');
+        const statusEl = document.getElementById('status');
+        const errorEl = document.getElementById('error');
+        const bar = document.getElementById('bar');
+        const preview = document.getElementById('preview');
+        const video = document.getElementById('video');
+        const videoPreview = document.getElementById('videoPreview');
+        const videoInfo = document.getElementById('videoInfo');
+
+        let currentFile = null;
+        let cancelRequested = false;
+        let savedFrames = []; // {blob, name, urlForPreview}
+        let processing = false;
+        let fileURL = null;
+
+        // 交互：点击或拖拽上传
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+        });
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault(); uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+
+        function resetUI() {
+            savedFrames.forEach(f => { if (f.urlForPreview) URL.revokeObjectURL(f.urlForPreview); });
+            savedFrames = [];
+            preview.innerHTML = '';
+            bar.style.width = '0%';
+            statusEl.textContent = '就绪';
+            errorEl.style.display = 'none';
+            downloadBtn.disabled = true;
+            videoPreview.src = '';
+            videoPreview.style.display = 'none';
+            videoInfo.style.display = 'none';
+        }
+
+        async function handleFile(file) {
+            resetUI();
+            if (!file || !file.type.startsWith('video/')) {
+                showError('请选择视频文件');
+                startBtn.disabled = true;
+                return;
+            }
+            currentFile = file;
+            startBtn.disabled = false;
+            statusEl.textContent = `已选择：${file.name}（${(file.size/1024/1024).toFixed(2)} MB）`;
+
+            // 创建/替换预览 URL
+            if (fileURL) {
+                URL.revokeObjectURL(fileURL);
+                fileURL = null;
+            }
+            fileURL = URL.createObjectURL(file);
+            videoPreview.src = fileURL;
+            videoPreview.style.display = 'block';
+
+            // 等元数据后展示信息
+            await new Promise((res) => {
+                if (videoPreview.readyState >= 1) res();
+                else videoPreview.onloadedmetadata = () => res();
+            });
+            const duration = isFinite(videoPreview.duration) ? videoPreview.duration : 0;
+            const width = videoPreview.videoWidth;
+            const height = videoPreview.videoHeight;
+
+            // 估算帧率：优先使用 track 设置，其次用常见值或留空
+            let fpsText = '—';
+            try {
+                const tmpStream = videoPreview.captureStream();
+                const t = tmpStream.getVideoTracks()[0];
+                const st = t && t.getSettings ? t.getSettings() : {};
+                if (st && st.frameRate) fpsText = `${Math.round(st.frameRate)} fps`;
+                tmpStream.getTracks().forEach(x => x.stop());
+            } catch(e) {}
+
+            videoInfo.innerHTML = `
+                <div><b>文件</b>：${file.name}（${(file.size/1024/1024).toFixed(2)} MB，${file.type || '未知类型'}）</div>
+                <div><b>分辨率</b>：${width} × ${height}</div>
+                <div><b>时长</b>：${duration.toFixed(3)} s</div>
+                <div><b>帧率(估)</b>：${fpsText}</div>
+            `;
+            videoInfo.style.display = 'block';
+        }
+
+        function showError(msg) {
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+
+        startBtn.addEventListener('click', async () => {
+            if (!currentFile || processing) return;
+            cancelRequested = false;
+            processing = true;
+            startBtn.disabled = true;
+            cancelBtn.disabled = false;
+            downloadBtn.disabled = true;
+            errorEl.style.display = 'none';
+            preview.innerHTML = '';
+            savedFrames = [];
+
+            try {
+                await processVideoToFrames(currentFile);
+            } catch (err) {
+                console.error(err);
+                showError(err.message || '处理失败');
+            } finally {
+                processing = false;
+                cancelBtn.disabled = true;
+                startBtn.disabled = !currentFile;
+                downloadBtn.disabled = savedFrames.length === 0;
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => { cancelRequested = true; statusEl.textContent = '取消中...'; });
+        downloadBtn.addEventListener('click', () => downloadZip());
+
+        async function processVideoToFrames(file) {
+            statusEl.textContent = '加载视频元数据...';
+            // 使用与预览相同的 URL，避免重复创建与过早 revoke
+            video.src = fileURL || URL.createObjectURL(file);
+            video.muted = true;
+            await new Promise((res) => { if (video.readyState >= 1) res(); else video.onloadedmetadata = () => res(); });
+
+            const duration = video.duration; // 秒
+            const startSec = parseFloat(startSecInput.value);
+            const endSec = parseFloat(endSecInput.value);
+            const rangeStart = isNaN(startSec) ? 0 : Math.max(0, startSec);
+            const rangeEnd = isNaN(endSec) ? Number.POSITIVE_INFINITY : Math.max(rangeStart, endSec);
+            const skipEvery = Math.max(0, parseInt(skipInput.value || '0'));
+            const takeEvery = skipEvery + 1; // 每 takeEvery 帧取 1 帧
+
+            // 先跳转到起点
+            if (rangeStart > 0) {
+                video.currentTime = Math.min(rangeStart, Math.max(0, duration - 0.001));
+                await new Promise((res) => video.onseeked = () => res());
+            }
+
+            statusEl.textContent = '初始化视频帧流...';
+            const stream = video.captureStream();
+            const [track] = stream.getVideoTracks();
+            if (!track) { throw new Error('无法获取视频轨道'); }
+
+            const processor = new MediaStreamTrackProcessor({ track });
+            const reader = processor.readable.getReader();
+
+            let frameIndex = 0;
+            let processedCount = 0;
+            let estimatedTotal = Math.max(100, Math.floor(duration * 30)); // 粗略估计用于进度条
+            const baseName = (file.name || 'video').replace(/\.[^/.]+$/, '');
+
+            statusEl.textContent = '开始逐帧读取...';
+            // 保持播放，captureStream 才会持续产出帧
+            await video.play().catch(() => {});
+
+            try {
+                while (true) {
+                    if (cancelRequested) break;
+                    const { value: frame, done } = await reader.read();
+                    if (done) break;
+                    try {
+                        const timestampUs = typeof frame.timestamp === 'number' ? frame.timestamp : NaN; // 微秒
+                        const sec = Number.isFinite(timestampUs) ? (timestampUs / 1_000_000) : video.currentTime;
+
+                        const inRange = sec >= rangeStart && sec <= rangeEnd;
+                        const pick = (frameIndex % takeEvery === 0);
+
+                        if (inRange && pick) {
+                            const bitmap = await createImageBitmap(frame);
+                            const { blob } = await drawBitmapToBlob(bitmap);
+                            const ts = Number.isFinite(sec) ? sec : 0;
+                            const filename = `${baseName}_f${String(frameIndex).padStart(6,'0')}_${ts.toFixed(3)}s.png`;
+                            const urlForPreview = URL.createObjectURL(blob);
+                            savedFrames.push({ blob, name: filename, urlForPreview });
+                            processedCount++;
+
+                            // 仅预览前 24 张，避免卡顿
+                            if (processedCount <= 24) addThumb(urlForPreview, filename);
+                        }
+                        // 超过区间直接停止
+                        if (sec > rangeEnd) break;
+                    } finally {
+                        frame.close();
+                    }
+
+                    frameIndex++;
+                    const pct = Math.min(100, Math.round((frameIndex / estimatedTotal) * 100));
+                    bar.style.width = pct + '%';
+                    if (frameIndex % 60 === 0) statusEl.textContent = `已读取帧: ${frameIndex}，已保存: ${processedCount}`;
+                }
+            } finally {
+                reader.releaseLock();
+                track.stop();
+                stream.getTracks().forEach(t => t.stop());
+                // 不在此处 revoke fileURL，供预览继续使用
+                video.pause();
+            }
+
+            if (cancelRequested) {
+                statusEl.textContent = `已取消，保存了 ${savedFrames.length} 帧。`;
+            } else {
+                statusEl.textContent = `完成！共保存 ${savedFrames.length} 帧。`;
+            }
+            bar.style.width = '100%';
+        }
+
+        function addThumb(url, name) {
+            const div = document.createElement('div');
+            div.className = 'thumb';
+            div.innerHTML = `<img src="${url}" alt="frame"><span>${name}</span>`;
+            preview.appendChild(div);
+        }
+
+        function drawBitmapToBlob(bitmap) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = bitmap.width;
+                    canvas.height = bitmap.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(bitmap, 0, 0);
+                    canvas.toBlob((blob) => {
+                        if (!blob) return reject(new Error('生成图片失败'));
+                        resolve({ blob });
+                    }, 'image/png');
+                } catch (e) { reject(e); }
+            });
+        }
+
+        async function downloadZip() {
+            if (!savedFrames.length) return;
+            const zip = new JSZip();
+            const folderName = (currentFile?.name || 'video').replace(/\.[^/.]+$/, '') + '_frames';
+            const folder = zip.folder(folderName);
+
+            statusEl.textContent = '打包中...';
+            let i = 0;
+            for (const f of savedFrames) {
+                folder.file(f.name, f.blob);
+                i++;
+                if (i % 50 === 0) statusEl.textContent = `打包中... ${i}/${savedFrames.length}`;
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            const outName = `${folderName}.zip`;
+            saveAs(content, outName);
+            statusEl.textContent = `已下载：${outName}`;
+        }
+    </script>
+</body>
+</html>
+
