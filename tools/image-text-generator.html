@@ -146,13 +146,14 @@
                     <label>阴影颜色</label>
                     <input id="shadowColor" type="color" value="#000000">
                 </div>
-                <div class="canvas-wrap">
-                    <canvas id="outCanvas" width="800" height="300"></canvas>
-                </div>
                 <div class="actions">
                     <button id="dlBtn" class="btn secondary">下载为 PNG</button>
                     <div id="err" class="error" style="display:none;"></div>
                 </div>
+                <div class="canvas-wrap">
+                    <canvas id="outCanvas" width="800" height="300"></canvas>
+                </div>
+
             </div>
         </div>
     </div>
@@ -181,6 +182,7 @@
         const ctx = outCanvas.getContext('2d');
         const dlBtn = document.getElementById('dlBtn');
         const err = document.getElementById('err');
+        let uploadedFileName = '';
 
         uploadArea.addEventListener('click', () => fileInput.click());
         uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
@@ -190,6 +192,7 @@
 
         function handleFile(file){
             if(!file.type.startsWith('image/')){ showErr('请选择图片文件'); return; }
+            uploadedFileName = file.name || '';
             const reader = new FileReader();
             reader.onload = () => {
                 const img = new Image();
@@ -318,7 +321,10 @@
         dlBtn.addEventListener('click', ()=>{
             const url = outCanvas.toDataURL('image/png');
             const a = document.createElement('a');
-            a.href = url; a.download = 'text-image.png'; a.click();
+            a.href = url;
+            const name = uploadedFileName ? (uploadedFileName.replace(/\.[^.]*$/, '') + '.png') : 'text-image.png';
+            a.download = name;
+            a.click();
         });
     </script>
 <!-- COMMON_FOOTER -->
