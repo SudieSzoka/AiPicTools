@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圆角矩形生成器 · 叠加层</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f5f7fb; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; padding: 20px 24px; }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .main { display: flex; gap: 0; }
+        .left, .right { padding: 18px; }
+        .left { width: 40%; border-right: 1px solid #eef2f7; }
+        .right { width: 60%; }
+        .section-title { font-size: 16px; color: #0f172a; margin-bottom: 10px; font-weight: 600; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
+        .upload-area:hover { border-color:#60a5fa; background:#f1f5f9; }
+        .upload-area.dragover { border-color:#22c55e; background:#ecfdf5; }
+        .upload-area p { color:#475569; font-size:14px; }
+        input[type="file"] { display:none; }
+        .preview-wrap { margin-top: 12px; display:flex; gap:12px; align-items:flex-start; }
+        .thumb { flex:0 0 auto; width: 140px; height: 140px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .thumb img { max-width: 100%; max-height: 100%; display:block; }
+        .meta { flex:1; font-size:14px; color:#374151; display:flex; flex-direction:column; gap:8px; }
+        .badge { display:inline-block; background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px; }
+        .colors { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+        .color-chip { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; }
+        .swatch { width:20px; height:20px; border-radius:4px; border:1px solid #e5e7eb; }
+        .chip-text { font-size:12px; color:#374151; }
+        .form-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap: wrap; }
+        .form-row label { font-size:13px; color:#374151; min-width:72px; }
+        .form-row input[type="number"], .form-row select, .form-row input[type="text"] { border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; font-size:14px; background:#fff; }
+        .form-row input[type="color"] { width: 44px; height: 34px; border:1px solid #e5e7eb; border-radius:6px; padding:0; }
+        .canvas-wrap { background: #1e40af; border:1px solid #e5e7eb; border-radius:10px; padding:12px; display:flex; align-items:center; justify-content:center; min-height:360px; }
+        canvas { max-width:100%; height:auto; background: transparent; }
+        .actions { margin-top: 10px; display:flex; gap:10px; flex-wrap: wrap; }
+        .btn { background:#2563eb; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:14px; }
+        .btn.secondary { background:#10b981; }
+        .btn.warn { background:#ef4444; }
+        .list { margin-top: 8px; display:flex; flex-direction:column; gap:8px; max-height: 280px; overflow:auto; }
+        .item { border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fafafa; }
+        .item-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+        .item-title { font-size:13px; font-weight:600; color:#334155; }
+        .hr { height:1px; background:#e5e7eb; margin:8px 0; }
+        .hint { font-size:12px; color:#6b7280; }
+        @media (max-width: 900px) { .main{ flex-direction:column; } .left, .right{ width:100%; border-right:none; border-top:1px solid #eef2f7; } }
+    </style>
+</head>
+<body>
+<!-- COMMON_HEADER -->
+<!-- 固定页头 -->
+<header class="page-header">
+    <div class="header-container">
+        <div class="header-inner">
+            <!-- Logo -->
+            <div class="logo">
+                <a href="../index.html" class="logo-link">我的工具站</a>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
+                <div class="nav-list">
+                    <a href="../index.html" class="nav-link">首页</a>
+                </div>
+            </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- END_COMMON_HEADER -->
+    <div class="container">
+        <div class="header"><h1>圆角矩形生成器 · 叠加层</h1></div>
+        <div class="main">
+            <div class="left">
+                <div class="section-title">1) 上传图片（用于尺寸与主题色分析）</div>
+                <div id="uploadArea" class="upload-area">
+                    <p>点击选择图片或拖拽图片到此处</p>
+                    <input id="fileInput" type="file" accept="image/*">
+                </div>
+                <div class="preview-wrap" id="leftPreview" style="display:none;">
+                    <div class="thumb"><img id="thumbImg" alt="预览"></div>
+                    <div class="meta">
+                        <div><span class="badge">图片信息</span></div>
+                        <div id="imgSize">-</div>
+                        <div><span class="badge">主要颜色(≥1%)</span></div>
+                        <div id="colorList" class="colors"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="right">
+                <div class="section-title">2) 生成画布并添加圆角矩形（透明背景）</div>
+                <div class="form-row">
+                    <label>画布宽度</label>
+                    <input id="cw" type="number" value="800" min="1">
+                    <label>画布高度</label>
+                    <input id="ch" type="number" value="400" min="1">
+                    <span class="hint">上传后会自动同步尺寸</span>
+                </div>
+                <div class="actions">
+                    <button id="addRect" class="btn">+ 添加圆角矩形</button>
+                    <button id="dlBtn" class="btn secondary">下载 PNG</button>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="outCanvas" width="800" height="400"></canvas>
+                </div>
+                <div class="section-title" style="margin-top:12px;">图层（由下到上）</div>
+                <div id="rectList" class="list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 左侧：上传与主题色
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const leftPreview = document.getElementById('leftPreview');
+        const thumbImg = document.getElementById('thumbImg');
+        const imgSize = document.getElementById('imgSize');
+        const colorList = document.getElementById('colorList');
+        let uploadedFileName = '';
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.classList.remove('dragover'); if (e.dataTransfer.files?.length) handleFile(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', (e) => { if (e.target.files?.length) handleFile(e.target.files[0]); });
+
+        function handleFile(file){
+            if(!file.type.startsWith('image/')){ return; }
+            uploadedFileName = file.name || '';
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    thumbImg.src = reader.result;
+                    leftPreview.style.display = 'flex';
+                    imgSize.textContent = `尺寸：${img.width} × ${img.height}`;
+                    // 同步右侧画布尺寸
+                    cw.value = img.width; ch.value = img.height; resizeCanvas(); drawAll();
+                    // 主题色统计
+                    analyzeColors(img).then(renderColors).catch(()=>{});
+                };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function analyzeColors(img){
+            return new Promise((resolve) => {
+                const sampleW = 80;
+                const ratio = img.width / sampleW;
+                const sampleH = Math.max(1, Math.round(img.height / ratio));
+                const c = document.createElement('canvas');
+                const cctx = c.getContext('2d');
+                c.width = sampleW; c.height = sampleH;
+                cctx.drawImage(img, 0, 0, sampleW, sampleH);
+                const { data } = cctx.getImageData(0,0,sampleW,sampleH);
+                const map = new Map();
+                for(let i=0;i<data.length;i+=4){
+                    const a = data[i+3]; if(a < 10) continue; // 忽略透明
+                    const r = data[i], g = data[i+1], b = data[i+2];
+                    const key = `${r},${g},${b}`;
+                    map.set(key, (map.get(key)||0)+1);
+                }
+                const total = Array.from(map.values()).reduce((s,v)=>s+v,0) || 1;
+                const entries = Array.from(map.entries()).map(([k,v])=>({ rgb:k, count:v, ratio:v/total }));
+                const filtered = entries.filter(e=> e.ratio >= 0.01).sort((a,b)=> b.ratio - a.ratio).slice(0,12);
+                resolve(filtered);
+            });
+        }
+
+        function renderColors(list){
+            colorList.innerHTML = '';
+            list.forEach(item=>{
+                const [r,g,b] = item.rgb.split(',').map(Number);
+                const hex = rgbToHex(r,g,b);
+                const div = document.createElement('div');
+                div.className = 'color-chip';
+                div.innerHTML = `<span class="swatch" style="background:${hex}"></span><span class="chip-text">RGB(${r},${g},${b}) · ${hex} · ${(item.ratio*100).toFixed(1)}%</span>`;
+                colorList.appendChild(div);
+            });
+        }
+
+        function rgbToHex(r,g,b){
+            const toHex = (n)=> ('0' + n.toString(16)).slice(-2);
+            return '#' + toHex(r) + toHex(g) + toHex(b);
+        }
+
+        // 右侧：画布与圆角矩形图层
+        const outCanvas = document.getElementById('outCanvas');
+        const ctx = outCanvas.getContext('2d');
+        const cw = document.getElementById('cw');
+        const ch = document.getElementById('ch');
+        const addRectBtn = document.getElementById('addRect');
+        const dlBtn = document.getElementById('dlBtn');
+        const rectList = document.getElementById('rectList');
+
+        function resizeCanvas(){
+            const w = Math.max(1, parseInt(cw.value||'0'));
+            const h = Math.max(1, parseInt(ch.value||'0'));
+            outCanvas.width = w; outCanvas.height = h;
+        }
+
+        ;[cw, ch].forEach(el=>{
+            el.addEventListener('input', ()=>{ resizeCanvas(); drawAll(); });
+            el.addEventListener('change', ()=>{ resizeCanvas(); drawAll(); });
+        });
+
+        // 图层数据结构
+        /** layer: { id, x,y,w,h, radius, fillType: 'solid'|'gradient', color: '#rrggbb', gradient: { angle, stops:[{color, pos}] }, stroke: { width, color }, innerShadow: { size } } */
+        let layers = [];
+        let idSeq = 1;
+
+        function createDefaultLayer(){
+            return {
+                id: idSeq++,
+                x: 0, y: 0,
+                w: outCanvas.width,
+                h: outCanvas.height,
+                radius: Math.round(Math.min(outCanvas.width, outCanvas.height) * 0.08),
+                fillType: 'solid',
+                color: '#ffffff',
+                gradient: { angle: 90, stops: [ { color: '#d6e9ff', pos: 0 }, { color: '#ffd6d6', pos: 100 } ] },
+                stroke: { width: 0, color: '#000000' },
+                innerShadow: { size: 0 }
+            };
+        }
+
+        addRectBtn.addEventListener('click', ()=>{ layers.push(createDefaultLayer()); renderList(); drawAll(); });
+
+        function renderList(){
+            rectList.innerHTML = '';
+            layers.forEach((ly, idx)=>{
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-title">#${idx+1} 圆角矩形</div>
+                        <div>
+                            <button class="btn warn" data-del="${ly.id}">删除</button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label>位置/尺寸</label>
+                        <span class="hint">x</span><input data-k="x" data-id="${ly.id}" type="number" value="${ly.x}" style="width:80px;">
+                        <span class="hint">y</span><input data-k="y" data-id="${ly.id}" type="number" value="${ly.y}" style="width:80px;">
+                        <span class="hint">w</span><input data-k="w" data-id="${ly.id}" type="number" value="${ly.w}" style="width:96px;">
+                        <span class="hint">h</span><input data-k="h" data-id="${ly.id}" type="number" value="${ly.h}" style="width:96px;">
+                        <label>圆角</label>
+                        <input data-k="radius" data-id="${ly.id}" type="number" value="${ly.radius}" style="width:96px;">
+                    </div>
+                    <div class="form-row">
+                        <label>填充</label>
+                        <select data-k="fillType" data-id="${ly.id}">
+                            <option value="solid" ${ly.fillType==='solid'?'selected':''}>纯色</option>
+                            <option value="gradient" ${ly.fillType==='gradient'?'selected':''}>渐变</option>
+                        </select>
+                        <span data-wrap="solid" ${ly.fillType==='solid'?'':'style="display:none;"'}>
+                            <input data-k="color" data-id="${ly.id}" type="color" value="${ly.color}">
+                        </span>
+                        <span data-wrap="gradient" ${ly.fillType==='gradient'?'':'style="display:none;"'}>
+                            <span class="hint">角度</span><input data-k="gAngle" data-id="${ly.id}" type="number" value="${ly.gradient.angle}" style="width:80px;">
+                            <button class="btn" data-addstop="${ly.id}" type="button">+色标</button>
+                        </span>
+                    </div>
+                    <div class="form-row" data-wrap="stops" ${ly.fillType==='gradient'?'':'style="display:none;"'}>
+                        ${ly.gradient.stops.map((s,i)=>`
+                            <span class="hint">色${i+1}</span><input data-k="gColor" data-i="${i}" data-id="${ly.id}" type="color" value="${s.color}">
+                            <span class="hint">位置%</span><input data-k="gPos" data-i="${i}" data-id="${ly.id}" type="number" value="${s.pos}" style="width:72px;">`
+                        ).join(' ')}
+                    </div>
+                    <div class="form-row">
+                        <label>线条</label>
+                        <span class="hint">宽</span><input data-k="sWidth" data-id="${ly.id}" type="number" value="${ly.stroke.width}" style="width:80px;">
+                        <span class="hint">颜色</span><input data-k="sColor" data-id="${ly.id}" type="color" value="${ly.stroke.color}">
+                        <label>内阴影</label>
+                        <span class="hint">像素</span><input data-k="iSize" data-id="${ly.id}" type="number" value="${ly.innerShadow.size}" style="width:96px;">
+                    </div>
+                `;
+                rectList.appendChild(item);
+            });
+        }
+
+        rectList.addEventListener('click', (e)=>{
+            const delId = e.target.getAttribute('data-del');
+            const addStopId = e.target.getAttribute('data-addstop');
+            if (delId){
+                layers = layers.filter(l=> String(l.id)!==String(delId));
+                renderList(); drawAll();
+            } else if (addStopId){
+                const ly = layers.find(l=> String(l.id)===String(addStopId));
+                if(ly){ ly.gradient.stops.push({ color: '#ffffff', pos: 100 }); renderList(); drawAll(); }
+            }
+        });
+
+        rectList.addEventListener('input', (e)=>{
+            const id = e.target.getAttribute('data-id');
+            if(!id) return;
+            const ly = layers.find(l=> String(l.id)===String(id));
+            if(!ly) return;
+            const k = e.target.getAttribute('data-k');
+            const idx = parseInt(e.target.getAttribute('data-i')||'-1',10);
+            switch(k){
+                case 'x': ly.x = parseInt(e.target.value||'0'); break;
+                case 'y': ly.y = parseInt(e.target.value||'0'); break;
+                case 'w': ly.w = Math.max(1, parseInt(e.target.value||'1')); break;
+                case 'h': ly.h = Math.max(1, parseInt(e.target.value||'1')); break;
+                case 'radius': ly.radius = Math.max(0, parseInt(e.target.value||'0')); break;
+                case 'fillType': ly.fillType = e.target.value; break;
+                case 'color': ly.color = e.target.value; break;
+                case 'gAngle': ly.gradient.angle = parseInt(e.target.value||'0'); break;
+                case 'gColor': if(idx>=0){ ly.gradient.stops[idx].color = e.target.value; } break;
+                case 'gPos': if(idx>=0){ ly.gradient.stops[idx].pos = Math.min(100, Math.max(0, parseInt(e.target.value||'0'))); } break;
+                case 'sWidth': ly.stroke.width = Math.max(0, parseInt(e.target.value||'0')); break;
+                case 'sColor': ly.stroke.color = e.target.value; break;
+                case 'iSize': ly.innerShadow.size = Math.max(0, parseInt(e.target.value||'0')); break;
+            }
+            // 级联显示控制
+            const item = e.target.closest('.item');
+            if (k==='fillType' && item){
+                const isGrad = ly.fillType==='gradient';
+                item.querySelectorAll('[data-wrap="solid"]').forEach(el=> el.style.display = isGrad?'none':'');
+                item.querySelectorAll('[data-wrap="gradient"],[data-wrap="stops"]').forEach(el=> el.style.display = isGrad?'':'none');
+            }
+            drawAll();
+        });
+
+        function drawAll(){
+            const w = outCanvas.width, h = outCanvas.height;
+            ctx.clearRect(0,0,w,h); // 透明背景，非图像区域由容器蓝色表现
+            // 逐层绘制
+            layers.forEach(ly=> drawLayer(ly));
+        }
+
+        function drawLayer(ly){
+            const { x,y,w,h, radius } = ly;
+            // 填充
+            ctx.save();
+            roundedRectPath(ctx, x,y,w,h, radius);
+            if (ly.fillType==='solid'){
+                ctx.fillStyle = ly.color;
+            } else {
+                const g = makeLinearGradient(ctx, x,y,w,h, ly.gradient.angle, ly.gradient.stops);
+                ctx.fillStyle = g;
+            }
+            ctx.fill();
+            ctx.restore();
+
+            // 描边
+            if (ly.stroke.width > 0){
+                ctx.save();
+                roundedRectPath(ctx, x,y,w,h, radius);
+                ctx.lineWidth = ly.stroke.width;
+                ctx.strokeStyle = ly.stroke.color;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 内阴影：沿边缘向内 size 像素，使用描边颜色，透明度由 0.6 -> 0
+            if (ly.innerShadow.size > 0){
+                const steps = Math.min(ly.innerShadow.size, 64); // 限制步数
+                const baseAlpha = 0.6;
+                for(let i=0;i<steps;i++){
+                    const t = 1 - i/steps;
+                    const alpha = baseAlpha * t;
+                    ctx.save();
+                    roundedRectPath(ctx, x + i/2, y + i/2, Math.max(0, w - i), Math.max(0, h - i), Math.max(0, radius - i/2));
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = withAlpha(ly.stroke.color, alpha);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+
+        function roundedRectPath(ctx, x,y,w,h,r){
+            const rr = Math.max(0, Math.min(r, Math.min(w,h)/2));
+            ctx.beginPath();
+            ctx.moveTo(x+rr, y);
+            ctx.lineTo(x+w-rr, y);
+            ctx.quadraticCurveTo(x+w, y, x+w, y+rr);
+            ctx.lineTo(x+w, y+h-rr);
+            ctx.quadraticCurveTo(x+w, y+h, x+w-rr, y+h);
+            ctx.lineTo(x+rr, y+h);
+            ctx.quadraticCurveTo(x, y+h, x, y+h-rr);
+            ctx.lineTo(x, y+rr);
+            ctx.quadraticCurveTo(x, y, x+rr, y);
+            ctx.closePath();
+        }
+
+        function makeLinearGradient(ctx, x,y,w,h, angleDeg, stops){
+            const rad = (angleDeg % 360) * Math.PI/180;
+            const cx = x + w/2, cy = y + h/2;
+            const dx = Math.cos(rad), dy = Math.sin(rad);
+            const half = Math.max(w,h);
+            const x0 = cx - dx * half, y0 = cy - dy * half;
+            const x1 = cx + dx * half, y1 = cy + dy * half;
+            const g = ctx.createLinearGradient(x0,y0,x1,y1);
+            const sorted = [...stops].sort((a,b)=> a.pos - b.pos);
+            sorted.forEach(s=>{ g.addColorStop(Math.min(1, Math.max(0, s.pos/100)), s.color); });
+            return g;
+        }
+
+        function withAlpha(hex, alpha){
+            // 支持 #rgb/#rrggbb/#rrggbbaa
+            const c = parseColor(hex);
+            return `rgba(${c.r},${c.g},${c.b},${Math.min(1,Math.max(0,alpha))})`;
+        }
+
+        function parseColor(hex){
+            let h = hex.replace('#','').trim();
+            if (h.length===3){ h = h.split('').map(ch=> ch+ch).join(''); }
+            const r = parseInt(h.slice(0,2),16);
+            const g = parseInt(h.slice(2,4),16);
+            const b = parseInt(h.slice(4,6),16);
+            return { r,g,b };
+        }
+
+        // 下载
+        dlBtn.addEventListener('click', ()=>{
+            const url = outCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            const name = uploadedFileName ? (uploadedFileName.replace(/\.[^.]*$/, '') + '.png') : 'rounded-rect.png';
+            a.download = name;
+            a.click();
+        });
+
+        // 初始
+        resizeCanvas();
+        drawAll();
+    </script>
+<!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
+<footer class="page-footer">
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
+</footer>
+<!-- END_COMMON_FOOTER -->
+</body>
+</html>

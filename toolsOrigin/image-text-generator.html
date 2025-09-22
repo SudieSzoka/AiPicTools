@@ -15,7 +15,7 @@
         .left { width: 42%; border-right: 1px solid #eef2f7; }
         .right { width: 58%; }
         .section-title { font-size: 16px; color: #111827; margin-bottom: 12px; font-weight: 600; }
-        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px;height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
         .upload-area:hover { border-color:#60a5fa; background:#f1f5f9; }
         .upload-area.dragover { border-color:#22c55e; background:#ecfdf5; }
         .upload-area p { color:#475569; font-size:14px; }
@@ -33,8 +33,8 @@
         .form-row label { font-size:13px; color:#374151; min-width:72px; }
         .form-row input[type="number"], .form-row input[type="text"], .form-row select { border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; font-size:14px; background:#fff; }
         .form-row input[type="color"] { width: 44px; height: 34px; border:1px solid #e5e7eb; border-radius:6px; padding:0; }
-        .canvas-wrap { background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 50% / 20px 20px; border:1px solid #e5e7eb; border-radius:10px; padding:16px; display:flex; align-items:center; justify-content:center; min-height:320px; }
-        canvas { max-width:100%; height:auto; background: transparent; }
+        .canvas-wrap { background: #1e3a8a; border:1px solid #e5e7eb; border-radius:10px; padding:16px; display:flex; align-items:center; justify-content:center; min-height:320px; }
+        canvas { max-width:100%; height:auto; background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 50% / 20px 20px; }
         .actions { margin-top: 14px; display:flex; gap:10px; }
         .btn { background:#3b82f6; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
         .btn.secondary { background:#10b981; }
@@ -58,7 +58,7 @@
                     <div class="meta">
                         <div><span class="badge">图片信息</span></div>
                         <div id="imgSize">-</div>
-                        <div><span class="badge">主题色域(>5%)</span></div>
+                        <div><span class="badge">主题色域(>1%)</span></div>
                         <div id="colorList" class="colors"></div>
                     </div>
                 </div>
@@ -289,7 +289,7 @@
             }
             const total = Array.from(map.values()).reduce((s,v)=>s+v,0) || 1;
             const entries = Array.from(map.entries()).map(([k,v])=>({ rgb:k, count:v, ratio:v/total }));
-            const filtered = entries.filter(e=> e.ratio >= 0.05).sort((a,b)=> b.ratio - a.ratio).slice(0,12);
+            const filtered = entries.filter(e=> e.ratio >= 0.01).sort((a,b)=> b.ratio - a.ratio).slice(0,12);
             return filtered;
         }
 

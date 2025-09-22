@@ -28,6 +28,15 @@
     },
     {
       "id": 3,
+      "name": "图片圆角矩形",
+      "description": "选择图片，将图片转换为圆角矩形",
+      "path": "tools/image-round-rect.html",
+      "category": "image",
+      "icon": "image-round-rect",
+      "show": true
+    },
+    {
+      "id": 3,
       "name": "批量图片渐变背景",
       "description": "为多张图片添加渐变背景，支持批量处理和下载",
       "path": "tools/image-batch-gradient.html",
