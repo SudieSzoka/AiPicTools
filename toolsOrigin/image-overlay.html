@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片叠加工具</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;background:#f5f7fb;padding:20px;min-height:100vh}
+        .container{max-width:1100px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08);overflow:hidden}
+        .header{background:linear-gradient(135deg,#6e8efb,#a777e3);color:#fff;padding:20px 24px}
+        .header h1{font-size:20px;font-weight:600}
+        .main{display:flex;gap:0}
+        .left,.right{padding:20px}
+        .left{width:40%;border-right:1px solid #eef2f7}
+        .right{width:60%}
+
+        .section-title{font-size:16px;color:#111827;margin-bottom:12px;font-weight:600}
+        .upload-area{border:2px dashed #cbd5e1;border-radius:10px;padding:24px;text-align:center;background:#f8fafc;transition:.2s;cursor:pointer}
+        .upload-area:hover{border-color:#60a5fa;background:#f1f5f9}
+        .upload-area.dragover{border-color:#22c55e;background:#ecfdf5}
+        .upload-area p{color:#475569;font-size:14px}
+        input[type="file"]{display:none}
+
+        .list{margin-top:14px;display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto}
+        .item{display:flex;gap:10px;align-items:center;border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff}
+        .thumb{flex:0 0 auto;width:72px;height:72px;border-radius:8px;overflow:hidden;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center}
+        .thumb img{max-width:100%;max-height:100%;display:block}
+        .meta{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+        .idx{width:26px;height:26px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+        .badge{display:inline-block;background:#f1f5f9;color:#374151;padding:2px 8px;border-radius:999px;font-size:12px}
+        .ctrl{display:flex;gap:8px;align-items:center}
+        select,input[type="number"],input[type="text"]{border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;font-size:13px;background:#fff}
+        .opacity{display:flex;align-items:center;gap:6px}
+        input[type="range"]{height:6px}
+        .btn{background:#3b82f6;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+        .btn.up{background:#6366f1}
+        .btn.del{background:#ef4444}
+        .btn:disabled{background:#cbd5e1;cursor:not-allowed}
+
+        .canvas-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:center;min-height:360px}
+        canvas{max-width:100%;height:auto;background:repeating-conic-gradient(#f3f4f6 0% 25%,#fff 0% 50%) 50%/20px 20px}
+        .actions{margin-top:14px;display:flex;gap:10px;align-items:center}
+        .hint{font-size:12px;color:#6b7280}
+        .error{color:#dc2626;font-size:13px;margin-top:8px}
+    </style>
+    <!--
+        说明：
+        - 列表顶部(索引0)图片为背景，其尺寸决定画布尺寸
+        - 其他图片按列表顺序依次叠加
+        - 每张图可选锚点位置或自定义坐标，以及透明度
+        - 仅提供「上移」以满足需求
+    -->
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>图片叠加工具</h1></div>
+        <div class="main">
+            <div class="left">
+                <div class="section-title">预览</div>
+                <div class="canvas-wrap">
+                    <canvas id="canvas"></canvas>
+                </div>
+                <div class="actions">
+                    <button id="dlBtn" class="btn" disabled>下载 PNG</button>
+                    <span class="hint">提示：任何修改都会自动更新预览</span>
+                </div>
+                <div id="err" class="error" style="display:none"></div>
+            </div>
+            <div class="right">
+                <div class="section-title">图片与参数（第一张为背景）</div>
+                <div id="uploadArea" class="upload-area">
+                    <p>点击选择图片或拖拽图片到此处</p>
+                    <input id="fileInput" type="file" accept="image/*" multiple>
+                </div>
+                <div class="list" id="list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const listEl = document.getElementById('list');
+        // 实时预览，无需手动生成按钮
+        const dlBtn = document.getElementById('dlBtn');
+        const errEl = document.getElementById('err');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        /** @type {{file:File,url:string,img?:HTMLImageElement,posMode:'anchor'|'custom',anchor:string,customX:number,customY:number,opacity:number}[]} */
+        let items = [];
+
+        uploadArea.addEventListener('click', ()=> fileInput.click());
+        uploadArea.addEventListener('dragover', (e)=>{ e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', ()=> uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e)=>{ e.preventDefault(); uploadArea.classList.remove('dragover'); if(e.dataTransfer.files?.length){ handleFiles(e.dataTransfer.files); } });
+        fileInput.addEventListener('change', (e)=>{ if(e.target.files?.length){ handleFiles(e.target.files); } });
+
+        function handleFiles(fileList){
+            const files = Array.from(fileList).filter(f=> f.type.startsWith('image/'));
+            items = files.map(f=>({
+                file: f,
+                url: URL.createObjectURL(f),
+                posMode: 'anchor',
+                anchor: 'lt', // 左上
+                customX: 0,
+                customY: 0,
+                opacity: 100
+            }));
+            renderList();
+            scheduleGenerate();
+        }
+
+        function renderList(){
+            listEl.innerHTML = '';
+            items.forEach((it, index)=>{
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `
+                    <div class="idx" title="序号">${index+1}</div>
+                    <div class="thumb"><img src="${it.url}" alt="thumb"></div>
+                    <div class="meta">
+                        <span class="badge">${index===0?'背景':'叠加'}</span>
+                        <div class="ctrl">
+                            <label>位置</label>
+                            <select data-k="anchor">
+                                <option value="lt">左上</option>
+                                <option value="lc">左中</option>
+                                <option value="lb">左下</option>
+                                <option value="ct">中上</option>
+                                <option value="cc">中间</option>
+                                <option value="cb">中下</option>
+                                <option value="rt">右上</option>
+                                <option value="rc">右中</option>
+                                <option value="rb">右下</option>
+                                <option value="custom">自定义坐标</option>
+                            </select>
+                            <span class="ctrl custom" style="display:none">
+                                <label>X</label><input type="number" data-k="customX" value="${it.customX}" style="width:90px">
+                                <label>Y</label><input type="number" data-k="customY" value="${it.customY}" style="width:90px">
+                            </span>
+                            <span class="opacity">
+                                <label>透明度</label>
+                                <input type="range" min="0" max="100" step="1" data-k="opacity" value="${it.opacity}">
+                                <span class="badge" data-k="opv">${it.opacity}%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <button class="btn up" ${index===0?'disabled':''} title="上移">上移</button>
+                        <button class="btn del" title="删除">删除</button>
+                    </div>
+                `;
+
+                // 初始化选择值
+                const sel = div.querySelector('select[data-k="anchor"]');
+                sel.value = it.posMode==='custom' ? 'custom' : it.anchor;
+                const customWrap = div.querySelector('.custom');
+                customWrap.style.display = sel.value==='custom' ? '' : 'none';
+
+                // 事件：位置选择
+                sel.addEventListener('change', (e)=>{
+                    const v = e.target.value;
+                    if(v==='custom'){
+                        it.posMode = 'custom';
+                    }else{
+                        it.posMode = 'anchor';
+                        it.anchor = v;
+                    }
+                    customWrap.style.display = it.posMode==='custom' ? '' : 'none';
+                    scheduleGenerate();
+                });
+
+                // 事件：自定义坐标与透明度
+                div.querySelectorAll('input[data-k]').forEach(input=>{
+                    input.addEventListener('input', (e)=>{
+                        const k = e.target.getAttribute('data-k');
+                        let val = e.target.value;
+                        if(k==='opacity'){
+                            const num = Math.max(0, Math.min(100, parseInt(val||'0')));
+                            it.opacity = num;
+                            div.querySelector('[data-k="opv"]').textContent = num + '%';
+                        }else{
+                            const n = parseInt(val||'0');
+                            if(k==='customX') it.customX = isNaN(n)?0:n;
+                            if(k==='customY') it.customY = isNaN(n)?0:n;
+                        }
+                        scheduleGenerate();
+                    });
+                });
+
+                // 上移
+                div.querySelector('.btn.up').addEventListener('click', ()=>{
+                    if(index>0){
+                        const tmp = items[index-1];
+                        items[index-1] = items[index];
+                        items[index] = tmp;
+                        renderList();
+                        scheduleGenerate();
+                    }
+                });
+                // 删除
+                div.querySelector('.btn.del').addEventListener('click', ()=>{
+                    URL.revokeObjectURL(items[index].url);
+                    items.splice(index,1);
+                    renderList();
+                    scheduleGenerate();
+                });
+
+                listEl.appendChild(div);
+            });
+        }
+
+        async function generate(){
+            errEl.style.display = 'none';
+            if(items.length < 1){
+                ctx.clearRect(0,0,canvas.width||0,canvas.height||0);
+                dlBtn.disabled = true;
+                return;
+            }
+            // 预加载所有图片
+            try{
+                await Promise.all(items.map(loadItemImage));
+            }catch(ex){
+                return showErr('有图片加载失败，请重试');
+            }
+            const bg = items[0].img;
+            if(!bg){ return showErr('背景图片加载失败'); }
+            // 以背景尺寸作为画布
+            canvas.width = bg.width; canvas.height = bg.height;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.globalAlpha = 1;
+            ctx.drawImage(bg, 0, 0);
+
+            for(let i=1;i<items.length;i++){
+                const it = items[i];
+                const img = it.img; if(!img) continue;
+                const pos = computePosition(it, canvas.width, canvas.height, img.width, img.height);
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, Math.min(1, it.opacity/100));
+                ctx.drawImage(img, pos.x, pos.y);
+                ctx.restore();
+            }
+            dlBtn.disabled = false;
+        }
+
+        let genTimer = null;
+        function scheduleGenerate(){
+            if(genTimer) cancelAnimationFrame(genTimer);
+            genTimer = requestAnimationFrame(()=>{ generate(); });
+        }
+
+        dlBtn.addEventListener('click', ()=>{
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = getDownloadName();
+            a.click();
+        });
+
+        function getDownloadName(){
+            const bg = items[0]?.file?.name || 'image-overlay';
+            const base = bg.replace(/\.[^.]*$/, '') || 'image-overlay';
+            return base + '.png';
+        }
+
+        function loadItemImage(it){
+            if(it.img && it.img.complete) return Promise.resolve();
+            return new Promise((resolve, reject)=>{
+                const img = new Image();
+                img.onload = ()=>{ it.img = img; resolve(); };
+                img.onerror = ()=> reject(new Error('load fail'));
+                img.src = it.url;
+            });
+        }
+
+        function computePosition(it, bgW, bgH, w, h){
+            if(it.posMode === 'custom'){
+                return { x: it.customX|0, y: it.customY|0 };
+            }
+            const map = {
+                lt: { x: 0, y: 0 },
+                lc: { x: 0, y: (bgH - h)/2 },
+                lb: { x: 0, y: bgH - h },
+                ct: { x: (bgW - w)/2, y: 0 },
+                cc: { x: (bgW - w)/2, y: (bgH - h)/2 },
+                cb: { x: (bgW - w)/2, y: bgH - h },
+                rt: { x: bgW - w, y: 0 },
+                rc: { x: bgW - w, y: (bgH - h)/2 },
+                rb: { x: bgW - w, y: bgH - h }
+            };
+            const p = map[it.anchor] || map.lt;
+            return { x: Math.round(p.x), y: Math.round(p.y) };
+        }
+
+        function showErr(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+    </script>
+</body>
+</html>
+
+
