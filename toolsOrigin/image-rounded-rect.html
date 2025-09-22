@@ -45,6 +45,8 @@
         .item-title { font-size:13px; font-weight:600; color:#334155; }
         .hr { height:1px; background:#e5e7eb; margin:8px 0; }
         .hint { font-size:12px; color:#6b7280; }
+        .palette-inline { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-left:8px; }
+        .palette-swatch { width:18px; height:18px; border-radius:4px; border:1px solid #e5e7eb; cursor:pointer; }
         @media (max-width: 900px) { .main{ flex-direction:column; } .left, .right{ width:100%; border-right:none; border-top:1px solid #eef2f7; } }
     </style>
 </head>
@@ -157,6 +159,8 @@
                 const hex = rgbToHex(r,g,b);
                 const div = document.createElement('div');
                 div.className = 'color-chip';
+                div.setAttribute('data-hex', hex);
+                div.setAttribute('title', `点击应用 ${hex}`);
                 div.innerHTML = `<span class="swatch" style="background:${hex}"></span><span class="chip-text">RGB(${r},${g},${b}) · ${hex} · ${(item.ratio*100).toFixed(1)}%</span>`;
                 colorList.appendChild(div);
             });
@@ -175,6 +179,15 @@
         const addRectBtn = document.getElementById('addRect');
         const dlBtn = document.getElementById('dlBtn');
         const rectList = document.getElementById('rectList');
+        
+        // 左侧颜色快捷应用：点击颜色芯片，直接应用到最新图层
+        colorList.addEventListener('click', (e)=>{
+            const chip = e.target.closest('.color-chip');
+            if(!chip) return;
+            const hex = chip.getAttribute('data-hex');
+            if(!hex) return;
+            applyColorToLatestLayer(hex);
+        });
 
         function resizeCanvas(){
             const w = Math.max(1, parseInt(cw.value||'0'));
@@ -245,7 +258,7 @@
                             <option value="gradient" ${ly.fillType==='gradient'?'selected':''}>渐变</option>
                         </select>
                         <span data-wrap="solid" ${ly.fillType==='solid'?'':'style="display:none;"'}>
-                            <input data-k="color" data-id="${ly.id}" type="color" value="${ly.color}">
+                            <input id="color-${ly.id}" data-k="color" data-id="${ly.id}" type="color" value="${ly.color}">
                         </span>
                         <span data-wrap="gradient" ${ly.fillType==='gradient'?'':'style="display:none;"'}>
                             <span class="hint">角度</span><input data-k="gAngle" data-id="${ly.id}" type="number" value="${ly.gradient.angle}" style="width:80px;">
@@ -254,20 +267,22 @@
                     </div>
                     <div class="form-row" data-wrap="stops" ${ly.fillType==='gradient'?'':'style="display:none;"'}>
                         ${ly.gradient.stops.map((s,i)=>`
-                            <span class="hint">色${i+1}</span><input data-k="gColor" data-i="${i}" data-id="${ly.id}" type="color" value="${s.color}">
+                            <span class="hint">色${i+1}</span><input id="gColor-${ly.id}-${i}" data-k="gColor" data-i="${i}" data-id="${ly.id}" type="color" value="${s.color}">
                             <span class="hint">位置%</span><input data-k="gPos" data-i="${i}" data-id="${ly.id}" type="number" value="${s.pos}" style="width:72px;">`
                         ).join(' ')}
                     </div>
                     <div class="form-row">
                         <label>线条</label>
                         <span class="hint">宽</span><input data-k="sWidth" data-id="${ly.id}" type="number" value="${ly.stroke.width}" style="width:80px;">
-                        <span class="hint">颜色</span><input data-k="sColor" data-id="${ly.id}" type="color" value="${ly.stroke.color}">
+                        <span class="hint">颜色</span><input id="sColor-${ly.id}" data-k="sColor" data-id="${ly.id}" type="color" value="${ly.stroke.color}">
                         <label>内阴影</label>
                         <span class="hint">像素</span><input data-k="iSize" data-id="${ly.id}" type="number" value="${ly.innerShadow.size}" style="width:96px;">
                     </div>
                 `;
                 rectList.appendChild(item);
             });
+            // 渲染右侧内联调色板
+            renderInlinePalettes();
         }
 
         rectList.addEventListener('click', (e)=>{
@@ -323,6 +338,25 @@
             ctx.clearRect(0,0,w,h); // 透明背景，非图像区域由容器蓝色表现
             // 逐层绘制
             layers.forEach(ly=> drawLayer(ly));
+        }
+
+        function applyColorToLatestLayer(hex){
+            if (!layers.length){
+                layers.push(createDefaultLayer());
+            }
+            const ly = layers[layers.length - 1];
+            if (ly.fillType === 'solid'){
+                ly.color = hex;
+            } else {
+                if (!ly.gradient || !Array.isArray(ly.gradient.stops) || ly.gradient.stops.length===0){
+                    ly.gradient = ly.gradient || { angle: 90, stops: [] };
+                    ly.gradient.stops = [{ color: hex, pos: 0 }, { color: hex, pos: 100 }];
+                } else {
+                    ly.gradient.stops[0].color = hex;
+                }
+            }
+            renderList();
+            drawAll();
         }
 
         function drawLayer(ly){
@@ -415,7 +449,19 @@
 
         // 下载
         dlBtn.addEventListener('click', ()=>{
-            const url = outCanvas.toDataURL('image/png');
+            const targetW = Math.max(1, parseInt(cw.value||'0'));
+            const targetH = Math.max(1, parseInt(ch.value||'0'));
+            let url;
+            if (outCanvas.width === targetW && outCanvas.height === targetH){
+                url = outCanvas.toDataURL('image/png');
+            } else {
+                const off = document.createElement('canvas');
+                off.width = targetW; off.height = targetH;
+                const octx = off.getContext('2d');
+                octx.clearRect(0,0,targetW,targetH);
+                octx.drawImage(outCanvas, 0,0,outCanvas.width,outCanvas.height, 0,0,targetW,targetH);
+                url = off.toDataURL('image/png');
+            }
             const a = document.createElement('a');
             a.href = url;
             const name = uploadedFileName ? (uploadedFileName.replace(/\.[^.]*$/, '') + '.png') : 'rounded-rect.png';
@@ -426,6 +472,68 @@
         // 初始
         resizeCanvas();
         drawAll();
+
+        // 右侧：为所有颜色选择控件添加左侧提取色的快捷列表
+        function getDetectedColors(){
+            const nodes = colorList?.querySelectorAll?.('.color-chip');
+            if(!nodes || nodes.length===0) return [];
+            return Array.from(nodes).map(n=> n.getAttribute('data-hex')).filter(Boolean);
+        }
+
+        function buildPalette(forInputId){
+            const colors = getDetectedColors();
+            if(colors.length===0) return null;
+            const wrap = document.createElement('span');
+            wrap.className = 'palette-inline';
+            wrap.setAttribute('data-for', forInputId);
+            colors.forEach(hex=>{
+                const s = document.createElement('span');
+                s.className = 'palette-swatch';
+                s.setAttribute('title', `应用 ${hex}`);
+                s.setAttribute('data-hex', hex);
+                s.style.background = hex;
+                wrap.appendChild(s);
+            });
+            return wrap;
+        }
+
+        function renderInlinePalettes(){
+            // 清理旧的
+            document.querySelectorAll('.right .palette-inline').forEach(el=> el.remove());
+            const inputs = document.querySelectorAll('.right input[type="color"]');
+            inputs.forEach(inp=>{
+                if(!inp.id){
+                    // 为稳妥起见生成一个唯一 id
+                    inp.id = 'c-' + Math.random().toString(36).slice(2);
+                }
+                const pal = buildPalette(inp.id);
+                if(pal){
+                    inp.insertAdjacentElement('afterend', pal);
+                }
+            });
+        }
+
+        // 监听调色板点击，应用到对应颜色输入并触发变更
+        document.querySelector('.right').addEventListener('click', (e)=>{
+            const sw = e.target.closest('.palette-swatch');
+            if(!sw) return;
+            const wrap = sw.parentElement;
+            const targetId = wrap?.getAttribute('data-for');
+            if(!targetId) return;
+            const input = document.getElementById(targetId);
+            const hex = sw.getAttribute('data-hex');
+            if(input && hex){
+                input.value = hex;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+
+        // 当左侧颜色更新后，刷新右侧调色板
+        const _origRenderColors = renderColors;
+        renderColors = function(list){
+            _origRenderColors(list);
+            renderInlinePalettes();
+        };
     </script>
 </body>
 </html>

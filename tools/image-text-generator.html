@@ -29,13 +29,15 @@
         .meta { flex:1; font-size:14px; color:#374151; display:flex; flex-direction:column; gap:8px; }
         .badge { display:inline-block; background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px; }
         .colors { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
-        .color-chip { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; }
+        .color-chip { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer; user-select:none; }
         .swatch { width:20px; height:20px; border-radius:4px; border:1px solid #e5e7eb; }
         .chip-text { font-size:12px; color:#374151; }
         .form-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap: wrap; }
         .form-row label { font-size:13px; color:#374151; min-width:72px; }
         .form-row input[type="number"], .form-row input[type="text"], .form-row select { border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; font-size:14px; background:#fff; }
         .form-row input[type="color"] { width: 44px; height: 34px; border:1px solid #e5e7eb; border-radius:6px; padding:0; }
+        .inline-colors { display:flex; flex-wrap:wrap; gap:6px; margin-left:8px; }
+        .inline-colors .color-chip { padding:4px 6px; }
         .canvas-wrap { background: #1e3a8a; border:1px solid #e5e7eb; border-radius:10px; padding:16px; display:flex; align-items:center; justify-content:center; min-height:320px; }
         canvas { max-width:100%; height:auto; background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 50% / 20px 20px; }
         .actions { margin-top: 14px; display:flex; gap:10px; }
@@ -119,12 +121,14 @@
                     <input id="fontSize" type="number" value="80" min="1">
                     <label>颜色</label>
                     <input id="fontColor" type="color" value="#ffffff">
+                    <div id="inlineFontColors" class="inline-colors"></div>
                 </div>
                 <div class="form-row">
                     <label>描边宽度</label>
                     <input id="strokeWidth" type="number" value="0" min="0">
                     <label>描边颜色</label>
                     <input id="strokeColor" type="color" value="#000000">
+                    <div id="inlineStrokeColors" class="inline-colors"></div>
                 </div>
                 <div class="form-row">
                     <label>背景</label>
@@ -134,6 +138,7 @@
                     </select>
                     <label>背景颜色</label>
                     <input id="bgColor" type="color" value="#000000">
+                    <div id="inlineBgColors" class="inline-colors"></div>
                 </div>
                 <div class="form-row">
                     <label>阴影方向</label>
@@ -149,6 +154,7 @@
                     <input id="shadowWidth" type="number" value="0" min="0">
                     <label>阴影颜色</label>
                     <input id="shadowColor" type="color" value="#000000">
+                    <div id="inlineShadowColors" class="inline-colors"></div>
                 </div>
                 <div class="actions">
                     <button id="dlBtn" class="btn secondary">下载为 PNG</button>
@@ -185,11 +191,16 @@
         const shadowDir = document.getElementById('shadowDir');
         const shadowWidth = document.getElementById('shadowWidth');
         const shadowColor = document.getElementById('shadowColor');
+        const inlineFontColors = document.getElementById('inlineFontColors');
+        const inlineStrokeColors = document.getElementById('inlineStrokeColors');
+        const inlineBgColors = document.getElementById('inlineBgColors');
+        const inlineShadowColors = document.getElementById('inlineShadowColors');
         const outCanvas = document.getElementById('outCanvas');
         const ctx = outCanvas.getContext('2d');
         const dlBtn = document.getElementById('dlBtn');
         const err = document.getElementById('err');
         let uploadedFileName = '';
+        let currentColorTarget = 'font'; // 'font' | 'bg'
 
         uploadArea.addEventListener('click', () => fileInput.click());
         uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
@@ -331,7 +342,37 @@
                 const div = document.createElement('div');
                 div.className = 'color-chip';
                 div.innerHTML = `<span class="swatch" style="background:${hex}"></span><span class="chip-text">RGB(${r},${g},${b}) · ${hex} · ${(item.ratio*100).toFixed(1)}%</span>`;
+                div.title = '点击应用到当前颜色（字体/背景）';
+                div.addEventListener('click', ()=>{
+                    if(currentColorTarget === 'bg'){
+                        bgColor.value = hex;
+                    }else{
+                        fontColor.value = hex;
+                    }
+                    drawOutput();
+                });
                 colorList.appendChild(div);
+            });
+
+            // 同步渲染右侧每个颜色输入旁的快速色卡
+            renderInlineColorList(inlineFontColors, list, (hex)=>{ fontColor.value = hex; drawOutput(); });
+            renderInlineColorList(inlineStrokeColors, list, (hex)=>{ strokeColor.value = hex; drawOutput(); });
+            renderInlineColorList(inlineBgColors, list, (hex)=>{ bgColor.value = hex; drawOutput(); });
+            renderInlineColorList(inlineShadowColors, list, (hex)=>{ shadowColor.value = hex; drawOutput(); });
+        }
+
+        function renderInlineColorList(container, list, onPick){
+            if(!container) return;
+            container.innerHTML = '';
+            list.forEach(item=>{
+                const [r,g,b] = item.rgb.split(',').map(Number);
+                const hex = rgbToHex(r,g,b);
+                const div = document.createElement('div');
+                div.className = 'color-chip';
+                div.innerHTML = `<span class=\"swatch\" style=\"background:${hex}\"></span>`;
+                div.title = '点击应用此颜色';
+                div.addEventListener('click', ()=> onPick(hex));
+                container.appendChild(div);
             });
         }
 
@@ -345,6 +386,10 @@
             el.addEventListener('input', ()=>{ if(el===cw||el===ch) resizeCanvas(); drawOutput(); });
             el.addEventListener('change', ()=>{ if(el===cw||el===ch) resizeCanvas(); drawOutput(); });
         });
+
+        // 记录当前颜色目标：聚焦哪个颜色输入，就应用到哪个
+        fontColor.addEventListener('focus', ()=> currentColorTarget = 'font');
+        bgColor.addEventListener('focus', ()=> currentColorTarget = 'bg');
 
         // 初始渲染
         resizeCanvas();
