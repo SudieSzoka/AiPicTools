@@ -83,7 +83,10 @@
                         <option value="Helvetica, Arial, sans-serif">Helvetica</option>
                         <option value="Georgia, serif">Georgia</option>
                         <option value="Courier New, monospace">Courier New</option>
+                        <optgroup id="customFontGroup" label="自定义字体"></optgroup>
                     </select>
+                    <input id="fontFile" type="file" accept=".ttf,.otf,.woff,.woff2">
+                    <button id="uploadFontBtn" class="btn" type="button">上传字体</button>
                     <label>字号(px)</label>
                     <input id="fontSize" type="number" value="80" min="1">
                     <label>颜色</label>
@@ -141,6 +144,9 @@
         const ch = document.getElementById('ch');
         const textInput = document.getElementById('textInput');
         const fontFamily = document.getElementById('fontFamily');
+        const customFontGroup = document.getElementById('customFontGroup');
+        const fontFileInput = document.getElementById('fontFile');
+        const uploadFontBtn = document.getElementById('uploadFontBtn');
         const fontSize = document.getElementById('fontSize');
         const fontColor = document.getElementById('fontColor');
         const strokeWidth = document.getElementById('strokeWidth');
@@ -237,6 +243,31 @@
             // 填充
             ctx.fillText(text, w/2, h/2);
         }
+
+        // 自定义字体：上传并动态注册
+        uploadFontBtn.addEventListener('click', ()=> fontFileInput.click());
+        fontFileInput.addEventListener('change', async (e)=>{
+            try{
+                const file = e.target.files && e.target.files[0];
+                if(!file) return;
+                const ab = await file.arrayBuffer();
+                const baseName = (file.name || 'CustomFont').replace(/\.[^.]*$/, '');
+                const familyName = baseName.replace(/[^\w\u4e00-\u9fa5-]+/g, ' ').trim() || 'CustomFont';
+                const ff = new FontFace(familyName, ab);
+                await ff.load();
+                document.fonts.add(ff);
+                const opt = document.createElement('option');
+                opt.value = `'${familyName}'`;
+                opt.textContent = `${familyName}（自定义）`;
+                customFontGroup.appendChild(opt);
+                fontFamily.value = opt.value;
+                drawOutput();
+            }catch(ex){
+                showErr('字体加载失败，请尝试更换文件（支持 .ttf/.otf/.woff/.woff2）');
+            }finally{
+                e.target.value = '';
+            }
+        });
 
         // 简易主题色分析：缩小取样 -> 统计像素 -> 过滤>5%
         async function analyzeColors(img){
