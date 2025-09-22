@@ -43,7 +43,7 @@
       "category": "image",
       "icon": "image-overlay",
       "show": true
-    }
+    },
     {
       "id": 3,
       "name": "批量图片渐变背景",
