@@ -216,7 +216,7 @@
         });
 
         // 图层数据结构
-        /** layer: { id, x,y,w,h, radius, fillType: 'solid'|'gradient', color: '#rrggbb', gradient: { angle, stops:[{color, pos}] }, stroke: { width, color }, innerShadow: { size } } */
+        /** layer: { id, x,y,w,h, radius, corners:{tl,tr,br,bl}, fillType: 'solid'|'gradient', color: '#rrggbb', gradient: { angle, stops:[{color, pos}] }, stroke: { width, color }, innerShadow: { size } } */
         let layers = [];
         let idSeq = 1;
 
@@ -227,6 +227,7 @@
                 w: outCanvas.width,
                 h: outCanvas.height,
                 radius: Math.round(Math.min(outCanvas.width, outCanvas.height) * 0.08),
+                corners: { tl: true, tr: true, br: true, bl: true },
                 fillType: 'solid',
                 color: '#ffffff',
                 gradient: { angle: 90, stops: [ { color: '#d6e9ff', pos: 0 }, { color: '#ffd6d6', pos: 100 } ] },
@@ -257,6 +258,13 @@
                         <span class="hint">h</span><input data-k="h" data-id="${ly.id}" type="number" value="${ly.h}" style="width:96px;">
                         <label>圆角</label>
                         <input data-k="radius" data-id="${ly.id}" type="number" value="${ly.radius}" style="width:96px;">
+                    </div>
+                    <div class="form-row">
+                        <label>圆角角</label>
+                        <label class="hint"><input type="checkbox" data-k="cTL" data-id="${ly.id}" ${ly.corners?.tl!==false?'checked':''}> 左上</label>
+                        <label class="hint"><input type="checkbox" data-k="cTR" data-id="${ly.id}" ${ly.corners?.tr!==false?'checked':''}> 右上</label>
+                        <label class="hint"><input type="checkbox" data-k="cBR" data-id="${ly.id}" ${ly.corners?.br!==false?'checked':''}> 右下</label>
+                        <label class="hint"><input type="checkbox" data-k="cBL" data-id="${ly.id}" ${ly.corners?.bl!==false?'checked':''}> 左下</label>
                     </div>
                     <div class="form-row">
                         <label>填充</label>
@@ -315,6 +323,10 @@
                 case 'w': ly.w = Math.max(1, parseInt(e.target.value||'1')); break;
                 case 'h': ly.h = Math.max(1, parseInt(e.target.value||'1')); break;
                 case 'radius': ly.radius = Math.max(0, parseInt(e.target.value||'0')); break;
+                case 'cTL': ly.corners = ly.corners || { tl:true,tr:true,br:true,bl:true }; ly.corners.tl = !!e.target.checked; break;
+                case 'cTR': ly.corners = ly.corners || { tl:true,tr:true,br:true,bl:true }; ly.corners.tr = !!e.target.checked; break;
+                case 'cBR': ly.corners = ly.corners || { tl:true,tr:true,br:true,bl:true }; ly.corners.br = !!e.target.checked; break;
+                case 'cBL': ly.corners = ly.corners || { tl:true,tr:true,br:true,bl:true }; ly.corners.bl = !!e.target.checked; break;
                 case 'fillType': ly.fillType = e.target.value; break;
                 case 'color': ly.color = e.target.value; break;
                 case 'gAngle': ly.gradient.angle = parseInt(e.target.value||'0'); break;
@@ -345,7 +357,7 @@
             const { x,y,w,h, radius } = ly;
             // 填充
             ctx.save();
-            roundedRectPath(ctx, x,y,w,h, radius);
+            roundedRectPath(ctx, x,y,w,h, radius, ly.corners);
             if (ly.fillType==='solid'){
                 ctx.fillStyle = ly.color;
             } else {
@@ -358,7 +370,7 @@
             // 描边
             if (ly.stroke.width > 0){
                 ctx.save();
-                roundedRectPath(ctx, x,y,w,h, radius);
+                roundedRectPath(ctx, x,y,w,h, radius, ly.corners);
                 ctx.lineWidth = ly.stroke.width;
                 ctx.strokeStyle = ly.stroke.color;
                 ctx.stroke();
@@ -373,7 +385,7 @@
                     const t = 1 - i/steps;
                     const alpha = baseAlpha * t;
                     ctx.save();
-                    roundedRectPath(ctx, x + i/2, y + i/2, Math.max(0, w - i), Math.max(0, h - i), Math.max(0, radius - i/2));
+                    roundedRectPath(ctx, x + i/2, y + i/2, Math.max(0, w - i), Math.max(0, h - i), Math.max(0, radius - i/2), ly.corners);
                     ctx.lineWidth = 1;
                     ctx.strokeStyle = withAlpha(ly.stroke.color, alpha);
                     ctx.stroke();
@@ -382,18 +394,22 @@
             }
         }
 
-        function roundedRectPath(ctx, x,y,w,h,r){
+        function roundedRectPath(ctx, x,y,w,h,r,corners){
             const rr = Math.max(0, Math.min(r, Math.min(w,h)/2));
+            const tl = corners?.tl !== false ? rr : 0;
+            const tr = corners?.tr !== false ? rr : 0;
+            const br = corners?.br !== false ? rr : 0;
+            const bl = corners?.bl !== false ? rr : 0;
             ctx.beginPath();
-            ctx.moveTo(x+rr, y);
-            ctx.lineTo(x+w-rr, y);
-            ctx.quadraticCurveTo(x+w, y, x+w, y+rr);
-            ctx.lineTo(x+w, y+h-rr);
-            ctx.quadraticCurveTo(x+w, y+h, x+w-rr, y+h);
-            ctx.lineTo(x+rr, y+h);
-            ctx.quadraticCurveTo(x, y+h, x, y+h-rr);
-            ctx.lineTo(x, y+rr);
-            ctx.quadraticCurveTo(x, y, x+rr, y);
+            ctx.moveTo(x + tl, y);
+            ctx.lineTo(x + w - tr, y);
+            if (tr>0) ctx.quadraticCurveTo(x + w, y, x + w, y + tr); else ctx.lineTo(x + w, y);
+            ctx.lineTo(x + w, y + h - br);
+            if (br>0) ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h); else ctx.lineTo(x + w, y + h);
+            ctx.lineTo(x + bl, y + h);
+            if (bl>0) ctx.quadraticCurveTo(x, y + h, x, y + h - bl); else ctx.lineTo(x, y + h);
+            ctx.lineTo(x, y + tl);
+            if (tl>0) ctx.quadraticCurveTo(x, y, x + tl, y); else ctx.lineTo(x, y);
             ctx.closePath();
         }
 

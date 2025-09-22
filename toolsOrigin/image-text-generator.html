@@ -115,6 +115,7 @@
                         <option value="right-top">右上</option>
                         <option value="left-bottom">左下</option>
                         <option value="left-top">左上</option>
+                        <option value="bottom">正下</option>
                     </select>
                     <label>阴影宽度</label>
                     <input id="shadowWidth" type="number" value="0" min="0">
@@ -227,6 +228,7 @@
                 case 'right-top': sx = sw; sy = -sw; break;
                 case 'left-bottom': sx = -sw; sy = sw; break;
                 case 'left-top': sx = -sw; sy = -sw; break;
+                case 'bottom': sx = 0; sy = sw; break;
                 default: sx = 0; sy = 0;
             }
             ctx.shadowColor = sw > 0 ? shadowColor.value : 'transparent';
