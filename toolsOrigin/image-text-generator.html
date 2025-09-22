@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字图片生成器 · 带主题色分析</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f5f7fb; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #6366f1, #3b82f6); color: #fff; padding: 22px 26px; }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .main { display: flex; gap: 0; }
+        .left, .right { padding: 20px; }
+        .left { width: 42%; border-right: 1px solid #eef2f7; }
+        .right { width: 58%; }
+        .section-title { font-size: 16px; color: #111827; margin-bottom: 12px; font-weight: 600; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
+        .upload-area:hover { border-color:#60a5fa; background:#f1f5f9; }
+        .upload-area.dragover { border-color:#22c55e; background:#ecfdf5; }
+        .upload-area p { color:#475569; font-size:14px; }
+        input[type="file"] { display:none; }
+        .preview-wrap { margin-top: 14px; display:flex; gap:12px; align-items:flex-start; }
+        .thumb { flex:0 0 auto; width: 140px; height: 140px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .thumb img { max-width: 100%; max-height: 100%; display:block; }
+        .meta { flex:1; font-size:14px; color:#374151; display:flex; flex-direction:column; gap:8px; }
+        .badge { display:inline-block; background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px; }
+        .colors { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+        .color-chip { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; }
+        .swatch { width:20px; height:20px; border-radius:4px; border:1px solid #e5e7eb; }
+        .chip-text { font-size:12px; color:#374151; }
+        .form-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap: wrap; }
+        .form-row label { font-size:13px; color:#374151; min-width:72px; }
+        .form-row input[type="number"], .form-row input[type="text"], .form-row select { border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; font-size:14px; background:#fff; }
+        .form-row input[type="color"] { width: 44px; height: 34px; border:1px solid #e5e7eb; border-radius:6px; padding:0; }
+        .canvas-wrap { background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 50% / 20px 20px; border:1px solid #e5e7eb; border-radius:10px; padding:16px; display:flex; align-items:center; justify-content:center; min-height:320px; }
+        canvas { max-width:100%; height:auto; background: transparent; }
+        .actions { margin-top: 14px; display:flex; gap:10px; }
+        .btn { background:#3b82f6; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+        .btn.secondary { background:#10b981; }
+        .hint { font-size:12px; color:#6b7280; }
+        .error { color:#dc2626; font-size:13px; margin-top:8px; }
+        @media (max-width: 900px) { .main{ flex-direction:column; } .left, .right{ width:100%; border-right:none; border-top:1px solid #eef2f7; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>文字图片生成器 · 带主题色分析</h1></div>
+        <div class="main">
+            <div class="left">
+                <div class="section-title">1) 选择或拖拽图片（用于分析主题色）</div>
+                <div id="uploadArea" class="upload-area">
+                    <p>点击选择图片或拖拽图片到此处</p>
+                    <input id="fileInput" type="file" accept="image/*">
+                </div>
+                <div class="preview-wrap" id="leftPreview" style="display:none;">
+                    <div class="thumb"><img id="thumbImg" alt="预览"></div>
+                    <div class="meta">
+                        <div><span class="badge">图片信息</span></div>
+                        <div id="imgSize">-</div>
+                        <div><span class="badge">主题色域(>5%)</span></div>
+                        <div id="colorList" class="colors"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="right">
+                <div class="section-title">2) 生成文字图片（透明背景）</div>
+                <div class="form-row">
+                    <label>画布宽度</label>
+                    <input id="cw" type="number" value="800" min="1">
+                    <label>画布高度</label>
+                    <input id="ch" type="number" value="300" min="1">
+                    <span class="hint">上传后会自动更新</span>
+                </div>
+                <div class="form-row">
+                    <label>文字内容</label>
+                    <input id="textInput" type="text" placeholder="输入文字..." value="Hello AiPicTools">
+                </div>
+                <div class="form-row">
+                    <label>字体</label>
+                    <select id="fontFamily">
+                        <option value="'Microsoft YaHei', Arial, sans-serif">微软雅黑 / 系统</option>
+                        <option value="Helvetica, Arial, sans-serif">Helvetica</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Courier New, monospace">Courier New</option>
+                    </select>
+                    <label>字号(px)</label>
+                    <input id="fontSize" type="number" value="80" min="1">
+                    <label>颜色</label>
+                    <input id="fontColor" type="color" value="#ffffff">
+                </div>
+                <div class="form-row">
+                    <label>描边宽度</label>
+                    <input id="strokeWidth" type="number" value="0" min="0">
+                    <label>描边颜色</label>
+                    <input id="strokeColor" type="color" value="#000000">
+                </div>
+                <div class="form-row">
+                    <label>背景</label>
+                    <select id="bgMode">
+                        <option value="transparent">透明</option>
+                        <option value="solid">纯色</option>
+                    </select>
+                    <label>背景颜色</label>
+                    <input id="bgColor" type="color" value="#000000">
+                </div>
+                <div class="form-row">
+                    <label>阴影方向</label>
+                    <select id="shadowDir">
+                        <option value="none">无</option>
+                        <option value="right-bottom">右下</option>
+                        <option value="right-top">右上</option>
+                        <option value="left-bottom">左下</option>
+                        <option value="left-top">左上</option>
+                    </select>
+                    <label>阴影宽度</label>
+                    <input id="shadowWidth" type="number" value="0" min="0">
+                    <label>阴影颜色</label>
+                    <input id="shadowColor" type="color" value="#000000">
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="outCanvas" width="800" height="300"></canvas>
+                </div>
+                <div class="actions">
+                    <button id="dlBtn" class="btn secondary">下载为 PNG</button>
+                    <div id="err" class="error" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const leftPreview = document.getElementById('leftPreview');
+        const thumbImg = document.getElementById('thumbImg');
+        const imgSize = document.getElementById('imgSize');
+        const colorList = document.getElementById('colorList');
+        const cw = document.getElementById('cw');
+        const ch = document.getElementById('ch');
+        const textInput = document.getElementById('textInput');
+        const fontFamily = document.getElementById('fontFamily');
+        const fontSize = document.getElementById('fontSize');
+        const fontColor = document.getElementById('fontColor');
+        const strokeWidth = document.getElementById('strokeWidth');
+        const strokeColor = document.getElementById('strokeColor');
+        const bgMode = document.getElementById('bgMode');
+        const bgColor = document.getElementById('bgColor');
+        const shadowDir = document.getElementById('shadowDir');
+        const shadowWidth = document.getElementById('shadowWidth');
+        const shadowColor = document.getElementById('shadowColor');
+        const outCanvas = document.getElementById('outCanvas');
+        const ctx = outCanvas.getContext('2d');
+        const dlBtn = document.getElementById('dlBtn');
+        const err = document.getElementById('err');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.classList.remove('dragover'); if (e.dataTransfer.files?.length) handleFile(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', (e) => { if (e.target.files?.length) handleFile(e.target.files[0]); });
+
+        function handleFile(file){
+            if(!file.type.startsWith('image/')){ showErr('请选择图片文件'); return; }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    thumbImg.src = reader.result;
+                    leftPreview.style.display = 'flex';
+                    imgSize.textContent = `尺寸：${img.width} × ${img.height}`;
+                    // 同步右侧画布宽高
+                    cw.value = img.width;
+                    ch.value = img.height;
+                    resizeCanvas();
+                    // 主题色统计
+                    analyzeColors(img).then(renderColors).catch(()=>{});
+                    // 刷新一次输出
+                    drawOutput();
+                };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showErr(m){ err.textContent = m; err.style.display = 'block'; setTimeout(()=>err.style.display='none', 2500); }
+
+        function resizeCanvas(){
+            const w = Math.max(1, parseInt(cw.value||'0'));
+            const h = Math.max(1, parseInt(ch.value||'0'));
+            outCanvas.width = w;
+            outCanvas.height = h;
+        }
+
+        function drawOutput(){
+            const w = outCanvas.width, h = outCanvas.height;
+            ctx.clearRect(0,0,w,h);
+            // 背景
+            if (bgMode.value === 'solid') {
+                ctx.save();
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = bgColor.value;
+                ctx.fillRect(0, 0, w, h);
+                ctx.restore();
+            }
+            const text = textInput.value || '';
+            const size = Math.max(1, parseInt(fontSize.value||'1'));
+            const family = fontFamily.value;
+            ctx.font = `${size}px ${family}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = fontColor.value;
+            // 阴影
+            const sw = Math.max(0, parseInt(shadowWidth.value||'0'));
+            let sx = 0, sy = 0;
+            switch(shadowDir.value){
+                case 'right-bottom': sx = sw; sy = sw; break;
+                case 'right-top': sx = sw; sy = -sw; break;
+                case 'left-bottom': sx = -sw; sy = sw; break;
+                case 'left-top': sx = -sw; sy = -sw; break;
+                default: sx = 0; sy = 0;
+            }
+            ctx.shadowColor = sw > 0 ? shadowColor.value : 'transparent';
+            ctx.shadowBlur = sw;
+            ctx.shadowOffsetX = sx;
+            ctx.shadowOffsetY = sy;
+            // 描边
+            const lw = Math.max(0, parseInt(strokeWidth.value||'0'));
+            if(lw > 0){
+                ctx.lineWidth = lw;
+                ctx.strokeStyle = strokeColor.value;
+                ctx.strokeText(text, w/2, h/2);
+            }
+            // 填充
+            ctx.fillText(text, w/2, h/2);
+        }
+
+        // 简易主题色分析：缩小取样 -> 统计像素 -> 过滤>5%
+        async function analyzeColors(img){
+            const sampleW = 80;
+            const ratio = img.width / sampleW;
+            const sampleH = Math.max(1, Math.round(img.height / ratio));
+            const c = document.createElement('canvas');
+            const cctx = c.getContext('2d');
+            c.width = sampleW; c.height = sampleH;
+            cctx.drawImage(img, 0, 0, sampleW, sampleH);
+            const { data } = cctx.getImageData(0,0,sampleW,sampleH);
+            const map = new Map();
+            for(let i=0;i<data.length;i+=4){
+                const a = data[i+3];
+                if(a < 10) continue; // 忽略几乎透明
+                const r = data[i], g = data[i+1], b = data[i+2];
+                const key = `${r},${g},${b}`;
+                map.set(key, (map.get(key)||0)+1);
+            }
+            const total = Array.from(map.values()).reduce((s,v)=>s+v,0) || 1;
+            const entries = Array.from(map.entries()).map(([k,v])=>({ rgb:k, count:v, ratio:v/total }));
+            const filtered = entries.filter(e=> e.ratio >= 0.05).sort((a,b)=> b.ratio - a.ratio).slice(0,12);
+            return filtered;
+        }
+
+        function renderColors(list){
+            colorList.innerHTML = '';
+            list.forEach(item=>{
+                const [r,g,b] = item.rgb.split(',').map(Number);
+                const hex = rgbToHex(r,g,b);
+                const div = document.createElement('div');
+                div.className = 'color-chip';
+                div.innerHTML = `<span class="swatch" style="background:${hex}"></span><span class="chip-text">RGB(${r},${g},${b}) · ${hex} · ${(item.ratio*100).toFixed(1)}%</span>`;
+                colorList.appendChild(div);
+            });
+        }
+
+        function rgbToHex(r,g,b){
+            const toHex = (n)=> ('0' + n.toString(16)).slice(-2);
+            return '#' + toHex(r) + toHex(g) + toHex(b);
+        }
+
+        // 实时联动
+        ;[cw, ch, textInput, fontFamily, fontSize, fontColor, strokeWidth, strokeColor, bgMode, bgColor, shadowDir, shadowWidth, shadowColor].forEach(el=>{
+            el.addEventListener('input', ()=>{ if(el===cw||el===ch) resizeCanvas(); drawOutput(); });
+            el.addEventListener('change', ()=>{ if(el===cw||el===ch) resizeCanvas(); drawOutput(); });
+        });
+
+        // 初始渲染
+        resizeCanvas();
+        drawOutput();
+
+        // 下载
+        dlBtn.addEventListener('click', ()=>{
+            const url = outCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url; a.download = 'text-image.png'; a.click();
+        });
+    </script>
+</body>
+</html>
+

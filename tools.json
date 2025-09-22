@@ -10,6 +10,15 @@
     },
     {
       "id": 2,
+      "name": "图片文字生成",
+      "description": "选择图片，生成文字",
+      "path": "tools/image-text-generator.html",
+      "category": "image",
+      "icon": "image-text-generator",
+      "show": true
+    },
+    {
+      "id": 2,
       "name": "图片自动分割",
       "description": "将图片自动分割为小图片",
       "path": "tools/image-auto-split-small.html",
