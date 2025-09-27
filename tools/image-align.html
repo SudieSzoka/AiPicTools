@@ -940,8 +940,10 @@ function autoGenerateImage() {
             processImages();
         } else {
             // 如果没有足够的图片，隐藏结果
+            const resultDiv = document.querySelector('.result');
             const resImg = document.getElementById('resultImage');
             const dl = document.getElementById('downloadBtn');
+            resultDiv.style.display = 'none';
             resImg.style.display = 'none';
             dl.style.display = 'none';
         }
@@ -1109,9 +1111,11 @@ async function processImages(){
         }
     
         // 显示结果
+        const resultDiv = document.querySelector('.result');
         const resImg = document.getElementById('resultImage');
         resImg.src = cvs.toDataURL('image/png');
         resImg.style.display='block';
+        resultDiv.style.display='block';
         
         const dl = document.getElementById('downloadBtn');
         dl.href = cvs.toDataURL('image/png');
