@@ -37,6 +37,15 @@
     },
     {
       "id": 3,
+      "name": "图片颜色分析",
+      "description": "选择图片，分析图片颜色",
+      "path": "tools/image-color-analyzer.html",
+      "category": "image",
+      "icon": "image-color-analyzer",
+      "show": true
+    },
+    {
+      "id": 3,
       "name": "图片叠加",
       "description": "将多张图片叠加为一张图片",
       "path": "tools/image-overlay.html",
