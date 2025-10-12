@@ -166,6 +166,11 @@
             background-position: 0 0, 10px 10px;
         }
         
+        .image-box.original {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+        }
+        
         .image-box img {
             display: block;
             max-width: 100%;
@@ -292,11 +297,11 @@
                 </div>
                 <input type="file" id="fileInput" accept="image/png" class="hidden">
                 <button id="processBtn" class="button" disabled>
-                    <span>裁剪透明区域</span>
+                    <span>重新处理</span>
                 </button>
                 
                 <div id="statusArea" class="status info hidden">
-                    请上传PNG格式的图像文件
+                    请上传PNG格式的图像文件，上传后将自动处理
                 </div>
             </div>
             
@@ -309,7 +314,7 @@
                 </div>
                 
                 <div class="image-container">
-                    <div class="image-box">
+                    <div class="image-box original">
                         <img id="originalPreview" src="" alt="原始图像预览">
                         <div class="image-label">原始图像</div>
                     </div>
@@ -406,18 +411,21 @@
                     originalImage.onload = () => {
                         originalPreview.src = e.target.result;
                         processBtn.disabled = false;
-                        showStatus('图像已加载，点击"裁剪透明区域"按钮进行处理', 'success');
+                        showStatus('图像已加载，正在自动裁剪透明区域...', 'info');
                         resultInfo.classList.add('hidden');
                         downloadBtn.disabled = true;
                         croppedPreview.src = '';
+                        
+                        // 自动开始处理
+                        processImage();
                     };
                     originalImage.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
             
-            // 裁剪图像处理
-            processBtn.addEventListener('click', () => {
+            // 图像处理函数
+            function processImage() {
                 if (!originalImage) return;
                 
                 const canvas = document.createElement('canvas');
@@ -506,6 +514,11 @@
                 resultInfo.className = 'status success';
                 
                 showStatus(`透明区域裁剪完成！尺寸减少 ${sizeReduction}%`, 'success');
+            }
+            
+            // 保留按钮点击事件作为备用
+            processBtn.addEventListener('click', () => {
+                processImage();
             });
             
             // 下载裁剪后的图像

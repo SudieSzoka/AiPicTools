@@ -746,17 +746,41 @@
                 icon.width >= minWidth && icon.height >= minHeight
             );
             
-            // 逐个下载
-            filteredIcons.forEach((icon, index) => {
+            // 禁用下载按钮防止重复点击
+            downloadAllBtn.disabled = true;
+            downloadAllBtn.textContent = '下载中...';
+            
+            // 使用延迟下载避免浏览器限制
+            let downloadCount = 0;
+            const downloadDelay = 200; // 200ms延迟
+            
+            function downloadNext() {
+                if (downloadCount >= filteredIcons.length) {
+                    // 所有下载完成
+                    downloadAllBtn.disabled = false;
+                    downloadAllBtn.textContent = '下载全部';
+                    statusElement.textContent = `已启动 ${filteredIcons.length} 个图标的下载`;
+                    return;
+                }
+                
+                const icon = filteredIcons[downloadCount];
                 const link = document.createElement('a');
                 link.href = icon.dataURL;
-                link.download = `icon_${index+1}.png`;
+                link.download = `icon_${downloadCount + 1}.png`;
+                link.style.display = 'none';
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
-            });
+                
+                // 延迟后移除链接并下载下一个
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    downloadCount++;
+                    downloadNext();
+                }, downloadDelay);
+            }
             
-            statusElement.textContent = `已下载 ${filteredIcons.length} 个图标`;
+            // 开始下载
+            downloadNext();
         }
         
         // 重置应用

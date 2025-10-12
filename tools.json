@@ -124,5 +124,14 @@
       "category": "video",
       "icon": "video-to-frames",
       "show": true
+    },
+    {
+      "id": 11,
+      "name": "图片透明度调整",
+      "description": "选择图片，调整透明度",
+      "path": "tools/image-transparency-adjust.html",
+      "category": "image",
+      "icon": "transparency",
+      "show": true
     }
   ]

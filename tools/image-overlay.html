@@ -97,6 +97,24 @@
             </div>
             <div class="right">
                 <div class="section-title">图片与参数（第一张为背景）</div>
+                
+                <!-- 透明背景选项 -->
+                <div class="transparent-bg-section" style="margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="useTransparentBg" style="width: 16px; height: 16px;">
+                        <label for="useTransparentBg" style="font-size: 14px; color: #374151; cursor: pointer;">使用透明背景</label>
+                    </div>
+                    <div id="transparentBgSize" style="display: none; gap: 12px; align-items: center;">
+                        <label style="font-size: 13px; color: #6b7280;">背景尺寸：</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="font-size: 12px; color: #6b7280;">宽</label>
+                            <input type="number" id="transparentBgWidth" value="200" min="1" max="4000" style="width: 80px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+                            <label style="font-size: 12px; color: #6b7280;">高</label>
+                            <input type="number" id="transparentBgHeight" value="300" min="1" max="4000" style="width: 80px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="uploadArea" class="upload-area">
                     <p>点击选择图片或拖拽图片到此处</p>
                     <input id="fileInput" type="file" accept="image/*" multiple>
@@ -115,6 +133,12 @@
         const errEl = document.getElementById('err');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        
+        // 透明背景相关元素
+        const useTransparentBg = document.getElementById('useTransparentBg');
+        const transparentBgSize = document.getElementById('transparentBgSize');
+        const transparentBgWidth = document.getElementById('transparentBgWidth');
+        const transparentBgHeight = document.getElementById('transparentBgHeight');
 
         /** @type {{file:File,url:string,img?:HTMLImageElement,posMode:'anchor'|'custom',anchor:string,customX:number,customY:number,opacity:number}[]} */
         let items = [];
@@ -124,6 +148,16 @@
         uploadArea.addEventListener('dragleave', ()=> uploadArea.classList.remove('dragover'));
         uploadArea.addEventListener('drop', (e)=>{ e.preventDefault(); uploadArea.classList.remove('dragover'); if(e.dataTransfer.files?.length){ handleFiles(e.dataTransfer.files); } });
         fileInput.addEventListener('change', (e)=>{ if(e.target.files?.length){ handleFiles(e.target.files); } });
+        
+        // 透明背景事件监听
+        useTransparentBg.addEventListener('change', ()=>{
+            transparentBgSize.style.display = useTransparentBg.checked ? 'flex' : 'none';
+            renderList(); // 重新渲染列表以更新背景标签和按钮状态
+            scheduleGenerate();
+        });
+        
+        transparentBgWidth.addEventListener('input', scheduleGenerate);
+        transparentBgHeight.addEventListener('input', scheduleGenerate);
 
         function handleFiles(fileList){
             const files = Array.from(fileList).filter(f=> f.type.startsWith('image/'));
@@ -149,7 +183,7 @@
                     <div class="idx" title="序号">${index+1}</div>
                     <div class="thumb"><img src="${it.url}" alt="thumb"></div>
                     <div class="meta">
-                        <span class="badge">${index===0?'背景':'叠加'}</span>
+                        <span class="badge">${index===0 && !useTransparentBg.checked?'背景':'叠加'}</span>
                         <div class="ctrl">
                             <label>位置</label>
                             <select data-k="anchor">
@@ -176,7 +210,7 @@
                         </div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px">
-                        <button class="btn up" ${index===0?'disabled':''} title="上移">上移</button>
+                        <button class="btn up" ${index===0 && !useTransparentBg.checked?'disabled':''} title="上移">上移</button>
                         <button class="btn del" title="删除">删除</button>
                     </div>
                 `;
@@ -220,7 +254,7 @@
 
                 // 上移
                 div.querySelector('.btn.up').addEventListener('click', ()=>{
-                    if(index>0){
+                    if(index>0 || (index===0 && useTransparentBg.checked)){
                         const tmp = items[index-1];
                         items[index-1] = items[index];
                         items[index] = tmp;
@@ -242,26 +276,38 @@
 
         async function generate(){
             errEl.style.display = 'none';
-            if(items.length < 1){
+            if(items.length < 1 && !useTransparentBg.checked){
                 ctx.clearRect(0,0,canvas.width||0,canvas.height||0);
                 dlBtn.disabled = true;
                 return;
             }
-            // 预加载所有图片
-            try{
-                await Promise.all(items.map(loadItemImage));
-            }catch(ex){
-                return showErr('有图片加载失败，请重试');
+            
+            // 如果使用透明背景
+            if(useTransparentBg.checked){
+                const width = parseInt(transparentBgWidth.value) || 200;
+                const height = parseInt(transparentBgHeight.value) || 300;
+                canvas.width = width;
+                canvas.height = height;
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                // 透明背景不需要绘制任何内容
+            } else {
+                // 预加载所有图片
+                try{
+                    await Promise.all(items.map(loadItemImage));
+                }catch(ex){
+                    return showErr('有图片加载失败，请重试');
+                }
+                const bg = items[0].img;
+                if(!bg){ return showErr('背景图片加载失败'); }
+                // 以背景尺寸作为画布
+                canvas.width = bg.width; canvas.height = bg.height;
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.globalAlpha = 1;
+                ctx.drawImage(bg, 0, 0);
             }
-            const bg = items[0].img;
-            if(!bg){ return showErr('背景图片加载失败'); }
-            // 以背景尺寸作为画布
-            canvas.width = bg.width; canvas.height = bg.height;
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.globalAlpha = 1;
-            ctx.drawImage(bg, 0, 0);
 
-            for(let i=1;i<items.length;i++){
+            // 绘制叠加图片
+            for(let i=0;i<items.length;i++){
                 const it = items[i];
                 const img = it.img; if(!img) continue;
                 const pos = computePosition(it, canvas.width, canvas.height, img.width, img.height);

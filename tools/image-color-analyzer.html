@@ -258,6 +258,13 @@
             color: #718096;
         }
         
+        .aggregation-info {
+            font-size: 0.8rem;
+            color: #667eea;
+            font-style: italic;
+            margin-top: 2px;
+        }
+        
         .color-input {
             width: 60px;
             height: 30px;
@@ -268,6 +275,53 @@
         
         .color-input:hover {
             border-color: #667eea;
+        }
+        
+        .controls-section {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-item label {
+            font-weight: 500;
+            color: #4a5568;
+            white-space: nowrap;
+        }
+        
+        .control-item input[type="number"] {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .control-item input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .control-item span {
+            color: #718096;
+            font-size: 0.9rem;
         }
         
         .download-section {
@@ -406,8 +460,24 @@
                     </div>
                 </div>
                 
+                <div class="controls-section">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">分析参数</h3>
+                    <div class="control-group">
+                        <div class="control-item">
+                            <label for="percentage-limit">百分比限制:</label>
+                            <input type="number" id="percentage-limit" value="1" min="0.1" max="50" step="0.1">
+                            <span>%</span>
+                        </div>
+                        <div class="control-item">
+                            <label for="aggregation-threshold">聚合数值:</label>
+                            <input type="number" id="aggregation-threshold" value="20" min="1" max="100" step="1">
+                        </div>
+                        <button class="btn" id="reanalyze-btn">重新分析</button>
+                    </div>
+                </div>
+                
                 <div class="color-analysis">
-                    <h3 style="margin-bottom: 15px; color: #2c3e50;">主要颜色 (占比 > 1%)</h3>
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">主要颜色</h3>
                     <div class="color-list" id="color-list">
                         <!-- 颜色项将动态生成 -->
                     </div>
@@ -446,9 +516,11 @@
                 <h3>使用说明：</h3>
                 <ol>
                     <li>点击"选择图片"按钮或拖放图片到上传区域</li>
-                    <li>查看图片的基础信息（尺寸、透明度等）</li>
-                    <li>查看图片中占比大于1%的主要颜色列表</li>
-                    <li>点击颜色输入框修改任意颜色</li>
+                    <li>调整"百分比限制"参数（默认1%）来控制显示颜色的最小占比</li>
+                    <li>调整"聚合数值"参数（默认20）来控制相似颜色的聚合程度</li>
+                    <li>点击"重新分析"按钮应用新的参数设置</li>
+                    <li>查看图片的基础信息和主要颜色列表（相似颜色会自动聚合）</li>
+                    <li>点击颜色输入框修改任意颜色（聚合颜色会同步修改所有相似颜色）</li>
                     <li>修改后将自动应用到右侧预览</li>
                     <li>点击"下载修改后的图片"按钮保存结果</li>
                 </ol>
@@ -468,6 +540,9 @@
             const resetBtn = document.getElementById('reset-btn');
             const downloadBtn = document.getElementById('download-btn');
             const colorList = document.getElementById('color-list');
+            const percentageLimit = document.getElementById('percentage-limit');
+            const aggregationThreshold = document.getElementById('aggregation-threshold');
+            const reanalyzeBtn = document.getElementById('reanalyze-btn');
             
             // 信息显示元素
             const imageWidth = document.getElementById('image-width');
@@ -521,6 +596,13 @@
             // 点击原图重新选择图片
             previewImage.addEventListener('click', () => {
                 fileInput.click();
+            });
+            
+            // 重新分析按钮事件
+            reanalyzeBtn.addEventListener('click', () => {
+                if (originalImage) {
+                    analyzeColors();
+                }
             });
             
             // 处理图片上传
@@ -599,6 +681,8 @@
                 const data = originalImageData.data;
                 const colorCounts = new Map();
                 const totalPixels = data.length / 4;
+                const percentageLimitValue = parseFloat(percentageLimit.value);
+                const aggregationThresholdValue = parseInt(aggregationThreshold.value);
                 
                 // 统计颜色
                 for (let i = 0; i < data.length; i += 4) {
@@ -616,18 +700,19 @@
                     colorCounts.set(colorKey, (colorCounts.get(colorKey) || 0) + 1);
                 }
                 
-                // 计算占比并筛选大于1%的颜色
+                // 计算占比并筛选大于设定百分比的颜色
                 const filteredColors = [];
                 for (const [colorKey, count] of colorCounts) {
                     const percentage = (count / totalPixels) * 100;
-                    if (percentage > 1) {
+                    if (percentage > percentageLimitValue) {
                         const [r, g, b, a] = colorKey.split(',').map(Number);
                         const hex = rgbToHex(r, g, b);
                         filteredColors.push({
                             colorKey,
                             hex,
                             r, g, b, a,
-                            percentage: percentage.toFixed(2)
+                            percentage: percentage.toFixed(2),
+                            count: count
                         });
                     }
                 }
@@ -635,17 +720,83 @@
                 // 按占比排序
                 filteredColors.sort((a, b) => b.percentage - a.percentage);
                 
+                // 应用颜色聚合
+                const aggregatedColors = aggregateSimilarColors(filteredColors, aggregationThresholdValue);
+                
                 // 更新颜色数量显示
-                colorCount.textContent = filteredColors.length;
+                colorCount.textContent = aggregatedColors.length;
                 
                 // 显示颜色列表
-                displayColorList(filteredColors);
+                displayColorList(aggregatedColors);
                 
                 // 保存颜色映射
                 colorMap.clear();
-                filteredColors.forEach(color => {
+                aggregatedColors.forEach(color => {
                     colorMap.set(color.colorKey, color);
                 });
+            }
+            
+            // 颜色聚合函数
+            function aggregateSimilarColors(colors, threshold) {
+                const aggregated = [];
+                const used = new Set();
+                
+                for (let i = 0; i < colors.length; i++) {
+                    if (used.has(i)) continue;
+                    
+                    const currentColor = colors[i];
+                    const similarColors = [currentColor];
+                    used.add(i);
+                    
+                    // 查找相似颜色
+                    for (let j = i + 1; j < colors.length; j++) {
+                        if (used.has(j)) continue;
+                        
+                        const otherColor = colors[j];
+                        const colorDiff = Math.abs(currentColor.r - otherColor.r) + 
+                                        Math.abs(currentColor.g - otherColor.g) + 
+                                        Math.abs(currentColor.b - otherColor.b);
+                        
+                        if (colorDiff <= threshold) {
+                            similarColors.push(otherColor);
+                            used.add(j);
+                        }
+                    }
+                    
+                    // 计算聚合后的颜色（加权平均）
+                    if (similarColors.length > 1) {
+                        let totalCount = 0;
+                        let weightedR = 0, weightedG = 0, weightedB = 0;
+                        let totalPercentage = 0;
+                        
+                        similarColors.forEach(color => {
+                            totalCount += color.count;
+                            weightedR += color.r * color.count;
+                            weightedG += color.g * color.count;
+                            weightedB += color.b * color.count;
+                            totalPercentage += parseFloat(color.percentage);
+                        });
+                        
+                        const aggregatedColor = {
+                            colorKey: `${Math.round(weightedR / totalCount)},${Math.round(weightedG / totalCount)},${Math.round(weightedB / totalCount)},${currentColor.a}`,
+                            hex: rgbToHex(Math.round(weightedR / totalCount), Math.round(weightedG / totalCount), Math.round(weightedB / totalCount)),
+                            r: Math.round(weightedR / totalCount),
+                            g: Math.round(weightedG / totalCount),
+                            b: Math.round(weightedB / totalCount),
+                            a: currentColor.a,
+                            percentage: totalPercentage.toFixed(2),
+                            count: totalCount,
+                            aggregated: true,
+                            originalColors: similarColors
+                        };
+                        
+                        aggregated.push(aggregatedColor);
+                    } else {
+                        aggregated.push(currentColor);
+                    }
+                }
+                
+                return aggregated;
             }
             
             // 显示颜色列表
@@ -655,11 +806,17 @@
                 colors.forEach((color, index) => {
                     const colorItem = document.createElement('div');
                     colorItem.className = 'color-item';
+                    
+                    // 如果是聚合颜色，显示额外信息
+                    const aggregationInfo = color.aggregated ? 
+                        `<div class="aggregation-info">聚合了 ${color.originalColors.length} 种相似颜色</div>` : '';
+                    
                     colorItem.innerHTML = `
                         <div class="color-preview" style="background-color: ${color.hex}"></div>
                         <div class="color-info">
                             <div class="color-hex">${color.hex}</div>
                             <div class="color-percentage">${color.percentage}%</div>
+                            ${aggregationInfo}
                         </div>
                         <input type="color" class="color-input" value="${color.hex}" data-color-key="${color.colorKey}">
                     `;
@@ -670,8 +827,15 @@
                         const newColor = this.value;
                         const colorKey = this.dataset.colorKey;
                         
-                        // 更新颜色映射
-                        colorReplacements.set(colorKey, newColor);
+                        // 如果是聚合颜色，需要更新所有原始颜色
+                        if (color.aggregated && color.originalColors) {
+                            color.originalColors.forEach(originalColor => {
+                                colorReplacements.set(originalColor.colorKey, newColor);
+                            });
+                        } else {
+                            colorReplacements.set(colorKey, newColor);
+                        }
+                        
                         // 立即应用修改并显示下载按钮
                         updateResultImage();
                         downloadBtn.style.display = 'inline-block';
