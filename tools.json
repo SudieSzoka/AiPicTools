@@ -133,5 +133,14 @@
       "category": "image",
       "icon": "transparency",
       "show": true
+    },
+    {
+      "id": 12,
+      "name": "3级结构图",
+      "description": "3级结构，可下载",
+      "path": "tools/image-orangenation.html",
+      "category": "image",
+      "icon": "organization",
+      "show": true
     }
   ]
