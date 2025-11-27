@@ -207,15 +207,16 @@
 
       // 二级节点容器
       const level2Container = document.createElement('div');
-      level2Container.className = 'inline-flex flex-row flex-wrap justify-center gap-6 mt-4';
+      level2Container.className = 'inline-flex flex-row flex-nowrap justify-center gap-6 mt-4';
       level2Container.dataset.level = '2';
       level2Container.dataset.parentId = root.id;
-      const hasLevel3 = root.children.some(c => c.children && c.children.length > 0);
-      level2Container.style.gap = hasLevel3 ? '3rem' : '1.5rem';
+      const maxLevel3Count = root.children.reduce((m, c) => Math.max(m, c.children?.length || 0), 0);
+      const hasLevel3 = maxLevel3Count > 0;
+      level2Container.style.gap = hasLevel3 ? `${3 + maxLevel3Count * 0.8}rem` : '1.5rem';
 
       root.children.forEach((child, index) => {
         const col = document.createElement('div');
-        col.className = 'flex flex-col items-center gap-2';
+        col.className = 'flex flex-col items-center gap-2 shrink-0';
         col.dataset.nodeId = child.id;
         col.dataset.level = '2';
         col.dataset.index = index;
