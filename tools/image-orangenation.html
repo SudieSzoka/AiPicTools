@@ -228,14 +228,14 @@
 
       // 根节点
       const rootWrapper = document.createElement('div');
-      rootWrapper.className = 'flex flex-col items-center gap-3';
+      rootWrapper.className = 'flex flex-col items-center gap-3 w-fit mx-auto';
 
       const rootNode = createNodeElement(root, 1, preset);
       rootWrapper.appendChild(rootNode);
 
       // 二级节点容器
       const level2Container = document.createElement('div');
-      level2Container.className = 'flex flex-row flex-wrap justify-center gap-6 mt-4';
+      level2Container.className = 'inline-flex flex-row flex-wrap justify-center gap-6 mt-4';
       level2Container.dataset.level = '2';
       level2Container.dataset.parentId = root.id;
       const hasLevel3 = root.children.some(c => c.children && c.children.length > 0);
@@ -254,7 +254,7 @@
         // 三级节点列表（垂直，对齐父节点中心稍向右偏移，偏移值后续按父节点宽度计算）
         const level3Container = document.createElement('div');
         level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative';
-        level3Container.style.transform = 'translateX(0px)';
+        level3Container.style.marginLeft = '0px';
         level3Container.dataset.level = '3';
         level3Container.dataset.parentId = child.id;
 
@@ -284,13 +284,19 @@
     function adjustLevel3Offsets() {
       const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
       containers.forEach((container) => {
+        if (!container.children.length) {
+          container.style.marginLeft = '0px';
+          container.style.transform = 'none';
+          return;
+        }
         const parentId = container.dataset.parentId;
         const parentBox = diagramEl.querySelector('[data-node-id="' + parentId + '"] .node-box');
         if (!parentBox) return;
         const firstChildBox = container.querySelector('.node-box');
         const childWidth = firstChildBox ? firstChildBox.getBoundingClientRect().width : 0;
-        const offset = 20 + childWidth / 2; // 20px + half of Level3 width => Level3 left edge at parent center + 20
-        container.style.transform = 'translateX(' + offset + 'px)';
+        const offset = 60 + childWidth / 2; // 20px + half of Level3 width => Level3 left edge at parent center + 20
+        container.style.transform = 'none';
+        container.style.marginLeft = offset + 'px';
       });
     }
 
