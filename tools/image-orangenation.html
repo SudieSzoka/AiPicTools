@@ -88,9 +88,18 @@
               <span class="block text-xs text-slate-500">节点样式预设</span>
               <select id="stylePresetSelect"
                       class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
-                <option value="minimal">Minimal</option>
-                <option value="card">Card</option>
-                <option value="soft">Soft</option>
+                <option value="minimal">简约 (Minimal)</option>
+                <option value="card">卡片 (Card)</option>
+                <option value="soft">柔和 (Soft)</option>
+                <option value="dark">深色 (Dark)</option>
+                <option value="warm">暖色 (Warm)</option>
+                <option value="cool">冷色 (Cool)</option>
+                <option value="modern">现代 (Modern)</option>
+                <option value="classic">经典 (Classic)</option>
+                <option value="vibrant">活力 (Vibrant)</option>
+                <option value="elegant">优雅 (Elegant)</option>
+                <option value="ocean">海洋 (Ocean)</option>
+                <option value="sunset">日落 (Sunset)</option>
               </select>
             </label>
 
@@ -188,25 +197,91 @@
       children: []
     };
 
-    // 样式预设
+    // 样式预设（包含背景颜色）
     const stylePresets = {
       minimal: {
         nodeRoot: 'px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-800 shadow-sm',
         nodeLevel2: 'px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-800 shadow-sm',
         nodeLevel3: 'px-3 py-1.5 rounded-md border border-slate-300 bg-white text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-slate-500'
+        badge: 'text-[10px] uppercase tracking-wide text-slate-500',
+        bgColor: '#f8fafc'
       },
       card: {
         nodeRoot: 'px-4 py-3 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-blue-50 text-slate-800 shadow-md shadow-sky-100',
         nodeLevel2: 'px-3 py-2 rounded-xl border border-sky-200 bg-sky-50 text-slate-800 shadow-sm shadow-sky-100',
         nodeLevel3: 'px-3 py-1.5 rounded-lg border border-sky-200 bg-sky-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-sky-500'
+        badge: 'text-[10px] uppercase tracking-wide text-sky-500',
+        bgColor: '#e0f2fe'
       },
       soft: {
         nodeRoot: 'px-4 py-3 rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 text-slate-800 shadow-md shadow-emerald-100',
         nodeLevel2: 'px-3 py-2 rounded-2xl border border-emerald-200 bg-emerald-50 text-slate-800 shadow-sm shadow-emerald-100',
         nodeLevel3: 'px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-emerald-500'
+        badge: 'text-[10px] uppercase tracking-wide text-emerald-500',
+        bgColor: '#ecfdf5'
+      },
+      dark: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/50',
+        nodeLevel2: 'px-3 py-2 rounded-xl border border-slate-500 bg-slate-800 text-black shadow-md shadow-slate-800/50',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-slate-400 bg-slate-700 text-black',
+        badge: 'text-[10px] uppercase tracking-wide text-slate-300',
+        bgColor: '#1e293b'
+      },
+      warm: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 text-slate-800 shadow-md shadow-orange-100',
+        nodeLevel2: 'px-3 py-2 rounded-xl border border-orange-200 bg-orange-50 text-slate-800 shadow-sm shadow-orange-100',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-orange-200 bg-orange-50 text-slate-800',
+        badge: 'text-[10px] uppercase tracking-wide text-orange-600',
+        bgColor: '#fff7ed'
+      },
+      cool: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 text-slate-800 shadow-md shadow-indigo-100',
+        nodeLevel2: 'px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-slate-800 shadow-sm shadow-indigo-100',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-slate-800',
+        badge: 'text-[10px] uppercase tracking-wide text-indigo-600',
+        bgColor: '#eef2ff'
+      },
+      modern: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border-2 border-pink-400 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/50 font-semibold',
+        nodeLevel2: 'px-3 py-2 rounded-xl border-2 border-pink-300 bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md shadow-pink-400/50',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-pink-500 bg-pink-500 text-black font-medium',
+        badge: 'text-[10px] uppercase tracking-wide text-pink-200',
+        bgColor: '#fdf2f8'
+      },
+      classic: {
+        nodeRoot: 'px-4 py-3 rounded-lg border-2 border-amber-600 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 shadow-md shadow-amber-200',
+        nodeLevel2: 'px-3 py-2 rounded-md border-2 border-amber-500 bg-amber-50 text-amber-900 shadow-sm shadow-amber-200',
+        nodeLevel3: 'px-3 py-1.5 rounded border border-amber-400 bg-amber-50 text-amber-900',
+        badge: 'text-[10px] uppercase tracking-wide text-amber-700',
+        bgColor: '#fffbeb'
+      },
+      vibrant: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border-2 border-violet-400 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/50 font-bold',
+        nodeLevel2: 'px-3 py-2 rounded-xl border-2 border-violet-300 bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-md shadow-violet-400/50 font-semibold',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-violet-500 bg-violet-600 text-black font-medium',
+        badge: 'text-[10px] uppercase tracking-wide text-violet-200',
+        bgColor: '#faf5ff'
+      },
+      elegant: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border border-rose-300 bg-gradient-to-r from-rose-50 via-pink-50 to-fuchsia-50 text-slate-800 shadow-md shadow-rose-100',
+        nodeLevel2: 'px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-slate-800 shadow-sm shadow-rose-100',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-slate-800',
+        badge: 'text-[10px] uppercase tracking-wide text-rose-500',
+        bgColor: '#fff1f2'
+      },
+      ocean: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-50 via-teal-50 to-blue-50 text-slate-800 shadow-md shadow-cyan-100',
+        nodeLevel2: 'px-3 py-2 rounded-xl border border-cyan-200 bg-cyan-50 text-slate-800 shadow-sm shadow-cyan-100',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-slate-800',
+        badge: 'text-[10px] uppercase tracking-wide text-cyan-600',
+        bgColor: '#ecfeff'
+      },
+      sunset: {
+        nodeRoot: 'px-4 py-3 rounded-2xl border border-red-300 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 text-slate-800 shadow-md shadow-red-100',
+        nodeLevel2: 'px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-slate-800 shadow-sm shadow-red-100',
+        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-slate-800',
+        badge: 'text-[10px] uppercase tracking-wide text-red-600',
+        bgColor: '#fef2f2'
       }
     };
 
@@ -752,6 +827,11 @@
     // ---------- 事件绑定 ----------
     document.getElementById('stylePresetSelect').addEventListener('change', (e) => {
       currentStylePreset = e.target.value;
+      const preset = stylePresets[currentStylePreset];
+      if (preset && preset.bgColor) {
+        diagramWrapper.style.backgroundColor = preset.bgColor;
+        bgColorInput.value = preset.bgColor;
+      }
       renderDiagram();
     });
 
