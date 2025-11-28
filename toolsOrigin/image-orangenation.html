@@ -482,7 +482,7 @@
             preset.nodeLevel3;
 
       const cursorClass = level > 1 ? ' cursor-grab' : '';
-      nodeDiv.className = 'node-box relative no-select' + cursorClass + ' ' + baseClass;
+      nodeDiv.className = 'node-box relative no-select inline-flex items-center justify-center leading-tight' + cursorClass + ' ' + baseClass;
       const appliedBg = node.bgColor || getDefaultBgColor(level);
       nodeDiv.style.backgroundColor = appliedBg;
 
@@ -826,6 +826,23 @@
 
     function createSnapshotSurface(stageWidth, stageHeight, backgroundColor) {
       const clone = diagramCanvas.cloneNode(true);
+      // 直接克隆会丢失 #diagramCanvas 的尺寸和 padding，导致导出时位置左移，这里同步关键的计算样式
+      const canvasStyle = window.getComputedStyle(diagramCanvas);
+      clone.style.width = canvasStyle.width;
+      clone.style.minWidth = canvasStyle.minWidth;
+      clone.style.minHeight = canvasStyle.minHeight;
+      clone.style.padding = canvasStyle.padding;
+      clone.style.boxSizing = canvasStyle.boxSizing;
+      clone.style.position = canvasStyle.position;
+
+      const clonedSvg = clone.querySelector('svg');
+      if (clonedSvg && svgEl) {
+        const wAttr = svgEl.getAttribute('width');
+        const hAttr = svgEl.getAttribute('height');
+        if (wAttr) clonedSvg.setAttribute('width', wAttr);
+        if (hAttr) clonedSvg.setAttribute('height', hAttr);
+      }
+
       clone.removeAttribute('id');
       clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
       clone.style.margin = '0';
