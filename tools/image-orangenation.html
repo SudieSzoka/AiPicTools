@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
   <link rel="stylesheet" href="styles/common.css">
@@ -11,15 +12,62 @@
   <!-- html2canvas for PNG export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
     }
+
     .no-select {
       user-select: none;
       -webkit-user-select: none;
     }
+
+    :root {
+      --preview-stage-width: 1080px;
+      --preview-stage-height: 620px;
+    }
+
+    #diagramWrapper {
+      width: min(var(--preview-stage-width), 100%);
+      height: var(--preview-stage-height);
+      box-sizing: border-box;
+    }
+
+    #diagramCanvas {
+      position: relative;
+      display: block;
+      width: 100%;
+      min-width: var(--preview-stage-width);
+      min-height: var(--preview-stage-height);
+      padding: 32px;
+      box-sizing: border-box;
+    }
+
+    /* 确保节点文字在容器内始终垂直居中（导出时也一致） */
+    .node-box {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .node-label {
+      display: inline-block;
+      line-height: 1.1;
+    }
+
+    /* 仅导出时上移文字，预览不受影响 */
+    .export-adjust .node-label {
+      transform: translateY(-7px);
+    }
+
+    #connectorSvg {
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
+
 <body class="min-h-screen bg-slate-50 text-slate-900">
 <!-- COMMON_HEADER -->
 <!-- 固定页头 -->
@@ -66,14 +114,14 @@
         </div>
 
         <div id="diagramWrapper"
-             class="relative overflow-auto rounded-xl border border-slate-200 bg-white"
-             style="min-height: 260px;">
-          <!-- SVG connectors -->
-          <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
-
-          <!-- Nodes -->
-          <div id="diagram"
-               class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
+          class="relative overflow-auto rounded-xl border border-slate-200 bg-white shadow-inner">
+          <div id="diagramCanvas" class="relative">
+            <!-- SVG connectors -->
+            <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
+            <!-- Nodes -->
+            <div id="diagram"
+              class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
+            </div>
           </div>
         </div>
       </div>
@@ -87,7 +135,7 @@
             <label class="space-y-1">
               <span class="block text-xs text-slate-500">节点样式预设</span>
               <select id="stylePresetSelect"
-                      class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
+                class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
                 <option value="minimal">简约 (Minimal)</option>
                 <option value="card">卡片 (Card)</option>
                 <option value="soft">柔和 (Soft)</option>
@@ -107,7 +155,7 @@
             <label class="space-y-1">
               <span class="block text-xs text-slate-500">连线样式</span>
               <select id="connectorStyleSelect"
-                      class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
+                class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
                 <option value="straight">直线</option>
                 <option value="smooth">圆滑曲线</option>
                 <option value="dashed">虚线直线</option>
@@ -120,10 +168,9 @@
             <label class="flex items-center gap-2">
               <span class="text-slate-600">背景颜色</span>
               <input id="bgColorInput" type="color" value="#f8fafc"
-                     class="w-9 h-9 p-0 border border-slate-300 rounded cursor-pointer bg-transparent" />
+                class="w-9 h-9 p-0 border border-slate-300 rounded cursor-pointer bg-transparent" />
             </label>
-            <button id="resetBtn"
-                    class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
+            <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
               重置结构
             </button>
           </div>
@@ -134,22 +181,23 @@
           <h2 class="text-sm font-semibold text-slate-800">导出 & 导入</h2>
           <div class="flex flex-wrap gap-2">
             <button id="exportPngBtn"
-                    class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white shadow-sm">
               导出 PNG
             </button>
             <button id="exportSvgBtn"
-                    class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition text-white shadow-sm">
               导出 SVG
             </button>
             <button id="copyBtn"
-                    class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 transition text-white shadow-sm">
               一键复制
             </button>
             <button id="saveJsonBtn"
-                    class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition shadow-sm">
               保存 JSON
             </button>
-            <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
+            <label
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
               导入 JSON
               <input id="loadJsonInput" type="file" accept="application/json" class="hidden">
             </label>
@@ -164,7 +212,7 @@
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-semibold text-slate-800">节点列表 / 操作</h2>
             <button id="addLevel2Btn"
-                    class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-sm">
               添加二级节点
             </button>
           </div>
@@ -196,6 +244,19 @@
       bgColor: getDefaultBgColor(1),
       children: []
     };
+
+    function sanitizeFileName(name) {
+      if (!name) return '';
+      return name
+        .replace(/[\\/:*?"<>|]/g, '')
+        .trim()
+        .slice(0, 80);
+    }
+
+    function getExportFileName(ext = 'png') {
+      const sanitized = sanitizeFileName(root.label) || 'orgchart';
+      return `${sanitized}.${ext}`;
+    }
 
     // 样式预设（包含背景颜色）
     const stylePresets = {
@@ -293,8 +354,18 @@
     const svgEl = document.getElementById('connectorSvg');
     const bgColorInput = document.getElementById('bgColorInput');
     const diagramWrapper = document.getElementById('diagramWrapper');
+    const diagramCanvas = document.getElementById('diagramCanvas');
     const nodeListEl = document.getElementById('nodeList');
     const connectorStyleSelect = document.getElementById('connectorStyleSelect');
+    const STAGE_DIMENSIONS = { width: 1080, height: 620 };
+    const EXPORT_MARGIN = 36;
+
+    function applyPreviewStageSize() {
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty('--preview-stage-width', STAGE_DIMENSIONS.width + 'px');
+      rootStyle.setProperty('--preview-stage-height', STAGE_DIMENSIONS.height + 'px');
+    }
+    applyPreviewStageSize();
 
     // ---------- 渲染 ----------
     function renderDiagram() {
@@ -302,20 +373,15 @@
       const preset = stylePresets[currentStylePreset];
 
       const baseLevel2GapRem = 1.5;
-      const extraGapRem = 3.5; // 固定的额外间距
-      const maxLevel3Count = root.children.reduce((m, c) => Math.max(m, c.children?.length || 0), 0);
-      const longestIndex = root.children.findIndex(
-        (c) => (c.children?.length || 0) === maxLevel3Count && maxLevel3Count > 0
-      );
 
-      // 根节点
+      // Root Wrapper
       const rootWrapper = document.createElement('div');
       rootWrapper.className = 'flex flex-col items-center gap-3 w-fit mx-auto';
 
       const rootNode = createNodeElement(root, 1, preset);
       rootWrapper.appendChild(rootNode);
 
-      // 二级节点容器
+      // Level 2 Container
       const level2Container = document.createElement('div');
       level2Container.className = 'inline-flex flex-row flex-nowrap justify-center mt-4';
       level2Container.dataset.level = '2';
@@ -332,9 +398,8 @@
         const nodeEl = createNodeElement(child, 2, preset);
         col.appendChild(nodeEl);
 
-        // 三级节点列表（垂直，固定相对父节点的左侧偏移）
+        // Level 3 Container
         const level3Container = document.createElement('div');
-        // 使用 self-start 避免被上层 items-center 居中，从而保证左侧 x 位置稳定
         level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative self-start';
         level3Container.style.marginLeft = '0px';
         level3Container.dataset.level = '3';
@@ -353,12 +418,6 @@
         });
 
         col.appendChild(level3Container);
-
-        const isLastLevel2 = index === root.children.length - 1;
-        const isLongestAnchor = index === longestIndex && !isLastLevel2;
-        const extraGap = isLongestAnchor ? extraGapRem : 0;
-        col.style.marginRight = extraGap ? `${extraGap}rem` : '0';
-
         level2Container.appendChild(col);
       });
 
@@ -366,11 +425,13 @@
       diagramEl.appendChild(rootWrapper);
 
       adjustLevel3Offsets();
-      requestAnimationFrame(drawConnectors);
+      adjustLevel2Spacing();
+      centerLevel2Container();
+      requestAnimationFrame(() => drawConnectors());
     }
 
     function adjustLevel3Offsets() {
-      const wrapperRect = diagramWrapper.getBoundingClientRect();
+      const wrapperRect = diagramCanvas.getBoundingClientRect();
       const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
       containers.forEach((container) => {
         if (!container.children.length) {
@@ -401,6 +462,55 @@
       });
     }
 
+    function adjustLevel2Spacing() {
+      const level2Container = diagramEl.querySelector('[data-level="2"][data-parent-id="' + root.id + '"]');
+      if (!level2Container) return;
+
+      const cols = Array.from(level2Container.querySelectorAll('[data-level="2"][data-node-id]'));
+      cols.forEach(col => { col.style.marginRight = '0px'; });
+      if (cols.length < 2) return;
+
+      const computed = getComputedStyle(level2Container);
+      const baseGap = parseFloat(computed.columnGap || computed.gap || computed.rowGap || '0') || 0;
+      const minGapPx = baseGap || 24; // fallback to 1.5rem
+
+      for (let i = 0; i < cols.length - 1; i++) {
+        const colRect = cols[i].getBoundingClientRect();
+        const nextRect = cols[i + 1].getBoundingClientRect();
+        const currentGap = nextRect.left - colRect.right;
+        if (currentGap < minGapPx) {
+          const extra = Math.ceil(minGapPx - currentGap);
+          cols[i].style.marginRight = `${extra}px`;
+        }
+      }
+    }
+
+    function centerLevel2Container() {
+      const level2Container = diagramEl.querySelector('[data-level="2"][data-parent-id="' + root.id + '"]');
+      if (!level2Container) return;
+
+      const cols = Array.from(level2Container.querySelectorAll('[data-level="2"][data-node-id]'));
+      level2Container.style.transform = 'translateX(0px)';
+      if (!cols.length) return;
+
+      const wrapperRect = diagramCanvas.getBoundingClientRect();
+      const minLeft = Math.min(...cols.map(col => col.getBoundingClientRect().left - wrapperRect.left));
+      const maxRight = Math.max(...cols.map(col => col.getBoundingClientRect().right - wrapperRect.left));
+      const visualCenter = (minLeft + maxRight) / 2;
+
+      const rootBox = diagramEl.querySelector('[data-node-id="' + root.id + '"] .node-box');
+      if (!rootBox) return;
+      const rootRect = rootBox.getBoundingClientRect();
+      const rootCenter = rootRect.left + rootRect.width / 2 - wrapperRect.left;
+
+      const delta = rootCenter - visualCenter;
+      if (Math.abs(delta) < 0.5) {
+        level2Container.style.transform = 'translateX(0px)';
+      } else {
+        level2Container.style.transform = `translateX(${delta}px)`;
+      }
+    }
+
     function createNodeElement(node, level, preset) {
       if (!node.bgColor) {
         node.bgColor = getDefaultBgColor(level);
@@ -414,16 +524,18 @@
       const nodeDiv = document.createElement('div');
       const baseClass =
         level === 1 ? preset.nodeRoot :
-        level === 2 ? preset.nodeLevel2 :
-        preset.nodeLevel3;
+          level === 2 ? preset.nodeLevel2 :
+            preset.nodeLevel3;
 
       const cursorClass = level > 1 ? ' cursor-grab' : '';
       nodeDiv.className = 'node-box relative no-select' + cursorClass + ' ' + baseClass;
       const appliedBg = node.bgColor || getDefaultBgColor(level);
       nodeDiv.style.backgroundColor = appliedBg;
+      nodeDiv.style.lineHeight = '1.1';
 
       // label
       const labelSpan = document.createElement('span');
+      labelSpan.className = 'node-label';
       labelSpan.textContent = node.label;
       nodeDiv.appendChild(labelSpan);
 
@@ -630,11 +742,20 @@
     }
 
     // ---------- 连线绘制 ----------
-    function drawConnectors() {
-      const wrapperRect = diagramWrapper.getBoundingClientRect();
-      svgEl.setAttribute('width', wrapperRect.width);
-      svgEl.setAttribute('height', wrapperRect.height);
-      svgEl.setAttribute('viewBox', `0 0 ${wrapperRect.width} ${wrapperRect.height}`);
+    function getFullDiagramSize() {
+      const rect = diagramCanvas.getBoundingClientRect();
+      return {
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function drawConnectors(forceSize) {
+      const wrapperRect = diagramCanvas.getBoundingClientRect();
+      const { width, height } = (forceSize && typeof forceSize === 'object') ? forceSize : getFullDiagramSize();
+      svgEl.setAttribute('width', width);
+      svgEl.setAttribute('height', height);
+      svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
       svgEl.innerHTML = '';
 
       const rootBox = diagramEl.querySelector('[data-node-id="' + root.id + '"] .node-box');
@@ -730,22 +851,213 @@
     }
 
     // ---------- 导出 / 导入 ----------
-    async function exportPng() {
-      const area = diagramWrapper;
-      const canvas = await html2canvas(area, {
-        backgroundColor: null,
-        useCORS: true,
-        scale: 2
+    async function waitForStageAssets(stageEl) {
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (err) {
+          console.warn('字体加载等待失败', err);
+        }
+      }
+      const pendingImages = Array.from(stageEl.querySelectorAll('img')).filter(img => !img.complete);
+      if (pendingImages.length) {
+        await Promise.all(
+          pendingImages.map(
+            (img) =>
+              new Promise((resolve) => {
+                img.onload = img.onerror = resolve;
+              })
+          )
+        );
+      }
+    }
+
+    function createSnapshotSurface(stageWidth, stageHeight, backgroundColor) {
+      const clone = diagramCanvas.cloneNode(true);
+      // 直接克隆会丢失 #diagramCanvas 的尺寸和 padding，导致导出时位置左移，这里同步关键的计算样式
+      const canvasStyle = window.getComputedStyle(diagramCanvas);
+      clone.style.width = canvasStyle.width;
+      clone.style.minWidth = canvasStyle.minWidth;
+      clone.style.minHeight = canvasStyle.minHeight;
+      clone.style.padding = canvasStyle.padding;
+      clone.style.boxSizing = canvasStyle.boxSizing;
+      clone.style.position = canvasStyle.position;
+      clone.classList.add('export-adjust'); // 导出时才上移文字
+
+      const clonedSvg = clone.querySelector('svg');
+      if (clonedSvg && svgEl) {
+        const wAttr = svgEl.getAttribute('width');
+        const hAttr = svgEl.getAttribute('height');
+        if (wAttr) clonedSvg.setAttribute('width', wAttr);
+        if (hAttr) clonedSvg.setAttribute('height', hAttr);
+      }
+
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      clone.style.margin = '0';
+      clone.style.left = '0';
+      clone.style.top = '0';
+      clone.style.transform = 'none';
+
+      const surface = document.createElement('div');
+      surface.style.width = `${stageWidth}px`;
+      surface.style.height = `${stageHeight}px`;
+      surface.style.boxSizing = 'border-box';
+      surface.style.padding = '0';
+      surface.style.backgroundColor = backgroundColor;
+      surface.style.display = 'flex';
+      surface.style.alignItems = 'flex-start';
+      surface.style.justifyContent = 'flex-start';
+      surface.style.position = 'relative';
+      surface.style.overflow = 'visible';
+      surface.appendChild(clone);
+
+      const host = document.createElement('div');
+      host.style.position = 'fixed';
+      host.style.left = '-4000px';
+      host.style.top = '0';
+      host.style.zIndex = '-10000';
+      // FIX: Ensure content is visible for html2canvas
+      host.style.opacity = '1';
+      host.appendChild(surface);
+      document.body.appendChild(host);
+
+      return {
+        surface,
+        cleanup: () => {
+          document.body.removeChild(host);
+        }
+      };
+    }
+
+    function measureNodeBounds(container, padding) {
+      const nodes = container.querySelectorAll('.node-box');
+      if (!nodes.length) {
+        return null;
+      }
+      const hostRect = container.getBoundingClientRect();
+      let minLeft = Infinity;
+      let minTop = Infinity;
+      let maxRight = -Infinity;
+      let maxBottom = -Infinity;
+
+      nodes.forEach((box) => {
+        const rect = box.getBoundingClientRect();
+        minLeft = Math.min(minLeft, rect.left - hostRect.left);
+        minTop = Math.min(minTop, rect.top - hostRect.top);
+        maxRight = Math.max(maxRight, rect.right - hostRect.left);
+        maxBottom = Math.max(maxBottom, rect.bottom - hostRect.top);
       });
-      canvas.toBlob((blob) => {
-        if (!blob) return;
+
+      return {
+        left: Math.max(0, minLeft - padding),
+        top: Math.max(0, minTop - padding),
+        right: Math.min(hostRect.width, maxRight + padding),
+        bottom: Math.min(hostRect.height, maxBottom + padding)
+      };
+    }
+
+    function cropCanvasToBounds(canvas, bounds, scale) {
+      if (!bounds) return canvas;
+      const cropCanvas = document.createElement('canvas');
+      const cropWidth = Math.max(1, Math.round((bounds.right - bounds.left) * scale));
+      const cropHeight = Math.max(1, Math.round((bounds.bottom - bounds.top) * scale));
+      cropCanvas.width = cropWidth;
+      cropCanvas.height = cropHeight;
+
+      const sourceX = Math.max(0, Math.floor(bounds.left * scale));
+      const sourceY = Math.max(0, Math.floor(bounds.top * scale));
+
+      cropCanvas.getContext('2d').drawImage(
+        canvas,
+        sourceX,
+        sourceY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        cropWidth,
+        cropHeight
+      );
+
+      return cropCanvas;
+    }
+
+    async function captureFullDiagramCanvas() {
+      drawConnectors();
+      await waitForStageAssets(diagramWrapper);
+      // Double RAF to ensure styles are applied
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const wrapperBg = window.getComputedStyle(diagramWrapper).backgroundColor || '#ffffff';
+      const exportScale = Math.min(3, Math.max(window.devicePixelRatio || 1, 2));
+      const canvasRect = diagramCanvas.getBoundingClientRect();
+      const stageWidth = Math.ceil(Math.max(diagramCanvas.scrollWidth, canvasRect.width, STAGE_DIMENSIONS.width));
+      const stageHeight = Math.ceil(Math.max(diagramCanvas.scrollHeight, canvasRect.height, STAGE_DIMENSIONS.height));
+
+      const snapshot = createSnapshotSurface(stageWidth, stageHeight, wrapperBg);
+
+      // FIX: Add delay to allow DOM to render
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        const bounds = measureNodeBounds(snapshot.surface, EXPORT_MARGIN);
+        const baseCanvas = await html2canvas(snapshot.surface, {
+          backgroundColor: wrapperBg,
+          useCORS: true,
+          allowTaint: true,
+          scale: exportScale,
+          width: stageWidth,
+          height: stageHeight,
+          letterRendering: true,
+          foreignObjectRendering: false, // FIX: Disable foreignObjectRendering
+          logging: true // FIX: Enable logging
+        });
+        return cropCanvasToBounds(baseCanvas, bounds, exportScale);
+      } finally {
+        snapshot.cleanup();
+      }
+    }
+
+    function canvasToPngBlob(canvas) {
+      if (canvas.toBlob) {
+        return new Promise((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('无法生成 PNG blob'));
+            }
+          }, 'image/png');
+        });
+      }
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1] || '';
+      const binary = atob(base64);
+      const length = binary.length;
+      const buffer = new Uint8Array(length);
+      for (let i = 0; i < length; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      return Promise.resolve(new Blob([buffer], { type: 'image/png' }));
+    }
+
+    async function exportPng() {
+      try {
+        const canvas = await captureFullDiagramCanvas();
+        const blob = await canvasToPngBlob(canvas);
         const url = URL.createObjectURL(blob);
+        const filename = getExportFileName('png');
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'orgchart.png';
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-      });
+      } catch (error) {
+        console.error('导出 PNG 失败', error);
+        alert('导出 PNG 失败，请稍后再试');
+      }
     }
 
     function exportSvg() {
@@ -761,9 +1073,8 @@
 
     async function copyAll() {
       try {
-        const area = diagramWrapper;
-        const canvas = await html2canvas(area, { backgroundColor: null, scale: 2 });
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const canvas = await captureFullDiagramCanvas();
+        const blob = await canvasToPngBlob(canvas);
         if (blob && navigator.clipboard && window.ClipboardItem) {
           const item = new ClipboardItem({ 'image/png': blob });
           await navigator.clipboard.write([item]);
@@ -774,7 +1085,7 @@
         console.warn('复制 PNG 失败，fallback 复制 JSON', e);
       }
 
-      // fallback：复制 JSON
+      // fallback: copy JSON
       await navigator.clipboard.writeText(JSON.stringify(root, null, 2));
       alert('已复制 JSON 到剪贴板');
     }
@@ -868,6 +1179,9 @@
     });
 
     window.addEventListener('resize', () => {
+      adjustLevel3Offsets();
+      adjustLevel2Spacing();
+      centerLevel2Container();
       drawConnectors();
     });
 
@@ -925,4 +1239,5 @@
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>
+
 </html>

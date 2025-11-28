@@ -40,6 +40,24 @@
       box-sizing: border-box;
     }
 
+    /* 确保节点文字在容器内始终垂直居中（导出时也一致） */
+    .node-box {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .node-label {
+      display: inline-block;
+      line-height: 1.1;
+    }
+
+    /* 仅导出时上移文字，预览不受影响 */
+    .export-adjust .node-label {
+      transform: translateY(-7px);
+    }
+
     #connectorSvg {
       width: 100%;
       height: 100%;
@@ -482,12 +500,14 @@
             preset.nodeLevel3;
 
       const cursorClass = level > 1 ? ' cursor-grab' : '';
-      nodeDiv.className = 'node-box relative no-select inline-flex items-center justify-center leading-tight' + cursorClass + ' ' + baseClass;
+      nodeDiv.className = 'node-box relative no-select' + cursorClass + ' ' + baseClass;
       const appliedBg = node.bgColor || getDefaultBgColor(level);
       nodeDiv.style.backgroundColor = appliedBg;
+      nodeDiv.style.lineHeight = '1.1';
 
       // label
       const labelSpan = document.createElement('span');
+      labelSpan.className = 'node-label';
       labelSpan.textContent = node.label;
       nodeDiv.appendChild(labelSpan);
 
@@ -834,6 +854,7 @@
       clone.style.padding = canvasStyle.padding;
       clone.style.boxSizing = canvasStyle.boxSizing;
       clone.style.position = canvasStyle.position;
+      clone.classList.add('export-adjust'); // 导出时才上移文字
 
       const clonedSvg = clone.querySelector('svg');
       if (clonedSvg && svgEl) {
