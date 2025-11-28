@@ -40,12 +40,13 @@
         <div id="diagramWrapper"
              class="relative overflow-auto rounded-xl border border-slate-200 bg-white"
              style="min-height: 260px;">
-          <!-- SVG connectors -->
-          <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
-
-          <!-- Nodes -->
-          <div id="diagram"
-               class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
+          <div id="diagramCanvas" class="relative inline-block">
+            <!-- SVG connectors -->
+            <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
+            <!-- Nodes -->
+            <div id="diagram"
+                 class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
+            </div>
           </div>
         </div>
       </div>
@@ -265,6 +266,7 @@
     const svgEl = document.getElementById('connectorSvg');
     const bgColorInput = document.getElementById('bgColorInput');
     const diagramWrapper = document.getElementById('diagramWrapper');
+    const diagramCanvas = document.getElementById('diagramCanvas');
     const nodeListEl = document.getElementById('nodeList');
     const connectorStyleSelect = document.getElementById('connectorStyleSelect');
 
@@ -332,7 +334,7 @@
       requestAnimationFrame(drawConnectors);
     }
     function adjustLevel3Offsets() {
-      const wrapperRect = diagramWrapper.getBoundingClientRect();
+      const wrapperRect = diagramCanvas.getBoundingClientRect();
       const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
       containers.forEach((container) => {
         if (!container.children.length) {
@@ -394,7 +396,7 @@
       level2Container.style.transform = 'translateX(0px)';
       if (!cols.length) return;
 
-      const wrapperRect = diagramWrapper.getBoundingClientRect();
+      const wrapperRect = diagramCanvas.getBoundingClientRect();
       const minLeft = Math.min(...cols.map(col => col.getBoundingClientRect().left - wrapperRect.left));
       const maxRight = Math.max(...cols.map(col => col.getBoundingClientRect().right - wrapperRect.left));
       const visualCenter = (minLeft + maxRight) / 2;
@@ -641,11 +643,20 @@
     }
 
     // ---------- 连线绘制 ----------
-    function drawConnectors() {
-      const wrapperRect = diagramWrapper.getBoundingClientRect();
-      svgEl.setAttribute('width', wrapperRect.width);
-      svgEl.setAttribute('height', wrapperRect.height);
-      svgEl.setAttribute('viewBox', `0 0 ${wrapperRect.width} ${wrapperRect.height}`);
+    function getFullDiagramSize() {
+      const rect = diagramCanvas.getBoundingClientRect();
+      return {
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function drawConnectors(forceSize) {
+      const wrapperRect = diagramCanvas.getBoundingClientRect();
+      const { width, height } = forceSize || getFullDiagramSize();
+      svgEl.setAttribute('width', width);
+      svgEl.setAttribute('height', height);
+      svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
       svgEl.innerHTML = '';
 
       const rootBox = diagramEl.querySelector('[data-node-id="' + root.id + '"] .node-box');
@@ -741,13 +752,22 @@
     }
 
     // ---------- 导出 / 导入 ----------
-    async function exportPng() {
-      const area = diagramWrapper;
-      const canvas = await html2canvas(area, {
+    async function captureFullDiagramCanvas() {
+      drawConnectors();
+      const { width, height } = getFullDiagramSize();
+      return await html2canvas(diagramCanvas, {
         backgroundColor: null,
         useCORS: true,
-        scale: 2
+        scale: window.devicePixelRatio || 2,
+        width,
+        height,
+        letterRendering: true,
+        foreignObjectRendering: true
       });
+    }
+
+    async function exportPng() {
+      const canvas = await captureFullDiagramCanvas();
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
@@ -772,8 +792,7 @@
 
     async function copyAll() {
       try {
-        const area = diagramWrapper;
-        const canvas = await html2canvas(area, { backgroundColor: null, scale: 2 });
+        const canvas = await captureFullDiagramCanvas();
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
         if (blob && navigator.clipboard && window.ClipboardItem) {
           const item = new ClipboardItem({ 'image/png': blob });
