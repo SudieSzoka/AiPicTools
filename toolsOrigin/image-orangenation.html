@@ -15,6 +15,28 @@
       user-select: none;
       -webkit-user-select: none;
     }
+    :root {
+      --preview-stage-width: 1080px;
+      --preview-stage-height: 620px;
+    }
+    #diagramWrapper {
+      width: min(var(--preview-stage-width), 100%);
+      height: var(--preview-stage-height);
+      box-sizing: border-box;
+    }
+    #diagramCanvas {
+      position: relative;
+      display: block;
+      width: 100%;
+      min-width: var(--preview-stage-width);
+      min-height: var(--preview-stage-height);
+      padding: 32px;
+      box-sizing: border-box;
+    }
+    #connectorSvg {
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
@@ -38,9 +60,8 @@
         </div>
 
         <div id="diagramWrapper"
-             class="relative overflow-auto rounded-xl border border-slate-200 bg-white"
-             style="min-height: 260px;">
-          <div id="diagramCanvas" class="relative inline-block">
+             class="relative overflow-auto rounded-xl border border-slate-200 bg-white shadow-inner">
+          <div id="diagramCanvas" class="relative">
             <!-- SVG connectors -->
             <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
             <!-- Nodes -->
@@ -170,6 +191,19 @@
       children: []
     };
 
+    function sanitizeFileName(name) {
+      if (!name) return '';
+      return name
+        .replace(/[\\/:*?"<>|]/g, '')
+        .trim()
+        .slice(0, 80);
+    }
+
+    function getExportFileName(ext = 'png') {
+      const sanitized = sanitizeFileName(root.label) || 'orgchart';
+      return `${sanitized}.${ext}`;
+    }
+
     // 样式预设（包含背景颜色）
     const stylePresets = {
       minimal: {
@@ -269,6 +303,15 @@
     const diagramCanvas = document.getElementById('diagramCanvas');
     const nodeListEl = document.getElementById('nodeList');
     const connectorStyleSelect = document.getElementById('connectorStyleSelect');
+    const STAGE_DIMENSIONS = { width: 1080, height: 620 };
+    const EXPORT_MARGIN = 36;
+
+    function applyPreviewStageSize() {
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty('--preview-stage-width', STAGE_DIMENSIONS.width + 'px');
+      rootStyle.setProperty('--preview-stage-height', STAGE_DIMENSIONS.height + 'px');
+    }
+    applyPreviewStageSize();
 
     // ---------- 渲染 ----------
     function renderDiagram() {
@@ -752,31 +795,188 @@
     }
 
     // ---------- 导出 / 导入 ----------
+    async function waitForStageAssets(stageEl) {
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (err) {
+          console.warn('字体加载等待失败', err);
+        }
+      }
+      const pendingImages = Array.from(stageEl.querySelectorAll('img')).filter(img => !img.complete);
+      if (pendingImages.length) {
+        await Promise.all(
+          pendingImages.map(
+            (img) =>
+              new Promise((resolve) => {
+                img.onload = img.onerror = resolve;
+              })
+          )
+        );
+      }
+    }
+
+    function createSnapshotSurface(stageWidth, stageHeight, backgroundColor) {
+      const clone = diagramCanvas.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      clone.style.margin = '0';
+      clone.style.left = '0';
+      clone.style.top = '0';
+      clone.style.transform = 'none';
+
+      const surface = document.createElement('div');
+      surface.style.width = `${stageWidth}px`;
+      surface.style.height = `${stageHeight}px`;
+      surface.style.boxSizing = 'border-box';
+      surface.style.padding = '0';
+      surface.style.backgroundColor = backgroundColor;
+      surface.style.display = 'flex';
+      surface.style.alignItems = 'flex-start';
+      surface.style.justifyContent = 'flex-start';
+      surface.style.position = 'relative';
+      surface.style.overflow = 'visible';
+      surface.appendChild(clone);
+
+      const host = document.createElement('div');
+      host.style.position = 'fixed';
+      host.style.left = '-4000px';
+      host.style.top = '0';
+      host.style.pointerEvents = 'none';
+      host.style.visibility = 'hidden';
+      host.appendChild(surface);
+      document.body.appendChild(host);
+
+      return {
+        surface,
+        cleanup: () => {
+          document.body.removeChild(host);
+        }
+      };
+    }
+
+    function measureNodeBounds(container, padding) {
+      const nodes = container.querySelectorAll('.node-box');
+      if (!nodes.length) {
+        return null;
+      }
+      const hostRect = container.getBoundingClientRect();
+      let minLeft = Infinity;
+      let minTop = Infinity;
+      let maxRight = -Infinity;
+      let maxBottom = -Infinity;
+
+      nodes.forEach((box) => {
+        const rect = box.getBoundingClientRect();
+        minLeft = Math.min(minLeft, rect.left - hostRect.left);
+        minTop = Math.min(minTop, rect.top - hostRect.top);
+        maxRight = Math.max(maxRight, rect.right - hostRect.left);
+        maxBottom = Math.max(maxBottom, rect.bottom - hostRect.top);
+      });
+
+      return {
+        left: Math.max(0, minLeft - padding),
+        top: Math.max(0, minTop - padding),
+        right: Math.min(hostRect.width, maxRight + padding),
+        bottom: Math.min(hostRect.height, maxBottom + padding)
+      };
+    }
+
+    function cropCanvasToBounds(canvas, bounds, scale) {
+      if (!bounds) return canvas;
+      const cropCanvas = document.createElement('canvas');
+      const cropWidth = Math.max(1, Math.round((bounds.right - bounds.left) * scale));
+      const cropHeight = Math.max(1, Math.round((bounds.bottom - bounds.top) * scale));
+      cropCanvas.width = cropWidth;
+      cropCanvas.height = cropHeight;
+
+      const sourceX = Math.max(0, Math.floor(bounds.left * scale));
+      const sourceY = Math.max(0, Math.floor(bounds.top * scale));
+
+      cropCanvas.getContext('2d').drawImage(
+        canvas,
+        sourceX,
+        sourceY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        cropWidth,
+        cropHeight
+      );
+
+      return cropCanvas;
+    }
+
     async function captureFullDiagramCanvas() {
       drawConnectors();
-      const { width, height } = getFullDiagramSize();
-      return await html2canvas(diagramCanvas, {
-        backgroundColor: null,
-        useCORS: true,
-        scale: window.devicePixelRatio || 2,
-        width,
-        height,
-        letterRendering: true,
-        foreignObjectRendering: true
-      });
+      await waitForStageAssets(diagramWrapper);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wrapperBg = window.getComputedStyle(diagramWrapper).backgroundColor || '#ffffff';
+      const exportScale = Math.min(3, Math.max(window.devicePixelRatio || 1, 2));
+      const canvasRect = diagramCanvas.getBoundingClientRect();
+      const stageWidth = Math.ceil(Math.max(diagramCanvas.scrollWidth, canvasRect.width, STAGE_DIMENSIONS.width));
+      const stageHeight = Math.ceil(Math.max(diagramCanvas.scrollHeight, canvasRect.height, STAGE_DIMENSIONS.height));
+
+      const snapshot = createSnapshotSurface(stageWidth, stageHeight, wrapperBg);
+      try {
+        const bounds = measureNodeBounds(snapshot.surface, EXPORT_MARGIN);
+        const baseCanvas = await html2canvas(snapshot.surface, {
+          backgroundColor: wrapperBg,
+          useCORS: true,
+          scale: exportScale,
+          width: stageWidth,
+          height: stageHeight,
+          letterRendering: true,
+          foreignObjectRendering: true,
+          logging: false
+        });
+        return cropCanvasToBounds(baseCanvas, bounds, exportScale);
+      } finally {
+        snapshot.cleanup();
+      }
+    }
+
+    function canvasToPngBlob(canvas) {
+      if (canvas.toBlob) {
+        return new Promise((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('\u65e0\u6cd5\u751f\u6210 PNG blob'));
+            }
+          }, 'image/png');
+        });
+      }
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1] || '';
+      const binary = atob(base64);
+      const length = binary.length;
+      const buffer = new Uint8Array(length);
+      for (let i = 0; i < length; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      return Promise.resolve(new Blob([buffer], { type: 'image/png' }));
     }
 
     async function exportPng() {
-      const canvas = await captureFullDiagramCanvas();
-      canvas.toBlob((blob) => {
-        if (!blob) return;
+      try {
+        const canvas = await captureFullDiagramCanvas();
+        const blob = await canvasToPngBlob(canvas);
         const url = URL.createObjectURL(blob);
+        const filename = getExportFileName('png');
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'orgchart.png';
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-      });
+      } catch (error) {
+        console.error('\u5bfc\u51fa PNG \u5931\u8d25', error);
+        alert('\u5bfc\u51fa PNG \u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5');
+      }
     }
 
     function exportSvg() {
@@ -793,20 +993,20 @@
     async function copyAll() {
       try {
         const canvas = await captureFullDiagramCanvas();
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const blob = await canvasToPngBlob(canvas);
         if (blob && navigator.clipboard && window.ClipboardItem) {
           const item = new ClipboardItem({ 'image/png': blob });
           await navigator.clipboard.write([item]);
-          alert('PNG 已复制到剪贴板');
+          alert('PNG \u5df2\u590d\u5236\u5230\u526a\u8d34\u677f');
           return;
         }
       } catch (e) {
-        console.warn('复制 PNG 失败，fallback 复制 JSON', e);
+        console.warn('\u590d\u5236 PNG \u5931\u8d25\uff0cfallback \u590d\u5236 JSON', e);
       }
 
-      // fallback：复制 JSON
+      // fallback: copy JSON
       await navigator.clipboard.writeText(JSON.stringify(root, null, 2));
-      alert('已复制 JSON 到剪贴板');
+      alert('\u5df2\u590d\u5236 JSON \u5230\u526a\u8d34\u677f');
     }
 
     function saveJson() {
