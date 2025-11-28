@@ -274,20 +274,15 @@
       const preset = stylePresets[currentStylePreset];
 
       const baseLevel2GapRem = 1.5;
-      const extraGapRem = 3.5; // 固定的额外间距
-      const maxLevel3Count = root.children.reduce((m, c) => Math.max(m, c.children?.length || 0), 0);
-      const longestIndex = root.children.findIndex(
-        (c) => (c.children?.length || 0) === maxLevel3Count && maxLevel3Count > 0
-      );
 
-      // 根节点
+      // ???
       const rootWrapper = document.createElement('div');
       rootWrapper.className = 'flex flex-col items-center gap-3 w-fit mx-auto';
 
       const rootNode = createNodeElement(root, 1, preset);
       rootWrapper.appendChild(rootNode);
 
-      // 二级节点容器
+      // ??????
       const level2Container = document.createElement('div');
       level2Container.className = 'inline-flex flex-row flex-nowrap justify-center mt-4';
       level2Container.dataset.level = '2';
@@ -304,9 +299,9 @@
         const nodeEl = createNodeElement(child, 2, preset);
         col.appendChild(nodeEl);
 
-        // 三级节点列表（垂直，固定相对父节点的左侧偏移）
+        // ????????????????????????
         const level3Container = document.createElement('div');
-        // 使用 self-start 避免被上层 items-center 居中，从而保证左侧 x 位置稳定
+        // ?? self-start ????? items-center ????????? x ????
         level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative self-start';
         level3Container.style.marginLeft = '0px';
         level3Container.dataset.level = '3';
@@ -325,12 +320,6 @@
         });
 
         col.appendChild(level3Container);
-
-        const isLastLevel2 = index === root.children.length - 1;
-        const isLongestAnchor = index === longestIndex && !isLastLevel2;
-        const extraGap = isLongestAnchor ? extraGapRem : 0;
-        col.style.marginRight = extraGap ? `${extraGap}rem` : '0';
-
         level2Container.appendChild(col);
       });
 
@@ -338,9 +327,10 @@
       diagramEl.appendChild(rootWrapper);
 
       adjustLevel3Offsets();
+      adjustLevel2Spacing();
+      centerLevel2Container();
       requestAnimationFrame(drawConnectors);
     }
-
     function adjustLevel3Offsets() {
       const wrapperRect = diagramWrapper.getBoundingClientRect();
       const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
@@ -371,6 +361,55 @@
 
         container.style.transform = 'translateX(' + deltaX + 'px)';
       });
+    }
+
+    function adjustLevel2Spacing() {
+      const level2Container = diagramEl.querySelector('[data-level="2"][data-parent-id="' + root.id + '"]');
+      if (!level2Container) return;
+
+      const cols = Array.from(level2Container.querySelectorAll('[data-level="2"][data-node-id]'));
+      cols.forEach(col => { col.style.marginRight = '0px'; });
+      if (cols.length < 2) return;
+
+      const computed = getComputedStyle(level2Container);
+      const baseGap = parseFloat(computed.columnGap || computed.gap || computed.rowGap || '0') || 0;
+      const minGapPx = baseGap || 24; // fallback to 1.5rem
+
+      for (let i = 0; i < cols.length - 1; i++) {
+        const colRect = cols[i].getBoundingClientRect();
+        const nextRect = cols[i + 1].getBoundingClientRect();
+        const currentGap = nextRect.left - colRect.right;
+        if (currentGap < minGapPx) {
+          const extra = Math.ceil(minGapPx - currentGap);
+          cols[i].style.marginRight = `${extra}px`;
+        }
+      }
+    }
+
+    function centerLevel2Container() {
+      const level2Container = diagramEl.querySelector('[data-level="2"][data-parent-id="' + root.id + '"]');
+      if (!level2Container) return;
+
+      const cols = Array.from(level2Container.querySelectorAll('[data-level="2"][data-node-id]'));
+      level2Container.style.transform = 'translateX(0px)';
+      if (!cols.length) return;
+
+      const wrapperRect = diagramWrapper.getBoundingClientRect();
+      const minLeft = Math.min(...cols.map(col => col.getBoundingClientRect().left - wrapperRect.left));
+      const maxRight = Math.max(...cols.map(col => col.getBoundingClientRect().right - wrapperRect.left));
+      const visualCenter = (minLeft + maxRight) / 2;
+
+      const rootBox = diagramEl.querySelector('[data-node-id=\"' + root.id + '\"] .node-box');
+      if (!rootBox) return;
+      const rootRect = rootBox.getBoundingClientRect();
+      const rootCenter = rootRect.left + rootRect.width / 2 - wrapperRect.left;
+
+      const delta = rootCenter - visualCenter;
+      if (Math.abs(delta) < 0.5) {
+        level2Container.style.transform = 'translateX(0px)';
+      } else {
+        level2Container.style.transform = `translateX(${delta}px)`;
+      }
     }
 
     function createNodeElement(node, level, preset) {
@@ -840,6 +879,9 @@
     });
 
     window.addEventListener('resize', () => {
+      adjustLevel3Offsets();
+      adjustLevel2Spacing();
+      centerLevel2Container();
       drawConnectors();
     });
 
