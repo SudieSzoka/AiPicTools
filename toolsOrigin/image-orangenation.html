@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <title>OrgChart Builder - toolsOrigin</title>
@@ -8,22 +9,27 @@
   <!-- html2canvas for PNG export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
     }
+
     .no-select {
       user-select: none;
       -webkit-user-select: none;
     }
+
     :root {
       --preview-stage-width: 1080px;
       --preview-stage-height: 620px;
     }
+
     #diagramWrapper {
       width: min(var(--preview-stage-width), 100%);
       height: var(--preview-stage-height);
       box-sizing: border-box;
     }
+
     #diagramCanvas {
       position: relative;
       display: block;
@@ -33,12 +39,14 @@
       padding: 32px;
       box-sizing: border-box;
     }
+
     #connectorSvg {
       width: 100%;
       height: 100%;
     }
   </style>
 </head>
+
 <body class="min-h-screen bg-slate-50 text-slate-900">
   <div class="max-w-6xl mx-auto py-6 px-4 space-y-4">
     <!-- Header -->
@@ -60,13 +68,13 @@
         </div>
 
         <div id="diagramWrapper"
-             class="relative overflow-auto rounded-xl border border-slate-200 bg-white shadow-inner">
+          class="relative overflow-auto rounded-xl border border-slate-200 bg-white shadow-inner">
           <div id="diagramCanvas" class="relative">
             <!-- SVG connectors -->
             <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
             <!-- Nodes -->
             <div id="diagram"
-                 class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
+              class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
             </div>
           </div>
         </div>
@@ -81,7 +89,7 @@
             <label class="space-y-1">
               <span class="block text-xs text-slate-500">节点样式预设</span>
               <select id="stylePresetSelect"
-                      class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
+                class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
                 <option value="minimal">简约 (Minimal)</option>
                 <option value="card">卡片 (Card)</option>
                 <option value="soft">柔和 (Soft)</option>
@@ -101,7 +109,7 @@
             <label class="space-y-1">
               <span class="block text-xs text-slate-500">连线样式</span>
               <select id="connectorStyleSelect"
-                      class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
+                class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
                 <option value="straight">直线</option>
                 <option value="smooth">圆滑曲线</option>
                 <option value="dashed">虚线直线</option>
@@ -114,10 +122,9 @@
             <label class="flex items-center gap-2">
               <span class="text-slate-600">背景颜色</span>
               <input id="bgColorInput" type="color" value="#f8fafc"
-                     class="w-9 h-9 p-0 border border-slate-300 rounded cursor-pointer bg-transparent" />
+                class="w-9 h-9 p-0 border border-slate-300 rounded cursor-pointer bg-transparent" />
             </label>
-            <button id="resetBtn"
-                    class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
+            <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
               重置结构
             </button>
           </div>
@@ -128,22 +135,23 @@
           <h2 class="text-sm font-semibold text-slate-800">导出 & 导入</h2>
           <div class="flex flex-wrap gap-2">
             <button id="exportPngBtn"
-                    class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white shadow-sm">
               导出 PNG
             </button>
             <button id="exportSvgBtn"
-                    class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition text-white shadow-sm">
               导出 SVG
             </button>
             <button id="copyBtn"
-                    class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 transition text-white shadow-sm">
               一键复制
             </button>
             <button id="saveJsonBtn"
-                    class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition shadow-sm">
               保存 JSON
             </button>
-            <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
+            <label
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
               导入 JSON
               <input id="loadJsonInput" type="file" accept="application/json" class="hidden">
             </label>
@@ -158,7 +166,7 @@
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-semibold text-slate-800">节点列表 / 操作</h2>
             <button id="addLevel2Btn"
-                    class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-sm">
+              class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-sm">
               添加二级节点
             </button>
           </div>
@@ -320,14 +328,14 @@
 
       const baseLevel2GapRem = 1.5;
 
-      // ???
+      // Root Wrapper
       const rootWrapper = document.createElement('div');
       rootWrapper.className = 'flex flex-col items-center gap-3 w-fit mx-auto';
 
       const rootNode = createNodeElement(root, 1, preset);
       rootWrapper.appendChild(rootNode);
 
-      // ??????
+      // Level 2 Container
       const level2Container = document.createElement('div');
       level2Container.className = 'inline-flex flex-row flex-nowrap justify-center mt-4';
       level2Container.dataset.level = '2';
@@ -344,9 +352,8 @@
         const nodeEl = createNodeElement(child, 2, preset);
         col.appendChild(nodeEl);
 
-        // ????????????????????????
+        // Level 3 Container
         const level3Container = document.createElement('div');
-        // ?? self-start ????? items-center ????????? x ????
         level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative self-start';
         level3Container.style.marginLeft = '0px';
         level3Container.dataset.level = '3';
@@ -374,8 +381,9 @@
       adjustLevel3Offsets();
       adjustLevel2Spacing();
       centerLevel2Container();
-      requestAnimationFrame(drawConnectors);
+      requestAnimationFrame(() => drawConnectors());
     }
+
     function adjustLevel3Offsets() {
       const wrapperRect = diagramCanvas.getBoundingClientRect();
       const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
@@ -444,7 +452,7 @@
       const maxRight = Math.max(...cols.map(col => col.getBoundingClientRect().right - wrapperRect.left));
       const visualCenter = (minLeft + maxRight) / 2;
 
-      const rootBox = diagramEl.querySelector('[data-node-id=\"' + root.id + '\"] .node-box');
+      const rootBox = diagramEl.querySelector('[data-node-id="' + root.id + '"] .node-box');
       if (!rootBox) return;
       const rootRect = rootBox.getBoundingClientRect();
       const rootCenter = rootRect.left + rootRect.width / 2 - wrapperRect.left;
@@ -470,8 +478,8 @@
       const nodeDiv = document.createElement('div');
       const baseClass =
         level === 1 ? preset.nodeRoot :
-        level === 2 ? preset.nodeLevel2 :
-        preset.nodeLevel3;
+          level === 2 ? preset.nodeLevel2 :
+            preset.nodeLevel3;
 
       const cursorClass = level > 1 ? ' cursor-grab' : '';
       nodeDiv.className = 'node-box relative no-select' + cursorClass + ' ' + baseClass;
@@ -696,7 +704,7 @@
 
     function drawConnectors(forceSize) {
       const wrapperRect = diagramCanvas.getBoundingClientRect();
-      const { width, height } = forceSize || getFullDiagramSize();
+      const { width, height } = (forceSize && typeof forceSize === 'object') ? forceSize : getFullDiagramSize();
       svgEl.setAttribute('width', width);
       svgEl.setAttribute('height', height);
       svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -842,8 +850,9 @@
       host.style.position = 'fixed';
       host.style.left = '-4000px';
       host.style.top = '0';
-      host.style.pointerEvents = 'none';
-      host.style.visibility = 'hidden';
+      host.style.zIndex = '-10000';
+      // FIX: Ensure content is visible for html2canvas
+      host.style.opacity = '1';
       host.appendChild(surface);
       document.body.appendChild(host);
 
@@ -911,7 +920,8 @@
     async function captureFullDiagramCanvas() {
       drawConnectors();
       await waitForStageAssets(diagramWrapper);
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      // Double RAF to ensure styles are applied
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       const wrapperBg = window.getComputedStyle(diagramWrapper).backgroundColor || '#ffffff';
       const exportScale = Math.min(3, Math.max(window.devicePixelRatio || 1, 2));
@@ -920,17 +930,22 @@
       const stageHeight = Math.ceil(Math.max(diagramCanvas.scrollHeight, canvasRect.height, STAGE_DIMENSIONS.height));
 
       const snapshot = createSnapshotSurface(stageWidth, stageHeight, wrapperBg);
+
+      // FIX: Add delay to allow DOM to render
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       try {
         const bounds = measureNodeBounds(snapshot.surface, EXPORT_MARGIN);
         const baseCanvas = await html2canvas(snapshot.surface, {
           backgroundColor: wrapperBg,
           useCORS: true,
+          allowTaint: true,
           scale: exportScale,
           width: stageWidth,
           height: stageHeight,
           letterRendering: true,
-          foreignObjectRendering: true,
-          logging: false
+          foreignObjectRendering: false, // FIX: Disable foreignObjectRendering
+          logging: true // FIX: Enable logging
         });
         return cropCanvasToBounds(baseCanvas, bounds, exportScale);
       } finally {
@@ -945,7 +960,7 @@
             if (blob) {
               resolve(blob);
             } else {
-              reject(new Error('\u65e0\u6cd5\u751f\u6210 PNG blob'));
+              reject(new Error('无法生成 PNG blob'));
             }
           }, 'image/png');
         });
@@ -974,8 +989,8 @@
         a.click();
         URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('\u5bfc\u51fa PNG \u5931\u8d25', error);
-        alert('\u5bfc\u51fa PNG \u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5');
+        console.error('导出 PNG 失败', error);
+        alert('导出 PNG 失败，请稍后再试');
       }
     }
 
@@ -997,16 +1012,16 @@
         if (blob && navigator.clipboard && window.ClipboardItem) {
           const item = new ClipboardItem({ 'image/png': blob });
           await navigator.clipboard.write([item]);
-          alert('PNG \u5df2\u590d\u5236\u5230\u526a\u8d34\u677f');
+          alert('PNG 已复制到剪贴板');
           return;
         }
       } catch (e) {
-        console.warn('\u590d\u5236 PNG \u5931\u8d25\uff0cfallback \u590d\u5236 JSON', e);
+        console.warn('复制 PNG 失败，fallback 复制 JSON', e);
       }
 
       // fallback: copy JSON
       await navigator.clipboard.writeText(JSON.stringify(root, null, 2));
-      alert('\u5df2\u590d\u5236 JSON \u5230\u526a\u8d34\u677f');
+      alert('已复制 JSON 到剪贴板');
     }
 
     function saveJson() {
@@ -1111,4 +1126,5 @@
     renderAll();
   </script>
 </body>
+
 </html>
