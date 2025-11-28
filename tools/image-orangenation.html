@@ -226,6 +226,13 @@
       diagramEl.innerHTML = '';
       const preset = stylePresets[currentStylePreset];
 
+      const baseLevel2GapRem = 1.5;
+      const extraGapRem = 3.5; // 固定的额外间距
+      const maxLevel3Count = root.children.reduce((m, c) => Math.max(m, c.children?.length || 0), 0);
+      const longestIndex = root.children.findIndex(
+        (c) => (c.children?.length || 0) === maxLevel3Count && maxLevel3Count > 0
+      );
+
       // 根节点
       const rootWrapper = document.createElement('div');
       rootWrapper.className = 'flex flex-col items-center gap-3 w-fit mx-auto';
@@ -235,12 +242,10 @@
 
       // 二级节点容器
       const level2Container = document.createElement('div');
-      level2Container.className = 'inline-flex flex-row flex-nowrap justify-center gap-6 mt-4';
+      level2Container.className = 'inline-flex flex-row flex-nowrap justify-center mt-4';
       level2Container.dataset.level = '2';
       level2Container.dataset.parentId = root.id;
-      const maxLevel3Count = root.children.reduce((m, c) => Math.max(m, c.children?.length || 0), 0);
-      const hasLevel3 = maxLevel3Count > 0;
-      level2Container.style.gap = hasLevel3 ? `${3 + maxLevel3Count * 0.8}rem` : '1.5rem';
+      level2Container.style.gap = `${baseLevel2GapRem}rem`;
 
       root.children.forEach((child, index) => {
         const col = document.createElement('div');
@@ -252,9 +257,10 @@
         const nodeEl = createNodeElement(child, 2, preset);
         col.appendChild(nodeEl);
 
-        // 三级节点列表（垂直，对齐父节点中心稍向右偏移，偏移值后续按父节点宽度计算）
+        // 三级节点列表（垂直，固定相对父节点的左侧偏移）
         const level3Container = document.createElement('div');
-        level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative';
+        // 使用 self-start 避免被上层 items-center 居中，从而保证左侧 x 位置稳定
+        level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative self-start';
         level3Container.style.marginLeft = '0px';
         level3Container.dataset.level = '3';
         level3Container.dataset.parentId = child.id;
@@ -264,7 +270,7 @@
           item.dataset.nodeId = grandChild.id;
           item.dataset.level = '3';
           item.dataset.index = idx;
-          item.className = 'flex justify-center';
+          item.className = 'flex justify-start';
 
           const gcEl = createNodeElement(grandChild, 3, preset);
           item.appendChild(gcEl);
@@ -272,6 +278,12 @@
         });
 
         col.appendChild(level3Container);
+
+        const isLastLevel2 = index === root.children.length - 1;
+        const isLongestAnchor = index === longestIndex && !isLastLevel2;
+        const extraGap = isLongestAnchor ? extraGapRem : 0;
+        col.style.marginRight = extraGap ? `${extraGap}rem` : '0';
+
         level2Container.appendChild(col);
       });
 
@@ -283,6 +295,7 @@
     }
 
     function adjustLevel3Offsets() {
+      const wrapperRect = diagramWrapper.getBoundingClientRect();
       const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
       containers.forEach((container) => {
         if (!container.children.length) {
@@ -290,14 +303,26 @@
           container.style.transform = 'none';
           return;
         }
+
+        // 先清除上一次的位移，获取自然布局下的位置
+        container.style.transform = 'none';
+
         const parentId = container.dataset.parentId;
         const parentBox = diagramEl.querySelector('[data-node-id="' + parentId + '"] .node-box');
         if (!parentBox) return;
-        const firstChildBox = container.querySelector('.node-box');
-        const childWidth = firstChildBox ? firstChildBox.getBoundingClientRect().width : 0;
-        const offset = 60 + childWidth / 2; // 20px + half of Level3 width => Level3 left edge at parent center + 20
-        container.style.transform = 'none';
-        container.style.marginLeft = offset + 'px';
+
+        const parentRect = parentBox.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        // x0：父级（二级节点）中心在 wrapper 内的横坐标
+        const x0 = parentRect.left + parentRect.width / 2 - wrapperRect.left;
+        // 当前三级容器左侧在 wrapper 内的横坐标
+        const currentLeft = containerRect.left - wrapperRect.left;
+        // 目标：左侧永远在 x0 + 40
+        const targetLeft = x0 + 40;
+        const deltaX = targetLeft - currentLeft;
+
+        container.style.transform = 'translateX(' + deltaX + 'px)';
       });
     }
 
