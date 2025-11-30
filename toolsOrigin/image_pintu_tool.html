@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Jigsaw Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #bb86fc;
+            --secondary-color: #03dac6;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: var(--surface-color);
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(#2a2a2a 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-color);
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s, filter 0.2s;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary-color);
+        }
+
+        #preview-container {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            max-height: 100%;
+            overflow: auto;
+        }
+
+        #preview-image {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+        }
+
+        #puzzle-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .status-bar {
+            margin-top: auto;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h1>Jigsaw Tool</h1>
+
+        <div class="control-group">
+            <label>Upload Images</label>
+            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                Click to Upload
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none"
+                    onchange="handleFiles(this.files)">
+            </div>
+            <div id="file-list" style="font-size: 0.8rem; color: #aaa;"></div>
+        </div>
+
+        <div class="control-group">
+            <label>Tiles (X * Y)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="xn" value="5" min="1" onchange="updatePreview()">
+                <input type="number" id="yn" value="4" min="1" onchange="updatePreview()">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Seed: <span id="seed-val">0</span></label>
+            <input type="range" id="seed" min="0" max="9999" value="0" oninput="updatePreview()">
+        </div>
+
+        <div class="control-group">
+            <label>Tab Size: <span id="tabsize-val">20%</span></label>
+            <input type="range" id="tabsize" min="10" max="30" step="0.1" value="20" oninput="updatePreview()">
+        </div>
+
+        <div class="control-group">
+            <label>Jitter: <span id="jitter-val">4%</span></label>
+            <input type="range" id="jitter" min="0" max="13" step="0.1" value="4" oninput="updatePreview()">
+        </div>
+
+        <div class="control-group">
+            <button onclick="downloadAll()">Download All (Zip)</button>
+        </div>
+
+        <div class="status-bar" id="status">Ready</div>
+    </div>
+
+    <div class="main-content">
+        <div id="preview-container">
+            <img id="preview-image" src="" alt="Upload an image to start" style="display: none;">
+            <svg id="puzzle-overlay"></svg>
+        </div>
+    </div>
+
+    <script>
+        // --- Jigsaw Logic (Ported from jigsaw.html) ---
+        const Jigsaw = {
+            seed: 0,
+            tabSize: 0.1,
+            jitter: 0.04,
+            xn: 5,
+            yn: 4,
+            width: 0,
+            height: 0,
+            vertical: 0,
+            offset: 0,
+
+            // RNG
+            _seed: 1,
+            random: function () { var x = Math.sin(this._seed) * 10000; this._seed += 1; return x - Math.floor(x); },
+            uniform: function (min, max) { var r = this.random(); return min + r * (max - min); },
+            rbool: function () { return this.random() > 0.5; },
+
+            // Helpers
+            sl: function () { return this.vertical ? this.height / this.yn : this.width / this.xn; },
+            sw: function () { return this.vertical ? this.width / this.xn : this.height / this.yn; },
+            ol: function (xi, yi) { return this.offset + this.sl() * (this.vertical ? yi : xi); },
+            ow: function (xi, yi) { return this.offset + this.sw() * (this.vertical ? xi : yi); },
+
+            l: function (v, xi, yi) { var ret = this.ol(xi, yi) + this.sl() * v; return ret; },
+            w: function (v, xi, yi, flip) { var ret = this.ow(xi, yi) + this.sw() * v * (flip ? -1.0 : 1.0); return ret; },
+
+            // Points
+            p0l: function (xi, yi) { return this.l(0.0, xi, yi); },
+            p0w: function (xi, yi, flip) { return this.w(0.0, xi, yi, flip); },
+            p1l: function (xi, yi) { return this.l(0.2, xi, yi); },
+            p1w: function (xi, yi, flip, a) { return this.w(a, xi, yi, flip); },
+            p2l: function (xi, yi, b, d) { return this.l(0.5 + b + d, xi, yi); },
+            p2w: function (xi, yi, flip, t, c) { return this.w(-t + c, xi, yi, flip); },
+            p3l: function (xi, yi, t, b) { return this.l(0.5 - t + b, xi, yi); },
+            p3w: function (xi, yi, flip, t, c) { return this.w(t + c, xi, yi, flip); },
+            p4l: function (xi, yi, t, b, d) { return this.l(0.5 - 2.0 * t + b - d, xi, yi); },
+            p4w: function (xi, yi, flip, t, c) { return this.w(3.0 * t + c, xi, yi, flip); },
+            p5l: function (xi, yi, t, b, d) { return this.l(0.5 + 2.0 * t + b - d, xi, yi); },
+            p5w: function (xi, yi, flip, t, c) { return this.w(3.0 * t + c, xi, yi, flip); },
+            p6l: function (xi, yi, t, b) { return this.l(0.5 + t + b, xi, yi); },
+            p6w: function (xi, yi, flip, t, c) { return this.w(t + c, xi, yi, flip); },
+            p7l: function (xi, yi, b, d) { return this.l(0.5 + b + d, xi, yi); },
+            p7w: function (xi, yi, flip, t, c) { return this.w(-t + c, xi, yi, flip); },
+            p8l: function (xi, yi) { return this.l(0.8, xi, yi); },
+            p8w: function (xi, yi, flip, e) { return this.w(e, xi, yi, flip); },
+            p9l: function (xi, yi) { return this.l(1.0, xi, yi); },
+            p9w: function (xi, yi, flip) { return this.w(0.0, xi, yi, flip); },
+
+            generateEdges: function (width, height, xn, yn, seed, tabSize, jitter) {
+                this.width = width;
+                this.height = height;
+                this.xn = xn;
+                this.yn = yn;
+                this.seed = seed;
+                this._seed = seed; // Reset RNG
+                this.tabSize = tabSize;
+                this.jitter = jitter;
+                this.offset = 0; // No offset for slicing
+
+                const t = this.tabSize / 200.0;
+                const j = this.jitter / 100.0;
+
+                const hEdges = [];
+                const vEdges = [];
+
+                // Horizontal Internal Edges
+                this.vertical = 0;
+                for (let yi = 1; yi < yn; ++yi) {
+                    hEdges[yi] = [];
+                    let xi = 0;
+                    let e = this.uniform(-j, j);
+                    let flip = this.rbool();
+                    e = this.uniform(-j, j);
+
+                    for (; xi < xn; ++xi) {
+                        let flipold = flip;
+                        flip = this.rbool();
+                        let a = (flip == flipold ? -e : e);
+                        let b = this.uniform(-j, j);
+                        let c = this.uniform(-j, j);
+                        let d = this.uniform(-j, j);
+                        e = this.uniform(-j, j);
+
+                        let str = "";
+                        str += "C " + this.p1l(xi, yi) + " " + this.p1w(xi, yi, flip, a) + " " +
+                            this.p2l(xi, yi, b, d) + " " + this.p2w(xi, yi, flip, t, c) + " " +
+                            this.p3l(xi, yi, t, b) + " " + this.p3w(xi, yi, flip, t, c) + " ";
+                        str += "C " + this.p4l(xi, yi, t, b, d) + " " + this.p4w(xi, yi, flip, t, c) + " " +
+                            this.p5l(xi, yi, t, b, d) + " " + this.p5w(xi, yi, flip, t, c) + " " +
+                            this.p6l(xi, yi, t, b) + " " + this.p6w(xi, yi, flip, t, c) + " ";
+                        str += "C " + this.p7l(xi, yi, b, d) + " " + this.p7w(xi, yi, flip, t, c) + " " +
+                            this.p8l(xi, yi) + " " + this.p8w(xi, yi, flip, e) + " " +
+                            this.p9l(xi, yi) + " " + this.p9w(xi, yi, flip) + " ";
+
+                        hEdges[yi][xi] = str;
+                    }
+                }
+
+                // Vertical Internal Edges
+                this.vertical = 1;
+                for (let xi = 1; xi < xn; ++xi) {
+                    vEdges[xi] = [];
+                    let yi = 0;
+                    let e = this.uniform(-j, j);
+                    let flip = this.rbool();
+
+                    for (; yi < yn; ++yi) {
+                        let flipold = flip;
+                        flip = this.rbool();
+                        let a = (flip == flipold ? -e : e);
+                        let b = this.uniform(-j, j);
+                        let c = this.uniform(-j, j);
+                        let d = this.uniform(-j, j);
+                        e = this.uniform(-j, j);
+
+                        let str = "";
+                        str += "C " + this.p1w(xi, yi, flip, a) + " " + this.p1l(xi, yi) + " " +
+                            this.p2w(xi, yi, flip, t, c) + " " + this.p2l(xi, yi, b, d) + " " +
+                            this.p3w(xi, yi, flip, t, c) + " " + this.p3l(xi, yi, t, b) + " ";
+                        str += "C " + this.p4w(xi, yi, flip, t, c) + " " + this.p4l(xi, yi, t, b, d) + " " +
+                            this.p5w(xi, yi, flip, t, c) + " " + this.p5l(xi, yi, t, b, d) + " " +
+                            this.p6w(xi, yi, flip, t, c) + " " + this.p6l(xi, yi, t, b) + " ";
+                        str += "C " + this.p7w(xi, yi, flip, t, c) + " " + this.p7l(xi, yi, b, d) + " " +
+                            this.p8w(xi, yi, flip, e) + " " + this.p8l(xi, yi) + " " +
+                            this.p9w(xi, yi, flip) + " " + this.p9l(xi, yi) + " ";
+
+                        vEdges[xi][yi] = str;
+                    }
+                }
+
+                return { hEdges, vEdges };
+            }
+        };
+
+        // --- App Logic ---
+        let uploadedFiles = [];
+        let currentImage = null;
+
+        function $(id) { return document.getElementById(id); }
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            uploadedFiles = Array.from(files);
+
+            // Update file list UI
+            const list = $('file-list');
+            list.innerHTML = uploadedFiles.map(f => `<div>${f.name}</div>`).join('');
+
+            // Load first image
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = $('preview-image');
+                img.onload = function () {
+                    currentImage = img;
+                    updatePreview();
+                    img.style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(uploadedFiles[0]);
+            $('status').innerText = `${uploadedFiles.length} file(s) loaded.`;
+        }
+
+        function updatePreview() {
+            if (!currentImage) return;
+
+            const xn = parseInt($('xn').value);
+            const yn = parseInt($('yn').value);
+            const seed = parseInt($('seed').value);
+            const tabSize = parseFloat($('tabsize').value);
+            const jitter = parseFloat($('jitter').value);
+
+            $('seed-val').innerText = seed;
+            $('tabsize-val').innerText = tabSize + '%';
+            $('jitter-val').innerText = jitter + '%';
+
+            const width = currentImage.naturalWidth;
+            const height = currentImage.naturalHeight;
+
+            // Generate Edges
+            const edges = Jigsaw.generateEdges(width, height, xn, yn, seed, tabSize, jitter);
+
+            // Build SVG for preview
+            let pathD = "";
+
+            // Horizontal lines
+            for (let yi = 1; yi < yn; ++yi) {
+                pathD += `M 0 ${yi * height / yn} `;
+                for (let xi = 0; xi < xn; ++xi) {
+                    pathD += edges.hEdges[yi][xi];
+                }
+            }
+
+            // Vertical lines
+            for (let xi = 1; xi < xn; ++xi) {
+                pathD += `M ${xi * width / xn} 0 `;
+                for (let yi = 0; yi < yn; ++yi) {
+                    pathD += edges.vEdges[xi][yi];
+                }
+            }
+
+            // Border (Rectangle)
+            pathD += `M 0 0 L ${width} 0 L ${width} ${height} L 0 ${height} Z`;
+
+            const svg = $('puzzle-overlay');
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            svg.innerHTML = `<path d="${pathD}" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="${Math.max(width, height) / 500}" vector-effect="non-scaling-stroke"></path>
+                         <path d="${pathD}" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="${Math.max(width, height) / 500}" stroke-dasharray="5,5"></path>`;
+        }
+
+        async function downloadAll() {
+            if (uploadedFiles.length === 0) {
+                alert("Please upload images first.");
+                return;
+            }
+
+            const xn = parseInt($('xn').value);
+            const yn = parseInt($('yn').value);
+            const seed = parseInt($('seed').value);
+            const tabSize = parseFloat($('tabsize').value);
+            const jitter = parseFloat($('jitter').value);
+
+            const zip = new JSZip();
+            $('status').innerText = "Processing...";
+
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const file = uploadedFiles[i];
+                const img = await loadImage(file);
+                const width = img.naturalWidth;
+                const height = img.naturalHeight;
+                const edges = Jigsaw.generateEdges(width, height, xn, yn, seed, tabSize, jitter);
+
+                const folderName = file.name.replace(/\.[^/.]+$/, "");
+                const folder = zip.folder(folderName);
+
+                // Add original image
+                folder.file(file.name, file);
+
+                for (let yi = 0; yi < yn; yi++) {
+                    for (let xi = 0; xi < xn; xi++) {
+                        // Generate path for this piece
+                        const path = new Path2D();
+                        let d = "";
+
+                        // Top
+                        if (yi === 0) {
+                            d += `M ${xi * width / xn} 0 L ${(xi + 1) * width / xn} 0 `;
+                        } else {
+                            d += `M ${xi * width / xn} ${yi * height / yn} `;
+                            d += edges.hEdges[yi][xi] + " ";
+                        }
+
+                        // Right
+                        if (xi === xn - 1) {
+                            d += `L ${width} ${(yi + 1) * height / yn} `;
+                        } else {
+                            d += edges.vEdges[xi + 1][yi] + " ";
+                        }
+
+                        // Bottom (Reversed)
+                        if (yi === yn - 1) {
+                            d += `L ${xi * width / xn} ${height} `;
+                        } else {
+                            d += reverseBezier(edges.hEdges[yi + 1][xi], (xi) * width / xn, (yi + 1) * height / yn, (xi + 1) * width / xn, (yi + 1) * height / yn) + " ";
+                        }
+
+                        // Left (Reversed)
+                        if (xi === 0) {
+                            d += `L 0 ${yi * height / yn} `;
+                        } else {
+                            d += reverseBezier(edges.vEdges[xi][yi], xi * width / xn, yi * height / yn, xi * width / xn, (yi + 1) * height / yn) + " ";
+                        }
+
+                        d += "Z";
+
+                        // Create canvas and draw
+                        const canvas = document.createElement('canvas');
+                        const pieceW = width / xn;
+                        const pieceH = height / yn;
+                        const margin = Math.max(pieceW, pieceH) * 0.5;
+
+                        const x = Math.max(0, xi * pieceW - margin);
+                        const y = Math.max(0, yi * pieceH - margin);
+                        const w = Math.min(width, (xi + 1) * pieceW + margin) - x;
+                        const h = Math.min(height, (yi + 1) * pieceH + margin) - y;
+
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+
+                        ctx.translate(-x, -y);
+                        const p2d = new Path2D(d);
+                        ctx.clip(p2d);
+                        ctx.drawImage(img, 0, 0);
+
+                        // Trim transparent pixels
+                        const trimmed = trimCanvas(canvas);
+
+                        const blob = await new Promise(r => trimmed.toBlob(r));
+                        folder.file(`piece_${yi}_${xi}.png`, blob);
+                    }
+                }
+            }
+
+            zip.generateAsync({ type: "blob" }).then(function (content) {
+                saveAs(content, "puzzle_pieces.zip");
+                $('status').innerText = "Download complete!";
+            });
+        }
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function trimCanvas(c) {
+            const ctx = c.getContext('2d');
+            const w = c.width;
+            const h = c.height;
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const data = imageData.data;
+
+            let minX = w, minY = h, maxX = 0, maxY = 0;
+
+            // Find minY
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    if (data[(y * w + x) * 4 + 3] > 0) {
+                        minY = y;
+                        break;
+                    }
+                }
+                if (minY !== h) break;
+            }
+
+            if (minY === h) return c; // Empty
+
+            // Find maxY
+            for (let y = h - 1; y >= 0; y--) {
+                for (let x = 0; x < w; x++) {
+                    if (data[(y * w + x) * 4 + 3] > 0) {
+                        maxY = y;
+                        break;
+                    }
+                }
+                if (maxY !== 0) break;
+            }
+
+            // Find minX
+            for (let x = 0; x < w; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    if (data[(y * w + x) * 4 + 3] > 0) {
+                        minX = x;
+                        break;
+                    }
+                }
+                if (minX !== w) break;
+            }
+
+            // Find maxX
+            for (let x = w - 1; x >= 0; x--) {
+                for (let y = minY; y <= maxY; y++) {
+                    if (data[(y * w + x) * 4 + 3] > 0) {
+                        maxX = x;
+                        break;
+                    }
+                }
+                if (maxX !== 0) break;
+            }
+
+            const trimmedW = maxX - minX + 1;
+            const trimmedH = maxY - minY + 1;
+
+            const trimmed = document.createElement('canvas');
+            trimmed.width = trimmedW;
+            trimmed.height = trimmedH;
+            const tCtx = trimmed.getContext('2d');
+
+            tCtx.drawImage(c, minX, minY, trimmedW, trimmedH, 0, 0, trimmedW, trimmedH);
+            return trimmed;
+        }
+
+        // Helper to reverse SVG path string (C commands only)
+        function reverseBezier(d, sx, sy, ex, ey) {
+            const nums = d.match(/-?\d*\.?\d+/g).map(parseFloat);
+            let res = "";
+            // C3 reversed
+            res += `C ${nums[14]} ${nums[15]} ${nums[12]} ${nums[13]} ${nums[10]} ${nums[11]} `;
+            // C2 reversed
+            res += `C ${nums[8]} ${nums[9]} ${nums[6]} ${nums[7]} ${nums[4]} ${nums[5]} `;
+            // C1 reversed
+            res += `C ${nums[2]} ${nums[3]} ${nums[0]} ${nums[1]} ${sx} ${sy} `;
+            return res;
+        }
+
+    </script>
+
+</body>
+
+</html>

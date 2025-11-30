@@ -142,5 +142,14 @@
       "category": "image",
       "icon": "organization",
       "show": true
+    },
+    {
+      "id": 13,
+      "name": "拼图",
+      "description": "上传1张或多张图片，生成拼图",
+      "path": "tools/image_pintu_tool",
+      "category": "image",
+      "icon": "pintu",
+      "show": true
     }
   ]
