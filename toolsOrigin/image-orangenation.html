@@ -2,1166 +2,644 @@
 <html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8" />
-  <title>OrgChart Builder - toolsOrigin</title>
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- html2canvas for PNG export -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>结构图生成器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    html,
-    body {
-      height: 100%;
-    }
-
-    .no-select {
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
     :root {
-      --preview-stage-width: 1080px;
-      --preview-stage-height: 620px;
+      --bg-color: #f4f6f8;
+      --node-bg: #ffffff;
+      --node-text: #333333;
+      --node-border: #e0e0e0;
+      --line-color: #999999;
+      --accent-color: #3b82f6;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --radius: 8px;
+      --font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    #diagramWrapper {
-      width: min(var(--preview-stage-width), 100%);
-      height: var(--preview-stage-height);
-      box-sizing: border-box;
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    #diagramCanvas {
+    /* Toolbar */
+    .toolbar {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      z-index: 100;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      background-color: #f9fafb;
+      border-color: #ccc;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+
+    select {
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    /* Canvas Area */
+    .canvas-container {
+      flex: 1;
+      overflow: auto;
       position: relative;
-      display: block;
-      width: 100%;
-      min-width: var(--preview-stage-width);
-      min-height: var(--preview-stage-height);
-      padding: 32px;
-      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 50px;
+      cursor: grab;
     }
 
-    /* 确保节点文字在容器内始终垂直居中（导出时也一致） */
-    .node-box {
-      display: grid;
-      place-items: center;
+    .canvas-container:active {
+      cursor: grabbing;
+    }
+
+    #diagram {
+      position: relative;
+      transform-origin: top center;
+      transition: transform 0.1s;
+      padding: 40px;
+      background-color: var(--bg-color);
+      min-width: min-content;
+    }
+
+    /* Node Styles */
+    .node {
+      background: var(--node-bg);
+      color: var(--node-text);
+      border: 1px solid var(--node-border);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-width: 80px;
+      max-width: 200px;
       text-align: center;
-      line-height: 1.1;
+      position: relative;
+      z-index: 2;
+      outline: none;
+      cursor: text;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
-    .node-label {
-      display: inline-block;
-      line-height: 1.1;
+    .node:empty:before {
+      content: '点击编辑';
+      color: #aaa;
     }
 
-    /* 仅导出时上移文字，预览不受影响 */
-    .export-adjust .node-label {
-      transform: translateY(-7px);
+    .node:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     }
 
-    #connectorSvg {
+    /* Controls on Node Hover */
+    .node-controls {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .node-wrapper:hover>.node-controls,
+    .node:focus+.node-controls,
+    .node-controls:hover {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .control-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-add {
+      background: #10b981;
+    }
+
+    .btn-del {
+      background: #ef4444;
+    }
+
+    /* Layout Structure */
+    .level-1-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .level-2-container {
+      display: flex;
+      gap: 40px;
+      margin-top: 40px;
+      align-items: flex-start;
+    }
+
+    .level-2-branch {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      /* Key change: align left */
+    }
+
+    .level-3-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 30px;
+      padding-left: 0;
+      /* Will be set by JS */
+      align-items: flex-start;
+    }
+
+    /* SVG Lines Layer */
+    #svg-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    path {
+      fill: none;
+      stroke: var(--line-color);
+      stroke-width: 2px;
+      transition: d 0.3s ease;
+    }
+
+    /* Themes */
+    .theme-default {
+      --bg-color: #f4f6f8;
+      --node-bg: #ffffff;
+      --node-text: #333333;
+      --node-border: #e0e0e0;
+      --line-color: #94a3b8;
+      --accent-color: #3b82f6;
+      --radius: 8px;
+    }
+
+    .theme-dark {
+      --bg-color: #1f2937;
+      --node-bg: #374151;
+      --node-text: #f3f4f6;
+      --node-border: #4b5563;
+      --line-color: #6b7280;
+      --accent-color: #60a5fa;
+      --radius: 8px;
+    }
+
+    .theme-colorful {
+      --bg-color: #fff1f2;
+      --node-bg: #ffe4e6;
+      --node-text: #881337;
+      --node-border: #fecdd3;
+      --line-color: #fda4af;
+      --accent-color: #e11d48;
+      --radius: 20px;
+    }
+
+    .theme-blue {
+      --bg-color: #eff6ff;
+      --node-bg: #dbeafe;
+      --node-text: #1e3a8a;
+      --node-border: #bfdbfe;
+      --line-color: #93c5fd;
+      --accent-color: #2563eb;
+      --radius: 6px;
+    }
+
+    /* Utility */
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 
-<body class="min-h-screen bg-slate-50 text-slate-900">
-  <div class="max-w-6xl mx-auto py-6 px-4 space-y-4">
-    <!-- Header -->
-    <header class="flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-xl font-semibold">OrgChart Builder</h1>
-        <p class="text-sm text-slate-400">
-          3 层组织结构，可视化编辑 & 导出 PNG / SVG / JSON
-        </p>
-      </div>
-    </header>
+<body class="theme-default">
 
-    <section class="grid lg:grid-cols-[2fr,1fr] gap-4 items-start">
-      <!-- Preview -->
-      <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-        <div class="text-xs text-slate-500 mb-1 flex justify-between">
-          <span>左侧预览，右侧编辑</span>
-          <span>最大深度：3 层</span>
-        </div>
+  <div class="toolbar">
+    <div style="font-weight: bold; margin-right: auto;">TreeGraph Gen</div>
 
-        <div id="diagramWrapper"
-          class="relative overflow-auto rounded-xl border border-slate-200 bg-white shadow-inner">
-          <div id="diagramCanvas" class="relative">
-            <!-- SVG connectors -->
-            <svg id="connectorSvg" class="absolute inset-0 pointer-events-none"></svg>
-            <!-- Nodes -->
-            <div id="diagram"
-              class="relative z-10 flex flex-col items-center py-8 gap-6 transition-colors duration-150">
-            </div>
-          </div>
-        </div>
-      </div>
+    <select id="theme-select">
+      <option value="theme-default">默认风格 (Default)</option>
+      <option value="theme-blue">清爽蓝 (Blue)</option>
+      <option value="theme-colorful">活力粉 (Pink)</option>
+      <option value="theme-dark">深色模式 (Dark)</option>
+    </select>
 
-      <!-- Right side controls -->
-      <div class="space-y-3">
-        <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-3 shadow-sm">
-          <h2 class="text-sm font-semibold text-slate-800">样式 & 背景</h2>
-          <div class="grid sm:grid-cols-2 gap-3 text-sm">
-            <!-- Style preset -->
-            <label class="space-y-1">
-              <span class="block text-xs text-slate-500">节点样式预设</span>
-              <select id="stylePresetSelect"
-                class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
-                <option value="minimal">简约 (Minimal)</option>
-                <option value="card">卡片 (Card)</option>
-                <option value="soft">柔和 (Soft)</option>
-                <option value="dark">深色 (Dark)</option>
-                <option value="warm">暖色 (Warm)</option>
-                <option value="cool">冷色 (Cool)</option>
-                <option value="modern">现代 (Modern)</option>
-                <option value="classic">经典 (Classic)</option>
-                <option value="vibrant">活力 (Vibrant)</option>
-                <option value="elegant">优雅 (Elegant)</option>
-                <option value="ocean">海洋 (Ocean)</option>
-                <option value="sunset">日落 (Sunset)</option>
-              </select>
-            </label>
+    <button class="btn" onclick="resetZoom()">重置视图</button>
+    <button class="btn" onclick="exportJSON()">导出 JSON</button>
+    <button class="btn" onclick="document.getElementById('file-input').click()">导入 JSON</button>
+    <input type="file" id="file-input" class="hidden" accept=".json" onchange="importJSON(this)">
+    <button class="btn btn-primary" onclick="exportPNG()">下载 PNG</button>
+  </div>
 
-            <!-- Connector style -->
-            <label class="space-y-1">
-              <span class="block text-xs text-slate-500">连线样式</span>
-              <select id="connectorStyleSelect"
-                class="w-full rounded-md border border-slate-300 bg-white text-slate-900 px-2 py-1.5 text-sm">
-                <option value="straight">直线</option>
-                <option value="smooth">圆滑曲线</option>
-                <option value="dashed">虚线直线</option>
-                <option value="elbow">折线</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-3 text-sm">
-            <label class="flex items-center gap-2">
-              <span class="text-slate-600">背景颜色</span>
-              <input id="bgColorInput" type="color" value="#f8fafc"
-                class="w-9 h-9 p-0 border border-slate-300 rounded cursor-pointer bg-transparent" />
-            </label>
-            <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
-              重置结构
-            </button>
-          </div>
-        </div>
-
-        <!-- Export / Import -->
-        <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-3 text-sm shadow-sm">
-          <h2 class="text-sm font-semibold text-slate-800">导出 & 导入</h2>
-          <div class="flex flex-wrap gap-2">
-            <button id="exportPngBtn"
-              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white shadow-sm">
-              导出 PNG
-            </button>
-            <button id="exportSvgBtn"
-              class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 transition text-white shadow-sm">
-              导出 SVG
-            </button>
-            <button id="copyBtn"
-              class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 transition text-white shadow-sm">
-              一键复制
-            </button>
-            <button id="saveJsonBtn"
-              class="px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition shadow-sm">
-              保存 JSON
-            </button>
-            <label
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
-              导入 JSON
-              <input id="loadJsonInput" type="file" accept="application/json" class="hidden">
-            </label>
-          </div>
-          <p class="text-xs text-slate-500">
-            JSON 结构示例：{ id, label, children: [...] }，最大深度 3 层。
-          </p>
-        </div>
-
-        <!-- Node controls -->
-        <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-2 text-sm shadow-sm">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-slate-800">节点列表 / 操作</h2>
-            <button id="addLevel2Btn"
-              class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-sm">
-              添加二级节点
-            </button>
-          </div>
-          <div id="nodeList" class="space-y-1 text-sm"></div>
-          <p class="text-xs text-slate-500">
-            在右侧编辑名称、修改背景色、添加子节点、上移 / 下移或删除，左侧预览实时更新。
-          </p>
-        </div>
-      </div>
-    </section>
+  <div class="canvas-container" id="canvas-container">
+    <div id="diagram">
+      <svg id="svg-layer"></svg>
+      <div id="tree-root"></div>
+    </div>
   </div>
 
   <script>
-    // ---------- 数据模型 ----------
-    let idCounter = 1;
-    const nextId = () => 'node-' + (idCounter++);
-
-    const defaultBgColorByLevel = {
-      1: '#fee2e2', // root - light red
-      2: '#dbeafe', // level 2 - light blue
-      3: '#ede9fe'  // level 3 - light purple
-    };
-    const getDefaultBgColor = (level) => defaultBgColorByLevel[level] || defaultBgColorByLevel[1];
-
-    // 初始数据：一个一级节点
-    let root = {
-      id: nextId(),
-      label: 'Root',
-      bgColor: getDefaultBgColor(1),
+    // Data Structure
+    let treeData = {
+      id: 'root',
+      text: '核心主题',
       children: []
     };
 
-    function sanitizeFileName(name) {
-      if (!name) return '';
-      return name
-        .replace(/[\\/:*?"<>|]/g, '')
-        .trim()
-        .slice(0, 80);
-    }
+    // DOM Elements
+    const treeRoot = document.getElementById('tree-root');
+    const svgLayer = document.getElementById('svg-layer');
+    const diagram = document.getElementById('diagram');
 
-    function getExportFileName(ext = 'png') {
-      const sanitized = sanitizeFileName(root.label) || 'orgchart';
-      return `${sanitized}.${ext}`;
-    }
+    // Render Function
+    function render() {
+      treeRoot.innerHTML = '';
 
-    // 样式预设（包含背景颜色）
-    const stylePresets = {
-      minimal: {
-        nodeRoot: 'px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-800 shadow-sm',
-        nodeLevel2: 'px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-800 shadow-sm',
-        nodeLevel3: 'px-3 py-1.5 rounded-md border border-slate-300 bg-white text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-slate-500',
-        bgColor: '#f8fafc'
-      },
-      card: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-blue-50 text-slate-800 shadow-md shadow-sky-100',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-sky-200 bg-sky-50 text-slate-800 shadow-sm shadow-sky-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-sky-200 bg-sky-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-sky-500',
-        bgColor: '#e0f2fe'
-      },
-      soft: {
-        nodeRoot: 'px-4 py-3 rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 text-slate-800 shadow-md shadow-emerald-100',
-        nodeLevel2: 'px-3 py-2 rounded-2xl border border-emerald-200 bg-emerald-50 text-slate-800 shadow-sm shadow-emerald-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-emerald-500',
-        bgColor: '#ecfdf5'
-      },
-      dark: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/50',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-slate-500 bg-slate-800 text-black shadow-md shadow-slate-800/50',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-slate-400 bg-slate-700 text-black',
-        badge: 'text-[10px] uppercase tracking-wide text-slate-300',
-        bgColor: '#1e293b'
-      },
-      warm: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 text-slate-800 shadow-md shadow-orange-100',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-orange-200 bg-orange-50 text-slate-800 shadow-sm shadow-orange-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-orange-200 bg-orange-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-orange-600',
-        bgColor: '#fff7ed'
-      },
-      cool: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 text-slate-800 shadow-md shadow-indigo-100',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-slate-800 shadow-sm shadow-indigo-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-indigo-600',
-        bgColor: '#eef2ff'
-      },
-      modern: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border-2 border-pink-400 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/50 font-semibold',
-        nodeLevel2: 'px-3 py-2 rounded-xl border-2 border-pink-300 bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md shadow-pink-400/50',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-pink-500 bg-pink-500 text-black font-medium',
-        badge: 'text-[10px] uppercase tracking-wide text-pink-200',
-        bgColor: '#fdf2f8'
-      },
-      classic: {
-        nodeRoot: 'px-4 py-3 rounded-lg border-2 border-amber-600 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 shadow-md shadow-amber-200',
-        nodeLevel2: 'px-3 py-2 rounded-md border-2 border-amber-500 bg-amber-50 text-amber-900 shadow-sm shadow-amber-200',
-        nodeLevel3: 'px-3 py-1.5 rounded border border-amber-400 bg-amber-50 text-amber-900',
-        badge: 'text-[10px] uppercase tracking-wide text-amber-700',
-        bgColor: '#fffbeb'
-      },
-      vibrant: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border-2 border-violet-400 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/50 font-bold',
-        nodeLevel2: 'px-3 py-2 rounded-xl border-2 border-violet-300 bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-md shadow-violet-400/50 font-semibold',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-violet-500 bg-violet-600 text-black font-medium',
-        badge: 'text-[10px] uppercase tracking-wide text-violet-200',
-        bgColor: '#faf5ff'
-      },
-      elegant: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-rose-300 bg-gradient-to-r from-rose-50 via-pink-50 to-fuchsia-50 text-slate-800 shadow-md shadow-rose-100',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-slate-800 shadow-sm shadow-rose-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-rose-500',
-        bgColor: '#fff1f2'
-      },
-      ocean: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-50 via-teal-50 to-blue-50 text-slate-800 shadow-md shadow-cyan-100',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-cyan-200 bg-cyan-50 text-slate-800 shadow-sm shadow-cyan-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-cyan-600',
-        bgColor: '#ecfeff'
-      },
-      sunset: {
-        nodeRoot: 'px-4 py-3 rounded-2xl border border-red-300 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 text-slate-800 shadow-md shadow-red-100',
-        nodeLevel2: 'px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-slate-800 shadow-sm shadow-red-100',
-        nodeLevel3: 'px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-slate-800',
-        badge: 'text-[10px] uppercase tracking-wide text-red-600',
-        bgColor: '#fef2f2'
-      }
-    };
+      // Level 1 Wrapper
+      const l1Wrapper = document.createElement('div');
+      l1Wrapper.className = 'level-1-wrapper';
 
-    let currentStylePreset = 'minimal';
-    let connectorStyle = 'elbow'; // straight, smooth, dashed, elbow
-
-    // ---------- DOM ----------
-    const diagramEl = document.getElementById('diagram');
-    const svgEl = document.getElementById('connectorSvg');
-    const bgColorInput = document.getElementById('bgColorInput');
-    const diagramWrapper = document.getElementById('diagramWrapper');
-    const diagramCanvas = document.getElementById('diagramCanvas');
-    const nodeListEl = document.getElementById('nodeList');
-    const connectorStyleSelect = document.getElementById('connectorStyleSelect');
-    const STAGE_DIMENSIONS = { width: 1080, height: 620 };
-    const EXPORT_MARGIN = 36;
-
-    function applyPreviewStageSize() {
-      const rootStyle = document.documentElement.style;
-      rootStyle.setProperty('--preview-stage-width', STAGE_DIMENSIONS.width + 'px');
-      rootStyle.setProperty('--preview-stage-height', STAGE_DIMENSIONS.height + 'px');
-    }
-    applyPreviewStageSize();
-
-    // ---------- 渲染 ----------
-    function renderDiagram() {
-      diagramEl.innerHTML = '';
-      const preset = stylePresets[currentStylePreset];
-
-      const baseLevel2GapRem = 1.5;
-
-      // Root Wrapper
-      const rootWrapper = document.createElement('div');
-      rootWrapper.className = 'flex flex-col items-center gap-3 w-fit mx-auto';
-
-      const rootNode = createNodeElement(root, 1, preset);
-      rootWrapper.appendChild(rootNode);
+      // Level 1 Node
+      const l1NodeWrapper = createNodeElement(treeData, 1);
+      l1Wrapper.appendChild(l1NodeWrapper);
 
       // Level 2 Container
-      const level2Container = document.createElement('div');
-      level2Container.className = 'inline-flex flex-row flex-nowrap justify-center mt-4';
-      level2Container.dataset.level = '2';
-      level2Container.dataset.parentId = root.id;
-      level2Container.style.gap = `${baseLevel2GapRem}rem`;
+      if (treeData.children && treeData.children.length > 0) {
+        const l2Container = document.createElement('div');
+        l2Container.className = 'level-2-container';
 
-      root.children.forEach((child, index) => {
-        const col = document.createElement('div');
-        col.className = 'flex flex-col items-center gap-2 shrink-0';
-        col.dataset.nodeId = child.id;
-        col.dataset.level = '2';
-        col.dataset.index = index;
+        treeData.children.forEach(l2Data => {
+          const l2Branch = document.createElement('div');
+          l2Branch.className = 'level-2-branch';
+          l2Branch.dataset.l2Id = l2Data.id;
 
-        const nodeEl = createNodeElement(child, 2, preset);
-        col.appendChild(nodeEl);
+          // Level 2 Node
+          const l2NodeWrapper = createNodeElement(l2Data, 2);
+          l2Branch.appendChild(l2NodeWrapper);
 
-        // Level 3 Container
-        const level3Container = document.createElement('div');
-        level3Container.className = 'mt-3 flex flex-col items-start gap-3 relative self-start';
-        level3Container.style.marginLeft = '0px';
-        level3Container.dataset.level = '3';
-        level3Container.dataset.parentId = child.id;
+          // Level 3 Container
+          if (l2Data.children && l2Data.children.length > 0) {
+            const l3Container = document.createElement('div');
+            l3Container.className = 'level-3-container';
 
-        child.children.forEach((grandChild, idx) => {
-          const item = document.createElement('div');
-          item.dataset.nodeId = grandChild.id;
-          item.dataset.level = '3';
-          item.dataset.index = idx;
-          item.className = 'flex justify-start';
+            l2Data.children.forEach(l3Data => {
+              const l3NodeWrapper = createNodeElement(l3Data, 3, l2Data.id);
+              l3Container.appendChild(l3NodeWrapper);
+            });
 
-          const gcEl = createNodeElement(grandChild, 3, preset);
-          item.appendChild(gcEl);
-          level3Container.appendChild(item);
+            l2Branch.appendChild(l3Container);
+          }
+
+          l2Container.appendChild(l2Branch);
         });
 
-        col.appendChild(level3Container);
-        level2Container.appendChild(col);
+        l1Wrapper.appendChild(l2Container);
+      }
+
+      treeRoot.appendChild(l1Wrapper);
+
+      // Wait for DOM update then adjust layout and draw lines
+      requestAnimationFrame(() => {
+        adjustLevel3Offsets();
+        drawLines();
       });
-
-      rootWrapper.appendChild(level2Container);
-      diagramEl.appendChild(rootWrapper);
-
-      adjustLevel3Offsets();
-      adjustLevel2Spacing();
-      centerLevel2Container();
-      requestAnimationFrame(() => drawConnectors());
     }
 
     function adjustLevel3Offsets() {
-      const wrapperRect = diagramCanvas.getBoundingClientRect();
-      const containers = diagramEl.querySelectorAll('[data-level="3"][data-parent-id]');
-      containers.forEach((container) => {
-        if (!container.children.length) {
-          container.style.marginLeft = '0px';
-          container.style.transform = 'none';
-          return;
+      const branches = document.querySelectorAll('.level-2-branch');
+      branches.forEach(branch => {
+        const l2Node = branch.querySelector('.node-wrapper'); // First child is L2
+        const l3Container = branch.querySelector('.level-3-container');
+
+        if (l2Node && l3Container) {
+          const l2Width = l2Node.offsetWidth;
+          // Shift L3 container so it starts to the right of L2 center
+          // L2 center is at l2Width / 2
+          // We want L3 to start at l2Width / 2 + 20px (gap)
+          l3Container.style.marginLeft = (l2Width / 2 + 20) + 'px';
         }
-
-        // 先清除上一次的位移，获取自然布局下的位置
-        container.style.transform = 'none';
-
-        const parentId = container.dataset.parentId;
-        const parentBox = diagramEl.querySelector('[data-node-id="' + parentId + '"] .node-box');
-        if (!parentBox) return;
-
-        const parentRect = parentBox.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-
-        // x0：父级（二级节点）中心在 wrapper 内的横坐标
-        const x0 = parentRect.left + parentRect.width / 2 - wrapperRect.left;
-        // 当前三级容器左侧在 wrapper 内的横坐标
-        const currentLeft = containerRect.left - wrapperRect.left;
-        // 目标：左侧永远在 x0 + 40
-        const targetLeft = x0 + 40;
-        const deltaX = targetLeft - currentLeft;
-
-        container.style.transform = 'translateX(' + deltaX + 'px)';
       });
     }
 
-    function adjustLevel2Spacing() {
-      const level2Container = diagramEl.querySelector('[data-level="2"][data-parent-id="' + root.id + '"]');
-      if (!level2Container) return;
-
-      const cols = Array.from(level2Container.querySelectorAll('[data-level="2"][data-node-id]'));
-      cols.forEach(col => { col.style.marginRight = '0px'; });
-      if (cols.length < 2) return;
-
-      const computed = getComputedStyle(level2Container);
-      const baseGap = parseFloat(computed.columnGap || computed.gap || computed.rowGap || '0') || 0;
-      const minGapPx = baseGap || 24; // fallback to 1.5rem
-
-      for (let i = 0; i < cols.length - 1; i++) {
-        const colRect = cols[i].getBoundingClientRect();
-        const nextRect = cols[i + 1].getBoundingClientRect();
-        const currentGap = nextRect.left - colRect.right;
-        if (currentGap < minGapPx) {
-          const extra = Math.ceil(minGapPx - currentGap);
-          cols[i].style.marginRight = `${extra}px`;
-        }
-      }
-    }
-
-    function centerLevel2Container() {
-      const level2Container = diagramEl.querySelector('[data-level="2"][data-parent-id="' + root.id + '"]');
-      if (!level2Container) return;
-
-      const cols = Array.from(level2Container.querySelectorAll('[data-level="2"][data-node-id]'));
-      level2Container.style.transform = 'translateX(0px)';
-      if (!cols.length) return;
-
-      const wrapperRect = diagramCanvas.getBoundingClientRect();
-      const minLeft = Math.min(...cols.map(col => col.getBoundingClientRect().left - wrapperRect.left));
-      const maxRight = Math.max(...cols.map(col => col.getBoundingClientRect().right - wrapperRect.left));
-      const visualCenter = (minLeft + maxRight) / 2;
-
-      const rootBox = diagramEl.querySelector('[data-node-id="' + root.id + '"] .node-box');
-      if (!rootBox) return;
-      const rootRect = rootBox.getBoundingClientRect();
-      const rootCenter = rootRect.left + rootRect.width / 2 - wrapperRect.left;
-
-      const delta = rootCenter - visualCenter;
-      if (Math.abs(delta) < 0.5) {
-        level2Container.style.transform = 'translateX(0px)';
-      } else {
-        level2Container.style.transform = `translateX(${delta}px)`;
-      }
-    }
-
-    function createNodeElement(node, level, preset) {
-      if (!node.bgColor) {
-        node.bgColor = getDefaultBgColor(level);
-      }
+    function createNodeElement(data, level, parentId = null) {
       const wrapper = document.createElement('div');
-      wrapper.className = 'flex flex-col items-center gap-1';
-      wrapper.draggable = level > 1; // root 不拖拽
-      wrapper.dataset.nodeId = node.id;
-      wrapper.dataset.level = String(level);
+      wrapper.className = 'node-wrapper';
+      wrapper.style.position = 'relative';
 
-      const nodeDiv = document.createElement('div');
-      const baseClass =
-        level === 1 ? preset.nodeRoot :
-          level === 2 ? preset.nodeLevel2 :
-            preset.nodeLevel3;
+      const node = document.createElement('div');
+      node.className = 'node';
+      node.contentEditable = true;
+      node.innerText = data.text;
+      node.id = `node-${data.id}`;
+      node.dataset.id = data.id;
 
-      const cursorClass = level > 1 ? ' cursor-grab' : '';
-      nodeDiv.className = 'node-box relative no-select' + cursorClass + ' ' + baseClass;
-      const appliedBg = node.bgColor || getDefaultBgColor(level);
-      nodeDiv.style.backgroundColor = appliedBg;
-      nodeDiv.style.lineHeight = '1.1';
+      // Text Edit Listener
+      node.addEventListener('input', (e) => {
+        data.text = e.target.innerText;
+        // Debounce line redraw
+        if (window.lineTimeout) clearTimeout(window.lineTimeout);
+        window.lineTimeout = setTimeout(() => {
+          adjustLevel3Offsets(); // Re-adjust if L2 width changes
+          drawLines();
+        }, 50);
+      });
 
-      // label
-      const labelSpan = document.createElement('span');
-      labelSpan.className = 'node-label';
-      labelSpan.textContent = node.label;
-      nodeDiv.appendChild(labelSpan);
+      // Prevent enter key creating divs
+      node.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          node.blur();
+        }
+      });
 
-      wrapper.appendChild(nodeDiv);
+      wrapper.appendChild(node);
 
-      // 拖拽事件（同级）
-      if (level > 1) {
-        wrapper.addEventListener('dragstart', onDragStart);
-        wrapper.addEventListener('dragover', onDragOver);
-        wrapper.addEventListener('drop', onDrop);
+      // Controls
+      const controls = document.createElement('div');
+      controls.className = 'node-controls';
+
+      // Add Button (Only for L1 and L2)
+      if (level < 3) {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'control-btn btn-add';
+        addBtn.innerHTML = '+';
+        addBtn.title = '添加子节点';
+        addBtn.onclick = () => addChild(data.id);
+        controls.appendChild(addBtn);
       }
 
+      // Delete Button (Not for Root)
+      if (level > 1) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'control-btn btn-del';
+        delBtn.innerHTML = '×';
+        delBtn.title = '删除节点';
+        delBtn.onclick = () => deleteNode(parentId || treeData.id, data.id);
+        controls.appendChild(delBtn);
+      }
+
+      wrapper.appendChild(controls);
       return wrapper;
     }
 
-    function renderNodeList() {
-      nodeListEl.innerHTML = '';
-
-      const walk = (node, level, parentInfo) => {
-        if (!node.bgColor) {
-          node.bgColor = getDefaultBgColor(level);
-        }
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-slate-100 border border-slate-200';
-        row.style.paddingLeft = `${(level - 1) * 12}px`;
-
-        const levelBadge = document.createElement('span');
-        levelBadge.className = 'text-[11px] uppercase tracking-wide text-slate-400 shrink-0';
-        levelBadge.textContent = 'L' + level;
-
-        const labelInput = document.createElement('input');
-        labelInput.value = node.label;
-        labelInput.className = 'flex-1 min-w-0 bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-sm focus:outline-none focus:ring focus:ring-slate-400';
-        labelInput.addEventListener('input', () => {
-          node.label = labelInput.value;
-          renderDiagram();
-        });
-
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.value = node.bgColor;
-        colorInput.className = 'w-9 h-9 p-0 border border-slate-300 rounded bg-transparent cursor-pointer shrink-0';
-        colorInput.addEventListener('input', () => {
-          node.bgColor = colorInput.value;
-          renderDiagram();
-        });
-
-        const actions = document.createElement('div');
-        actions.className = 'flex items-center gap-1 shrink-0';
-
-        if (level < 3) {
-          const addBtn = document.createElement('button');
-          addBtn.textContent = '＋子节点';
-          addBtn.className = 'px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800';
-          addBtn.addEventListener('click', () => addChild(node, level));
-          actions.appendChild(addBtn);
-        }
-
-        if (parentInfo && parentInfo.children) {
-          const { children, index } = parentInfo;
-          if (index > 0) {
-            const upBtn = document.createElement('button');
-            upBtn.textContent = '上移';
-            upBtn.className = 'px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800';
-            upBtn.addEventListener('click', () => moveNodeInArray(children, index, -1));
-            actions.appendChild(upBtn);
-          }
-          if (index < children.length - 1) {
-            const downBtn = document.createElement('button');
-            downBtn.textContent = '下移';
-            downBtn.className = 'px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800';
-            downBtn.addEventListener('click', () => moveNodeInArray(children, index, 1));
-            actions.appendChild(downBtn);
-          }
-        }
-
-        if (level > 1) {
-          const delBtn = document.createElement('button');
-          delBtn.textContent = '删除';
-          delBtn.className = 'px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700';
-          delBtn.addEventListener('click', () => deleteNode(node.id));
-          actions.appendChild(delBtn);
-        }
-
-        row.appendChild(levelBadge);
-        row.appendChild(labelInput);
-        row.appendChild(colorInput);
-        row.appendChild(actions);
-        nodeListEl.appendChild(row);
-
-        node.children.forEach((child, idx) => {
-          walk(child, level + 1, { parent: node, children: node.children, index: idx });
-        });
-      };
-
-      walk(root, 1, null);
+    // Data Manipulation
+    function generateId() {
+      return 'n' + Date.now() + Math.random().toString(36).substr(2, 5);
     }
 
-    function renderAll() {
-      renderDiagram();
-      renderNodeList();
-    }
+    function addChild(parentId) {
+      const newNode = { id: generateId(), text: '新节点', children: [] };
 
-    // ---------- 操作：添加 / 删除 / 移动 ----------
-    function addChild(parentNode, level) {
-      if (level >= 3) return;
-      const newNode = {
-        id: nextId(),
-        label: level === 1 ? 'Level 2' : 'Level 3',
-        bgColor: getDefaultBgColor(level + 1),
-        children: []
-      };
-      parentNode.children.push(newNode);
-      renderAll();
-    }
-
-    function deleteNode(id) {
-      // 只会删除 level2 和 level3
-      for (let i = 0; i < root.children.length; i++) {
-        const child = root.children[i];
-        if (child.id === id) {
-          root.children.splice(i, 1);
-          renderAll();
-          return;
-        }
-        const gc = child.children;
-        for (let j = 0; j < gc.length; j++) {
-          if (gc[j].id === id) {
-            gc.splice(j, 1);
-            renderAll();
-            return;
-          }
-        }
-      }
-    }
-
-    function moveNodeInArray(arr, fromIndex, offset) {
-      const toIndex = fromIndex + offset;
-      if (toIndex < 0 || toIndex >= arr.length) return;
-      const [item] = arr.splice(fromIndex, 1);
-      arr.splice(toIndex, 0, item);
-      renderAll();
-    }
-
-    // ---------- 拖拽排序 ----------
-    let dragInfo = null;
-
-    function onDragStart(e) {
-      const wrapper = e.currentTarget;
-      dragInfo = {
-        id: wrapper.dataset.nodeId,
-        level: parseInt(wrapper.dataset.level, 10)
-      };
-      e.dataTransfer.effectAllowed = 'move';
-    }
-
-    function onDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    }
-
-    function onDrop(e) {
-      e.preventDefault();
-      if (!dragInfo) return;
-
-      const targetWrapper = e.currentTarget;
-      const targetId = targetWrapper.dataset.nodeId;
-      const targetLevel = parseInt(targetWrapper.dataset.level, 10);
-
-      if (targetLevel !== dragInfo.level) {
-        dragInfo = null;
-        return;
-      }
-
-      if (dragInfo.id === targetId) {
-        dragInfo = null;
-        return;
-      }
-
-      if (dragInfo.level === 2) {
-        reorderWithinArray(root.children, dragInfo.id, targetId);
-      } else if (dragInfo.level === 3) {
-        // 找到属于同一个 parent 的 children
-        for (const child of root.children) {
-          const arr = child.children;
-          const ids = arr.map(n => n.id);
-          if (ids.includes(dragInfo.id) && ids.includes(targetId)) {
-            reorderWithinArray(arr, dragInfo.id, targetId);
-            break;
-          }
-        }
-      }
-
-      dragInfo = null;
-      renderAll();
-    }
-
-    function reorderWithinArray(arr, fromId, toId) {
-      const fromIndex = arr.findIndex(n => n.id === fromId);
-      const toIndex = arr.findIndex(n => n.id === toId);
-      if (fromIndex === -1 || toIndex === -1) return;
-      const [item] = arr.splice(fromIndex, 1);
-      arr.splice(toIndex, 0, item);
-    }
-
-    // ---------- 连线绘制 ----------
-    function getFullDiagramSize() {
-      const rect = diagramCanvas.getBoundingClientRect();
-      return {
-        width: rect.width,
-        height: rect.height
-      };
-    }
-
-    function drawConnectors(forceSize) {
-      const wrapperRect = diagramCanvas.getBoundingClientRect();
-      const { width, height } = (forceSize && typeof forceSize === 'object') ? forceSize : getFullDiagramSize();
-      svgEl.setAttribute('width', width);
-      svgEl.setAttribute('height', height);
-      svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      svgEl.innerHTML = '';
-
-      const rootBox = diagramEl.querySelector('[data-node-id="' + root.id + '"] .node-box');
-      if (!rootBox) return;
-
-      const rootRect = rootBox.getBoundingClientRect();
-      const rootCenterX = rootRect.left + rootRect.width / 2 - wrapperRect.left;
-      const rootBottomY = rootRect.bottom - wrapperRect.top;
-
-      // 连接 root 与每个二级节点
-      root.children.forEach(child => {
-        const childBox = diagramEl.querySelector('[data-node-id="' + child.id + '"] .node-box');
-        if (!childBox) return;
-        const cRect = childBox.getBoundingClientRect();
-        const childCenterX = cRect.left + cRect.width / 2 - wrapperRect.left;
-        const childTopY = cRect.top - wrapperRect.top;
-
-        drawConnector(rootCenterX, rootBottomY, childCenterX, childTopY);
-      });
-
-      // 连接二级与三级
-      root.children.forEach(child => {
-        const parentBox = diagramEl.querySelector('[data-node-id="' + child.id + '"] .node-box');
-        if (!parentBox) return;
-        const pRect = parentBox.getBoundingClientRect();
-        const pCenterX = pRect.left + pRect.width / 2 - wrapperRect.left;
-        const pBottomY = pRect.bottom - wrapperRect.top;
-
-        child.children.forEach(gc => {
-          const gcBox = diagramEl.querySelector('[data-node-id="' + gc.id + '"] .node-box');
-          if (!gcBox) return;
-          const gRect = gcBox.getBoundingClientRect();
-          // connect to middle of left side of level 3 node
-          const gLeftMidX = gRect.left - wrapperRect.left;
-          const gLeftMidY = gRect.top + gRect.height / 2 - wrapperRect.top;
-
-          if (connectorStyle === 'elbow') {
-            drawElbowToLeft(pCenterX, pBottomY, gLeftMidX, gLeftMidY);
-          } else {
-            drawConnector(pCenterX, pBottomY, gLeftMidX, gLeftMidY);
-          }
-        });
-      });
-    }
-
-    function drawConnector(x1, y1, x2, y2) {
-      const strokeColor = '#64748b'; // slate-500
-      const strokeWidth = 1.5;
-
-      if (connectorStyle === 'smooth') {
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const midY = (y1 + y2) / 2;
-        const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
-        path.setAttribute('d', d);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', strokeColor);
-        path.setAttribute('stroke-width', strokeWidth);
-        svgEl.appendChild(path);
-      } else if (connectorStyle === 'elbow') {
-        const anchorY = Math.min(y1 + 28, y2 - 6); // 短竖线后再转折
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const d = `M ${x1} ${y1} L ${x1} ${anchorY} L ${x2} ${anchorY} L ${x2} ${y2}`;
-        path.setAttribute('d', d);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', strokeColor);
-        path.setAttribute('stroke-width', strokeWidth);
-        svgEl.appendChild(path);
+      if (treeData.id === parentId) {
+        treeData.children.push(newNode);
       } else {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', x1);
-        line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2);
-        line.setAttribute('y2', y2);
-        line.setAttribute('stroke', strokeColor);
-        line.setAttribute('stroke-width', strokeWidth);
-        if (connectorStyle === 'dashed') {
-          line.setAttribute('stroke-dasharray', '4 3');
-        }
-        svgEl.appendChild(line);
-      }
-    }
-
-    function drawElbowToLeft(x1, y1, x2, y2) {
-      const strokeColor = '#64748b';
-      const strokeWidth = 1.5;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const d = `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`;
-      path.setAttribute('d', d);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', strokeColor);
-      path.setAttribute('stroke-width', strokeWidth);
-      svgEl.appendChild(path);
-    }
-
-    // ---------- 导出 / 导入 ----------
-    async function waitForStageAssets(stageEl) {
-      if (document.fonts && document.fonts.ready) {
-        try {
-          await document.fonts.ready;
-        } catch (err) {
-          console.warn('字体加载等待失败', err);
+        // Find L2 parent
+        const l2 = treeData.children.find(c => c.id === parentId);
+        if (l2) {
+          l2.children = l2.children || [];
+          l2.children.push(newNode);
         }
       }
-      const pendingImages = Array.from(stageEl.querySelectorAll('img')).filter(img => !img.complete);
-      if (pendingImages.length) {
-        await Promise.all(
-          pendingImages.map(
-            (img) =>
-              new Promise((resolve) => {
-                img.onload = img.onerror = resolve;
-              })
-          )
-        );
-      }
+      render();
     }
 
-    function createSnapshotSurface(stageWidth, stageHeight, backgroundColor) {
-      const clone = diagramCanvas.cloneNode(true);
-      // 直接克隆会丢失 #diagramCanvas 的尺寸和 padding，导致导出时位置左移，这里同步关键的计算样式
-      const canvasStyle = window.getComputedStyle(diagramCanvas);
-      clone.style.width = canvasStyle.width;
-      clone.style.minWidth = canvasStyle.minWidth;
-      clone.style.minHeight = canvasStyle.minHeight;
-      clone.style.padding = canvasStyle.padding;
-      clone.style.boxSizing = canvasStyle.boxSizing;
-      clone.style.position = canvasStyle.position;
-      clone.classList.add('export-adjust'); // 导出时才上移文字
-
-      const clonedSvg = clone.querySelector('svg');
-      if (clonedSvg && svgEl) {
-        const wAttr = svgEl.getAttribute('width');
-        const hAttr = svgEl.getAttribute('height');
-        if (wAttr) clonedSvg.setAttribute('width', wAttr);
-        if (hAttr) clonedSvg.setAttribute('height', hAttr);
-      }
-
-      clone.removeAttribute('id');
-      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-      clone.style.margin = '0';
-      clone.style.left = '0';
-      clone.style.top = '0';
-      clone.style.transform = 'none';
-
-      const surface = document.createElement('div');
-      surface.style.width = `${stageWidth}px`;
-      surface.style.height = `${stageHeight}px`;
-      surface.style.boxSizing = 'border-box';
-      surface.style.padding = '0';
-      surface.style.backgroundColor = backgroundColor;
-      surface.style.display = 'flex';
-      surface.style.alignItems = 'flex-start';
-      surface.style.justifyContent = 'flex-start';
-      surface.style.position = 'relative';
-      surface.style.overflow = 'visible';
-      surface.appendChild(clone);
-
-      const host = document.createElement('div');
-      host.style.position = 'fixed';
-      host.style.left = '-4000px';
-      host.style.top = '0';
-      host.style.zIndex = '-10000';
-      // FIX: Ensure content is visible for html2canvas
-      host.style.opacity = '1';
-      host.appendChild(surface);
-      document.body.appendChild(host);
-
-      return {
-        surface,
-        cleanup: () => {
-          document.body.removeChild(host);
+    function deleteNode(parentId, nodeId) {
+      if (parentId === treeData.id) {
+        treeData.children = treeData.children.filter(c => c.id !== nodeId);
+      } else {
+        const parent = treeData.children.find(c => c.id === parentId);
+        if (parent) {
+          parent.children = parent.children.filter(c => c.id !== nodeId);
         }
+      }
+      render();
+    }
+
+    // Drawing Lines
+    function drawLines() {
+      const svg = document.getElementById('svg-layer');
+      svg.innerHTML = '';
+
+      // Get Diagram Offset
+      const diagramRect = document.getElementById('diagram').getBoundingClientRect();
+      const offsetX = diagramRect.left;
+      const offsetY = diagramRect.top;
+
+      // Helper to get center
+      const getPos = (id) => {
+        const el = document.getElementById(`node-${id}`);
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        return {
+          x: rect.left + rect.width / 2 - offsetX,
+          y: rect.top + rect.height / 2 - offsetY,
+          top: rect.top - offsetY,
+          bottom: rect.bottom - offsetY,
+          left: rect.left - offsetX,
+          right: rect.right - offsetX,
+          width: rect.width,
+          height: rect.height
+        };
       };
-    }
 
-    function measureNodeBounds(container, padding) {
-      const nodes = container.querySelectorAll('.node-box');
-      if (!nodes.length) {
-        return null;
-      }
-      const hostRect = container.getBoundingClientRect();
-      let minLeft = Infinity;
-      let minTop = Infinity;
-      let maxRight = -Infinity;
-      let maxBottom = -Infinity;
-
-      nodes.forEach((box) => {
-        const rect = box.getBoundingClientRect();
-        minLeft = Math.min(minLeft, rect.left - hostRect.left);
-        minTop = Math.min(minTop, rect.top - hostRect.top);
-        maxRight = Math.max(maxRight, rect.right - hostRect.left);
-        maxBottom = Math.max(maxBottom, rect.bottom - hostRect.top);
-      });
-
-      return {
-        left: Math.max(0, minLeft - padding),
-        top: Math.max(0, minTop - padding),
-        right: Math.min(hostRect.width, maxRight + padding),
-        bottom: Math.min(hostRect.height, maxBottom + padding)
+      const createPath = (d) => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        svg.appendChild(path);
       };
-    }
 
-    function cropCanvasToBounds(canvas, bounds, scale) {
-      if (!bounds) return canvas;
-      const cropCanvas = document.createElement('canvas');
-      const cropWidth = Math.max(1, Math.round((bounds.right - bounds.left) * scale));
-      const cropHeight = Math.max(1, Math.round((bounds.bottom - bounds.top) * scale));
-      cropCanvas.width = cropWidth;
-      cropCanvas.height = cropHeight;
+      // 1. L1 to L2s
+      const rootPos = getPos(treeData.id);
+      if (!rootPos) return;
 
-      const sourceX = Math.max(0, Math.floor(bounds.left * scale));
-      const sourceY = Math.max(0, Math.floor(bounds.top * scale));
+      if (treeData.children && treeData.children.length > 0) {
+        // Vertical line from root bottom
+        const rootBottomX = rootPos.x;
+        const rootBottomY = rootPos.bottom;
 
-      cropCanvas.getContext('2d').drawImage(
-        canvas,
-        sourceX,
-        sourceY,
-        cropWidth,
-        cropHeight,
-        0,
-        0,
-        cropWidth,
-        cropHeight
-      );
+        // Find min and max X of L2s to draw the horizontal bar
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let firstL2Y = 0;
 
-      return cropCanvas;
-    }
+        treeData.children.forEach(l2 => {
+          const l2Pos = getPos(l2.id);
+          if (l2Pos) {
+            minX = Math.min(minX, l2Pos.x);
+            maxX = Math.max(maxX, l2Pos.x);
+            firstL2Y = l2Pos.top;
 
-    async function captureFullDiagramCanvas() {
-      drawConnectors();
-      await waitForStageAssets(diagramWrapper);
-      // Double RAF to ensure styles are applied
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-      const wrapperBg = window.getComputedStyle(diagramWrapper).backgroundColor || '#ffffff';
-      const exportScale = Math.min(3, Math.max(window.devicePixelRatio || 1, 2));
-      const canvasRect = diagramCanvas.getBoundingClientRect();
-      const stageWidth = Math.ceil(Math.max(diagramCanvas.scrollWidth, canvasRect.width, STAGE_DIMENSIONS.width));
-      const stageHeight = Math.ceil(Math.max(diagramCanvas.scrollHeight, canvasRect.height, STAGE_DIMENSIONS.height));
-
-      const snapshot = createSnapshotSurface(stageWidth, stageHeight, wrapperBg);
-
-      // FIX: Add delay to allow DOM to render
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      try {
-        const bounds = measureNodeBounds(snapshot.surface, EXPORT_MARGIN);
-        const baseCanvas = await html2canvas(snapshot.surface, {
-          backgroundColor: wrapperBg,
-          useCORS: true,
-          allowTaint: true,
-          scale: exportScale,
-          width: stageWidth,
-          height: stageHeight,
-          letterRendering: true,
-          foreignObjectRendering: false, // FIX: Disable foreignObjectRendering
-          logging: true // FIX: Enable logging
+            // Draw vertical line from horizontal bar to L2 top
+            const midY = (rootBottomY + l2Pos.top) / 2;
+            createPath(`M ${l2Pos.x} ${midY} L ${l2Pos.x} ${l2Pos.top}`);
+          }
         });
-        return cropCanvasToBounds(baseCanvas, bounds, exportScale);
-      } finally {
-        snapshot.cleanup();
-      }
-    }
 
-    function canvasToPngBlob(canvas) {
-      if (canvas.toBlob) {
-        return new Promise((resolve, reject) => {
-          canvas.toBlob((blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('无法生成 PNG blob'));
+        if (minX !== Infinity) {
+          const midY = (rootBottomY + firstL2Y) / 2;
+          // Line from Root down to midY
+          createPath(`M ${rootBottomX} ${rootBottomY} L ${rootBottomX} ${midY}`);
+          // Horizontal bar
+          createPath(`M ${minX} ${midY} L ${maxX} ${midY}`);
+        }
+
+        // 2. L2 to L3s
+        treeData.children.forEach(l2 => {
+          if (l2.children && l2.children.length > 0) {
+            const l2Pos = getPos(l2.id);
+            const lastL3 = l2.children[l2.children.length - 1];
+            const lastL3Pos = getPos(lastL3.id);
+
+            if (l2Pos && lastL3Pos) {
+              // Vertical spine from L2 bottom
+              const spineX = l2Pos.x;
+              const spineStartY = l2Pos.bottom;
+              const spineEndY = lastL3Pos.y; // Go down to the last child's middle height
+
+              createPath(`M ${spineX} ${spineStartY} L ${spineX} ${spineEndY}`);
+
+              // Horizontal branches to each L3
+              l2.children.forEach(l3 => {
+                const l3Pos = getPos(l3.id);
+                if (l3Pos) {
+                  // Horizontal line from spine to L3 left
+                  createPath(`M ${spineX} ${l3Pos.y} L ${l3Pos.left} ${l3Pos.y}`);
+                }
+              });
             }
-          }, 'image/png');
+          }
         });
       }
 
-      const dataUrl = canvas.toDataURL('image/png');
-      const base64 = dataUrl.split(',')[1] || '';
-      const binary = atob(base64);
-      const length = binary.length;
-      const buffer = new Uint8Array(length);
-      for (let i = 0; i < length; i++) {
-        buffer[i] = binary.charCodeAt(i);
-      }
-      return Promise.resolve(new Blob([buffer], { type: 'image/png' }));
+      // Update SVG size
+      svg.setAttribute('width', diagram.scrollWidth);
+      svg.setAttribute('height', diagram.scrollHeight);
     }
 
-    async function exportPng() {
-      try {
-        const canvas = await captureFullDiagramCanvas();
-        const blob = await canvasToPngBlob(canvas);
-        const url = URL.createObjectURL(blob);
-        const filename = getExportFileName('png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('导出 PNG 失败', error);
-        alert('导出 PNG 失败，请稍后再试');
-      }
+    // Initial Render
+    render();
+    window.addEventListener('resize', () => {
+      adjustLevel3Offsets();
+      drawLines();
+    });
+
+    // Zoom & Pan
+    let scale = 1;
+    function resetZoom() {
+      scale = 1;
+      diagram.style.transform = `scale(${scale})`;
     }
 
-    function exportSvg() {
-      const svgContent = svgEl.outerHTML;
-      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'orgchart-connectors.svg';
-      a.click();
-      URL.revokeObjectURL(url);
+    // Theme
+    document.getElementById('theme-select').addEventListener('change', (e) => {
+      document.body.className = e.target.value;
+    });
+
+    // Export/Import
+    function exportJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(treeData, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "structure.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
     }
 
-    async function copyAll() {
-      try {
-        const canvas = await captureFullDiagramCanvas();
-        const blob = await canvasToPngBlob(canvas);
-        if (blob && navigator.clipboard && window.ClipboardItem) {
-          const item = new ClipboardItem({ 'image/png': blob });
-          await navigator.clipboard.write([item]);
-          alert('PNG 已复制到剪贴板');
-          return;
-        }
-      } catch (e) {
-        console.warn('复制 PNG 失败，fallback 复制 JSON', e);
-      }
-
-      // fallback: copy JSON
-      await navigator.clipboard.writeText(JSON.stringify(root, null, 2));
-      alert('已复制 JSON 到剪贴板');
-    }
-
-    function saveJson() {
-      const json = JSON.stringify(root, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'orgchart.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function validateDepth(node, depth = 1) {
-      if (depth > 3) return false;
-      if (!node.children) return true;
-      return node.children.every(child => validateDepth(child, depth + 1));
-    }
-
-    function loadJsonFile(file) {
+    function importJSON(input) {
+      const file = input.files[0];
+      if (!file) return;
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const obj = JSON.parse(e.target.result);
-          if (!validateDepth(obj)) {
-            alert('JSON 超过最大深度 3，导入失败');
-            return;
-          }
-          // 简单 normalize
-          const normalize = (n, depth = 1) => {
-            n.id = n.id || nextId();
-            n.label = n.label || 'Node';
-            n.bgColor = n.bgColor || getDefaultBgColor(depth);
-            n.children = n.children || [];
-            n.children.forEach(child => normalize(child, depth + 1));
-          };
-          normalize(obj);
-          root = obj;
-          renderAll();
+          treeData = JSON.parse(e.target.result);
+          render();
         } catch (err) {
-          console.error(err);
-          alert('JSON 解析失败');
+          alert('Invalid JSON file');
         }
       };
-      reader.readAsText(file, 'utf-8');
+      reader.readAsText(file);
     }
 
-    // ---------- 事件绑定 ----------
-    document.getElementById('stylePresetSelect').addEventListener('change', (e) => {
-      currentStylePreset = e.target.value;
-      const preset = stylePresets[currentStylePreset];
-      if (preset && preset.bgColor) {
-        diagramWrapper.style.backgroundColor = preset.bgColor;
-        bgColorInput.value = preset.bgColor;
-      }
-      renderDiagram();
-    });
+    function exportPNG() {
+      // Reset zoom for capture
+      const currentTransform = diagram.style.transform;
+      diagram.style.transform = 'scale(1)';
 
-    connectorStyleSelect.value = connectorStyle;
-    connectorStyleSelect.addEventListener('change', (e) => {
-      connectorStyle = e.target.value;
-      drawConnectors();
-    });
+      // Ensure background color is captured
+      const bg = getComputedStyle(document.body).getPropertyValue('--bg-color');
 
-    document.getElementById('addLevel2Btn').addEventListener('click', () => {
-      addChild(root, 1);
-    });
+      html2canvas(diagram, {
+        backgroundColor: bg,
+        scale: 2 // Higher quality
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'structure-map.png';
+        link.href = canvas.toDataURL();
+        link.click();
 
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      if (!confirm('确定要重置结构吗？')) return;
-      idCounter = 1;
-      root = { id: nextId(), label: 'Root', bgColor: getDefaultBgColor(1), children: [] };
-      renderAll();
-    });
-
-    document.getElementById('exportPngBtn').addEventListener('click', exportPng);
-    document.getElementById('exportSvgBtn').addEventListener('click', exportSvg);
-    document.getElementById('copyBtn').addEventListener('click', copyAll);
-    document.getElementById('saveJsonBtn').addEventListener('click', saveJson);
-
-    document.getElementById('loadJsonInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) loadJsonFile(file);
-      e.target.value = '';
-    });
-
-    bgColorInput.addEventListener('input', (e) => {
-      diagramWrapper.style.backgroundColor = e.target.value;
-    });
-
-    window.addEventListener('resize', () => {
-      adjustLevel3Offsets();
-      adjustLevel2Spacing();
-      centerLevel2Container();
-      drawConnectors();
-    });
-
-    // 初始背景色同步
-    diagramWrapper.style.backgroundColor = bgColorInput.value;
-
-    // 初始化渲染
-    renderAll();
+        // Restore zoom
+        diagram.style.transform = currentTransform;
+      });
+    }
   </script>
 </body>
 
