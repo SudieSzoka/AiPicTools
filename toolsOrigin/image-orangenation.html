@@ -23,11 +23,48 @@
       margin: 0;
       padding: 0;
       font-family: var(--font-family);
-      background-color: var(--bg-color);
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    /* Theme background colors */
+    body.theme-minimal {
+      background-color: #f8fafc;
+    }
+    body.theme-card {
+      background-color: #e0f2fe;
+    }
+    body.theme-soft {
+      background-color: #ecfdf5;
+    }
+    body.theme-dark {
+      background-color: #1e293b;
+    }
+    body.theme-warm {
+      background-color: #fff7ed;
+    }
+    body.theme-cool {
+      background-color: #eef2ff;
+    }
+    body.theme-modern {
+      background-color: #fdf2f8;
+    }
+    body.theme-classic {
+      background-color: #fffbeb;
+    }
+    body.theme-vibrant {
+      background-color: #faf5ff;
+    }
+    body.theme-elegant {
+      background-color: #fff1f2;
+    }
+    body.theme-ocean {
+      background-color: #ecfeff;
+    }
+    body.theme-sunset {
+      background-color: #fef2f2;
     }
 
     /* Toolbar */
@@ -103,12 +140,6 @@
 
     /* Node Styles */
     .node {
-      background: var(--node-bg);
-      color: var(--node-text);
-      border: 1px solid var(--node-border);
-      padding: 10px 16px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
       min-width: 80px;
       max-width: 200px;
       text-align: center;
@@ -119,10 +150,354 @@
       transition: all 0.3s ease;
       font-size: 14px;
       line-height: 1.4;
+      box-sizing: border-box;
     }
 
     .node.level-3 {
       text-align: left;
+    }
+
+    /* Theme-based Node Styles */
+    /* Minimal Theme */
+    body.theme-minimal .node.level-1 {
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    body.theme-minimal .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    body.theme-minimal .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+    }
+    body.theme-minimal #diagram {
+      background-color: #f8fafc;
+    }
+
+    /* Card Theme */
+    body.theme-card .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #bae6fd;
+      background: linear-gradient(to right, #f0f9ff, #eff6ff);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -1px rgba(14, 165, 233, 0.06);
+    }
+    body.theme-card .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #bae6fd;
+      background: #f0f9ff;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(14, 165, 233, 0.1);
+    }
+    body.theme-card .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #bae6fd;
+      background: #f0f9ff;
+      color: #1e293b;
+    }
+    body.theme-card #diagram {
+      background-color: #e0f2fe;
+    }
+
+    /* Soft Theme */
+    body.theme-soft .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 24px;
+      border: 1px solid #a7f3d0;
+      background: linear-gradient(to right, #ecfdf5, #f0fdfa);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06);
+    }
+    body.theme-soft .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 16px;
+      border: 1px solid #a7f3d0;
+      background: #ecfdf5;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(16, 185, 129, 0.1);
+    }
+    body.theme-soft .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1px solid #a7f3d0;
+      background: #ecfdf5;
+      color: #1e293b;
+    }
+    body.theme-soft #diagram {
+      background-color: #ecfdf5;
+    }
+
+    /* Dark Theme */
+    body.theme-dark .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #475569;
+      background: linear-gradient(to right, #1e293b, #0f172a);
+      color: #ffffff;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+      font-weight: 600;
+    }
+    body.theme-dark .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #64748b;
+      background: #1e293b;
+      color: #000000;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.5);
+    }
+    body.theme-dark .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #94a3b8;
+      background: #334155;
+      color: #000000;
+    }
+    body.theme-dark #diagram {
+      background-color: #1e293b;
+    }
+
+    /* Warm Theme */
+    body.theme-warm .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #fdba74;
+      background: linear-gradient(to right, #fff7ed, #fffbeb);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(251, 146, 60, 0.1), 0 2px 4px -1px rgba(251, 146, 60, 0.06);
+    }
+    body.theme-warm .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #fed7aa;
+      background: #fff7ed;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(251, 146, 60, 0.1);
+    }
+    body.theme-warm .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #fed7aa;
+      background: #fff7ed;
+      color: #1e293b;
+    }
+    body.theme-warm #diagram {
+      background-color: #fff7ed;
+    }
+
+    /* Cool Theme */
+    body.theme-cool .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #a5b4fc;
+      background: linear-gradient(to right, #eef2ff, #f3e8ff);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1), 0 2px 4px -1px rgba(99, 102, 241, 0.06);
+    }
+    body.theme-cool .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(99, 102, 241, 0.1);
+    }
+    body.theme-cool .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #1e293b;
+    }
+    body.theme-cool #diagram {
+      background-color: #eef2ff;
+    }
+
+    /* Modern Theme */
+    body.theme-modern .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 2px solid #f472b6;
+      background: linear-gradient(to right, #ec4899, #f43f5e);
+      color: #ffffff;
+      box-shadow: 0 10px 15px -3px rgba(236, 72, 153, 0.5), 0 4px 6px -2px rgba(236, 72, 153, 0.5);
+      font-weight: 600;
+    }
+    body.theme-modern .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 2px solid #f9a8d4;
+      background: linear-gradient(to right, #f472b6, #fb7185);
+      color: #ffffff;
+      box-shadow: 0 4px 6px -1px rgba(244, 114, 182, 0.5), 0 2px 4px -1px rgba(244, 114, 182, 0.5);
+    }
+    body.theme-modern .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #ec4899;
+      background: #ec4899;
+      color: #000000;
+      font-weight: 500;
+    }
+    body.theme-modern #diagram {
+      background-color: #fdf2f8;
+    }
+
+    /* Classic Theme */
+    body.theme-classic .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid #d97706;
+      background: linear-gradient(to right, #fef3c7, #fef9c3);
+      color: #78350f;
+      box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2), 0 2px 4px -1px rgba(217, 119, 6, 0.2);
+    }
+    body.theme-classic .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 2px solid #f59e0b;
+      background: #fffbeb;
+      color: #78350f;
+      box-shadow: 0 1px 2px 0 rgba(217, 119, 6, 0.2);
+    }
+    body.theme-classic .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid #fbbf24;
+      background: #fffbeb;
+      color: #78350f;
+    }
+    body.theme-classic #diagram {
+      background-color: #fffbeb;
+    }
+
+    /* Vibrant Theme */
+    body.theme-vibrant .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 2px solid #a78bfa;
+      background: linear-gradient(to right, #8b5cf6, #a855f7, #d946ef);
+      color: #ffffff;
+      box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.5), 0 4px 6px -2px rgba(139, 92, 246, 0.5);
+      font-weight: 700;
+    }
+    body.theme-vibrant .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 2px solid #c4b5fd;
+      background: linear-gradient(to right, #a78bfa, #c084fc);
+      color: #ffffff;
+      box-shadow: 0 4px 6px -1px rgba(167, 139, 250, 0.5), 0 2px 4px -1px rgba(167, 139, 250, 0.5);
+      font-weight: 600;
+    }
+    body.theme-vibrant .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #8b5cf6;
+      background: #7c3aed;
+      color: #000000;
+      font-weight: 500;
+    }
+    body.theme-vibrant #diagram {
+      background-color: #faf5ff;
+    }
+
+    /* Elegant Theme */
+    body.theme-elegant .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #fda4af;
+      background: linear-gradient(to right, #fff1f2, #fdf2f8, #fdf4ff);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(251, 113, 133, 0.1), 0 2px 4px -1px rgba(251, 113, 133, 0.06);
+    }
+    body.theme-elegant .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #fecdd3;
+      background: #fff1f2;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(251, 113, 133, 0.1);
+    }
+    body.theme-elegant .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #fecdd3;
+      background: #fff1f2;
+      color: #1e293b;
+    }
+    body.theme-elegant #diagram {
+      background-color: #fff1f2;
+    }
+
+    /* Ocean Theme */
+    body.theme-ocean .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #67e8f9;
+      background: linear-gradient(to right, #ecfeff, #f0fdfa, #eff6ff);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.1), 0 2px 4px -1px rgba(6, 182, 212, 0.06);
+    }
+    body.theme-ocean .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #a5f3fc;
+      background: #ecfeff;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(6, 182, 212, 0.1);
+    }
+    body.theme-ocean .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #a5f3fc;
+      background: #ecfeff;
+      color: #1e293b;
+    }
+    body.theme-ocean #diagram {
+      background-color: #ecfeff;
+    }
+
+    /* Sunset Theme */
+    body.theme-sunset .node.level-1 {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid #fca5a5;
+      background: linear-gradient(to right, #fef2f2, #fff7ed, #fefce8);
+      color: #1e293b;
+      box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1), 0 2px 4px -1px rgba(239, 68, 68, 0.06);
+    }
+    body.theme-sunset .node.level-2 {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(239, 68, 68, 0.1);
+    }
+    body.theme-sunset .node.level-3 {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      color: #1e293b;
+    }
+    body.theme-sunset #diagram {
+      background-color: #fef2f2;
     }
 
     .node:empty:before {
@@ -131,8 +506,8 @@
     }
 
     .node:focus {
-      border-color: var(--accent-color);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      outline: 2px solid rgba(59, 130, 246, 0.5);
+      outline-offset: 2px;
     }
 
     /* Controls on Node Hover */
@@ -226,75 +601,42 @@
       transition: d 0.3s ease;
     }
 
-    /* Themes */
-    .theme-default {
-      --bg-color: #f4f6f8;
-      --node-bg: #ffffff;
-      --node-text: #333333;
-      --node-border: #e0e0e0;
-      --line-color: #94a3b8;
-      --accent-color: #3b82f6;
-      --radius: 8px;
+    /* Line color adjustments for themes */
+    body.theme-minimal path {
+      stroke: #94a3b8;
     }
-
-    .theme-dark {
-      --bg-color: #1f2937;
-      --node-bg: #374151;
-      --node-text: #f3f4f6;
-      --node-border: #4b5563;
-      --line-color: #6b7280;
-      --accent-color: #60a5fa;
-      --radius: 8px;
+    body.theme-card path {
+      stroke: #7dd3fc;
     }
-
-    .theme-colorful {
-      --bg-color: #fff1f2;
-      --node-bg: #ffe4e6;
-      --node-text: #881337;
-      --node-border: #fecdd3;
-      --line-color: #fda4af;
-      --accent-color: #e11d48;
-      --radius: 20px;
+    body.theme-soft path {
+      stroke: #6ee7b7;
     }
-
-    .theme-blue {
-      --bg-color: #eff6ff;
-      --node-bg: #dbeafe;
-      --node-text: #1e3a8a;
-      --node-border: #bfdbfe;
-      --line-color: #93c5fd;
-      --accent-color: #2563eb;
-      --radius: 6px;
+    body.theme-dark path {
+      stroke: #64748b;
     }
-
-    .theme-forest {
-      --bg-color: #ecfdf5;
-      --node-bg: #d1fae5;
-      --node-text: #064e3b;
-      --node-border: #a7f3d0;
-      --line-color: #6ee7b7;
-      --accent-color: #059669;
-      --radius: 10px;
+    body.theme-warm path {
+      stroke: #fdba74;
     }
-
-    .theme-sunset {
-      --bg-color: #fff7ed;
-      --node-bg: #ffedd5;
-      --node-text: #7c2d12;
-      --node-border: #fed7aa;
-      --line-color: #fdba74;
-      --accent-color: #ea580c;
-      --radius: 14px;
+    body.theme-cool path {
+      stroke: #818cf8;
     }
-
-    .theme-slate {
-      --bg-color: #e2e8f0;
-      --node-bg: #cbd5f5;
-      --node-text: #0f172a;
-      --node-border: #94a3b8;
-      --line-color: #64748b;
-      --accent-color: #475569;
-      --radius: 4px;
+    body.theme-modern path {
+      stroke: #f472b6;
+    }
+    body.theme-classic path {
+      stroke: #f59e0b;
+    }
+    body.theme-vibrant path {
+      stroke: #a78bfa;
+    }
+    body.theme-elegant path {
+      stroke: #fda4af;
+    }
+    body.theme-ocean path {
+      stroke: #22d3ee;
+    }
+    body.theme-sunset path {
+      stroke: #f87171;
     }
 
     /* Utility */
@@ -304,19 +646,24 @@
   </style>
 </head>
 
-<body class="theme-default">
+<body class="theme-minimal">
 
   <div class="toolbar">
     <div style="font-weight: bold; margin-right: auto;">TreeGraph Gen</div>
 
     <select id="theme-select">
-      <option value="theme-default">默认风格 (Default)</option>
-      <option value="theme-blue">清爽蓝 (Blue)</option>
-      <option value="theme-colorful">活力粉 (Pink)</option>
+      <option value="theme-minimal" selected>极简风格 (Minimal)</option>
+      <option value="theme-card">卡片风格 (Card)</option>
+      <option value="theme-soft">柔和风格 (Soft)</option>
       <option value="theme-dark">深色模式 (Dark)</option>
-      <option value="theme-forest">森林绿 (Forest)</option>
-      <option value="theme-sunset">暖色夕阳 (Sunset)</option>
-      <option value="theme-slate">冷灰质感 (Slate)</option>
+      <option value="theme-warm">温暖风格 (Warm)</option>
+      <option value="theme-cool">清爽风格 (Cool)</option>
+      <option value="theme-modern">现代风格 (Modern)</option>
+      <option value="theme-classic">经典风格 (Classic)</option>
+      <option value="theme-vibrant">活力风格 (Vibrant)</option>
+      <option value="theme-elegant">优雅风格 (Elegant)</option>
+      <option value="theme-ocean">海洋风格 (Ocean)</option>
+      <option value="theme-sunset">夕阳风格 (Sunset)</option>
     </select>
 
     <button class="btn" onclick="resetZoom()">重置视图</button>
@@ -628,6 +975,11 @@
     // Theme
     document.getElementById('theme-select').addEventListener('change', (e) => {
       document.body.className = e.target.value;
+      // Wait for CSS transitions to complete, then recalculate layout
+      setTimeout(() => {
+        adjustLevel3Offsets();
+        drawLines();
+      }, 350); // Slightly longer than transition duration (0.3s)
     });
 
     // Export/Import
@@ -668,11 +1020,11 @@
       const currentTransform = diagram.style.transform;
       diagram.style.transform = 'scale(1)';
 
-      // Ensure background color is captured
-      const bg = getComputedStyle(document.body).getPropertyValue('--bg-color');
+      // Get background color from computed style
+      const bg = getComputedStyle(diagram).backgroundColor;
 
       html2canvas(diagram, {
-        backgroundColor: bg,
+        backgroundColor: bg || '#f8fafc',
         scale: 2 // Higher quality
       }).then(canvas => {
         const link = document.createElement('a');
