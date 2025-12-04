@@ -124,6 +124,10 @@
       line-height: 1.4;
     }
 
+    .node.level-3 {
+      text-align: left;
+    }
+
     .node:empty:before {
       content: '点击编辑';
       color: #aaa;
@@ -266,6 +270,36 @@
       --radius: 6px;
     }
 
+    .theme-forest {
+      --bg-color: #ecfdf5;
+      --node-bg: #d1fae5;
+      --node-text: #064e3b;
+      --node-border: #a7f3d0;
+      --line-color: #6ee7b7;
+      --accent-color: #059669;
+      --radius: 10px;
+    }
+
+    .theme-sunset {
+      --bg-color: #fff7ed;
+      --node-bg: #ffedd5;
+      --node-text: #7c2d12;
+      --node-border: #fed7aa;
+      --line-color: #fdba74;
+      --accent-color: #ea580c;
+      --radius: 14px;
+    }
+
+    .theme-slate {
+      --bg-color: #e2e8f0;
+      --node-bg: #cbd5f5;
+      --node-text: #0f172a;
+      --node-border: #94a3b8;
+      --line-color: #64748b;
+      --accent-color: #475569;
+      --radius: 4px;
+    }
+
     /* Utility */
     .hidden {
       display: none;
@@ -308,6 +342,9 @@
       <option value="theme-blue">清爽蓝 (Blue)</option>
       <option value="theme-colorful">活力粉 (Pink)</option>
       <option value="theme-dark">深色模式 (Dark)</option>
+      <option value="theme-forest">森林绿 (Forest)</option>
+      <option value="theme-sunset">暖色夕阳 (Sunset)</option>
+      <option value="theme-slate">冷灰质感 (Slate)</option>
     </select>
 
     <button class="btn" onclick="resetZoom()">重置视图</button>
@@ -413,7 +450,7 @@
       wrapper.style.position = 'relative';
 
       const node = document.createElement('div');
-      node.className = 'node';
+      node.className = `node level-${level}`;
       node.contentEditable = true;
       node.innerText = data.text;
       node.id = `node-${data.id}`;
@@ -622,11 +659,17 @@
     });
 
     // Export/Import
+    function getSafeFileName(base) {
+      const sanitized = (base || 'structure').replace(/[\\\/:*?"<>|]/g, '_').trim();
+      return sanitized || 'structure';
+    }
+
     function exportJSON() {
+      const fileName = getSafeFileName(treeData.text);
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(treeData, null, 2));
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "structure.json");
+      downloadAnchorNode.setAttribute("download", `${fileName}.json`);
       document.body.appendChild(downloadAnchorNode);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
@@ -648,6 +691,7 @@
     }
 
     function exportPNG() {
+      const fileName = getSafeFileName(treeData.text);
       // Reset zoom for capture
       const currentTransform = diagram.style.transform;
       diagram.style.transform = 'scale(1)';
@@ -660,7 +704,7 @@
         scale: 2 // Higher quality
       }).then(canvas => {
         const link = document.createElement('a');
-        link.download = 'structure-map.png';
+        link.download = `${fileName}.png`;
         link.href = canvas.toDataURL();
         link.click();
 
