@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Stroke and Shadow Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .control-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .control-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .preview-area {
+      border: 1px dashed #ccc;
+      padding: 20px;
+      min-height: 150px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: repeating-conic-gradient(#f5f5f5 0% 25%, transparent 0% 50%) 
+                 50% / 20px 20px;
+      position: relative;
+    }
+    #textPreview {
+      display: inline-block;
+      white-space: pre-wrap;
+      text-align: center;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #2d3748;
+    }
+    .color-picker {
+      display: flex;
+      align-items: center;
+    }
+    .color-picker input[type="color"] {
+      width: 40px;
+      margin-right: 8px;
+    }
+    .color-picker input[type="text"] {
+      flex: 1;
+    }
+    #fontFileInput {
+      display: none;
+    }
+    .custom-file-upload {
+      display: inline-block;
+      padding: 8px 12px;
+      cursor: pointer;
+      background-color: #e2e8f0;
+      border-radius: 4px;
+      margin-top: 5px;
+      text-align: center;
+    }
+    .custom-file-upload:hover {
+      background-color: #cbd5e0;
+    }
+    #fontsList {
+      margin-top: 10px;
+    }
+    .font-item {
+      margin-bottom: 5px;
+      padding: 5px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .remove-font {
+      cursor: pointer;
+      color: #e53e3e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>文本描边与阴影生成器</h1>
+    
+    <div class="control-panel">
+      <div class="control-group">
+        <label for="textInput">输入文本:</label>
+        <input type="text" id="textInput" value="签到" placeholder="输入要显示的文本">
+      </div>
+      
+      <div class="control-group">
+        <label for="fontSize">字体大小 (px):</label>
+        <input type="number" id="fontSize" value="72" min="10" max="500">
+      </div>
+      
+      <div class="control-group">
+        <label for="letterSpacing">字距 (px):</label>
+        <input type="number" id="letterSpacing" value="0" min="-20" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="fontFamily">字体选择:</label>
+        <select id="fontFamily">
+          <option value="Arial">Arial</option>
+          <option value="'Times New Roman'">Times New Roman</option>
+          <option value="'Microsoft YaHei'">Microsoft YaHei</option>
+          <option value="SimHei">SimHei</option>
+          <option value="KaiTi">KaiTi</option>
+          <option value="SimSun">SimSun</option>
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
+        </select>
+        <label for="fontFileInput" class="custom-file-upload">
+          上传自定义字体
+        </label>
+        <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2">
+        <div id="fontsList"></div>
+      </div>
+      
+      <div class="control-group">
+        <label for="textColor">文本颜色:</label>
+        <div class="color-picker">
+          <input type="color" id="textColorPicker" value="#ff0000">
+          <input type="text" id="textColor" value="#ff0000">
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <label for="strokeWidth">描边宽度 (px):</label>
+        <input type="number" id="strokeWidth" value="4" min="0" max="50" step="0.5">
+      </div>
+      
+      <div class="control-group">
+        <label for="strokeColor">描边颜色:</label>
+        <div class="color-picker">
+          <input type="color" id="strokeColorPicker" value="#000000">
+          <input type="text" id="strokeColor" value="#000000">
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowOffsetX">阴影水平偏移 (px):</label>
+        <input type="number" id="shadowOffsetX" value="0" min="-50" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowOffsetY">阴影垂直偏移 (px):</label>
+        <input type="number" id="shadowOffsetY" value="5" min="-50" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowBlur">阴影模糊 (px):</label>
+        <input type="number" id="shadowBlur" value="3" min="0" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowColor">阴影颜色:</label>
+        <div class="color-picker">
+          <input type="color" id="shadowColorPicker" value="#000000">
+          <input type="text" id="shadowColor" value="#000000">
+        </div>
+      </div>
+    </div>
+    
+    <div class="preview-area">
+      <div id="textPreview">签到</div>
+    </div>
+    
+    <div class="button-group">
+      <button id="downloadBtn">导出为PNG</button>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量存储自定义字体
+    const customFonts = [];
+    
+    // 初始渲染和事件监听
+    document.addEventListener('DOMContentLoaded', () => {
+      // 初始化渲染
+      updateTextStyle();
+      
+      // 监听输入变化
+      document.getElementById('textInput').addEventListener('input', updateTextStyle);
+      document.getElementById('fontSize').addEventListener('input', updateTextStyle);
+      document.getElementById('letterSpacing').addEventListener('input', updateTextStyle);
+      document.getElementById('fontFamily').addEventListener('change', updateTextStyle);
+      document.getElementById('textColorPicker').addEventListener('input', e => {
+        document.getElementById('textColor').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('textColor').addEventListener('change', e => {
+        document.getElementById('textColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('textColor').addEventListener('input', e => {
+        document.getElementById('textColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('strokeWidth').addEventListener('input', updateTextStyle);
+      document.getElementById('strokeColorPicker').addEventListener('input', e => {
+        document.getElementById('strokeColor').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('strokeColor').addEventListener('input', e => {
+        document.getElementById('strokeColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('shadowOffsetX').addEventListener('input', updateTextStyle);
+      document.getElementById('shadowOffsetY').addEventListener('input', updateTextStyle);
+      document.getElementById('shadowBlur').addEventListener('input', updateTextStyle);
+      document.getElementById('shadowColorPicker').addEventListener('input', e => {
+        document.getElementById('shadowColor').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('shadowColor').addEventListener('input', e => {
+        document.getElementById('shadowColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      
+      // 字体文件上传处理
+      document.getElementById('fontFileInput').addEventListener('change', handleFontUpload);
+      
+      // 下载按钮点击事件
+      document.getElementById('downloadBtn').addEventListener('click', downloadAsPNG);
+    });
+
+    // 更新文本样式
+    function updateTextStyle() {
+      const textPreview = document.getElementById('textPreview');
+      const text = document.getElementById('textInput').value || '签到';
+      const fontSize = document.getElementById('fontSize').value + 'px';
+      const fontFamily = document.getElementById('fontFamily').value;
+      const textColor = document.getElementById('textColor').value;
+      const strokeWidth = document.getElementById('strokeWidth').value + 'px';
+      const strokeColor = document.getElementById('strokeColor').value;
+      const shadowOffsetX = document.getElementById('shadowOffsetX').value + 'px';
+      const shadowOffsetY = document.getElementById('shadowOffsetY').value + 'px';
+      const shadowBlur = document.getElementById('shadowBlur').value + 'px';
+      const shadowColor = document.getElementById('shadowColor').value;
+      const letterSpacing = document.getElementById('letterSpacing').value + 'px';
+      
+      textPreview.textContent = text;
+      textPreview.style.fontFamily = fontFamily;
+      textPreview.style.fontSize = fontSize;
+      textPreview.style.color = textColor;
+      textPreview.style.letterSpacing = letterSpacing;
+      textPreview.style.webkitTextStroke = `${strokeWidth} ${strokeColor}`;
+      textPreview.style.textStroke = `${strokeWidth} ${strokeColor}`;
+      textPreview.style.textShadow = `${shadowOffsetX} ${shadowOffsetY} ${shadowBlur} ${shadowColor}`;
+    }
+
+    // 处理字体上传
+    function handleFontUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // 检查文件扩展名
+      const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validExtensions.includes(fileExtension)) {
+        alert('请上传有效的字体文件：.ttf, .otf, .woff, 或 .woff2');
+        return;
+      }
+      
+      const fontName = file.name.split('.')[0];
+      const fontUrl = URL.createObjectURL(file);
+      
+      // 创建自定义字体
+      const fontFace = new FontFace(fontName, `url(${fontUrl})`);
+      
+      fontFace.load().then(loadedFace => {
+        // 添加到文档
+        document.fonts.add(loadedFace);
+        
+        // 保存自定义字体信息
+        customFonts.push({
+          name: fontName,
+          face: loadedFace,
+          url: fontUrl
+        });
+        
+        // 更新字体选择下拉框
+        const fontSelect = document.getElementById('fontFamily');
+        const option = document.createElement('option');
+        option.value = fontName;
+        option.textContent = fontName + ' (自定义)';
+        fontSelect.appendChild(option);
+        option.selected = true;
+        
+        // 更新字体列表显示
+        updateFontsList();
+        
+        // 更新文本样式
+        updateTextStyle();
+      }).catch(error => {
+        console.error('字体加载失败:', error);
+        alert('字体加载失败，请尝试其他字体文件');
+      });
+      
+      // 清除文件输入，允许重复上传相同文件
+      event.target.value = '';
+    }
+
+    // 更新自定义字体列表显示
+    function updateFontsList() {
+      const fontsList = document.getElementById('fontsList');
+      fontsList.innerHTML = '';
+      
+      customFonts.forEach((font, index) => {
+        const fontItem = document.createElement('div');
+        fontItem.className = 'font-item';
+        fontItem.innerHTML = `
+          <span>${font.name}</span>
+          <span class="remove-font" data-index="${index}">×</span>
+        `;
+        fontsList.appendChild(fontItem);
+      });
+      
+      // 添加删除事件监听
+      document.querySelectorAll('.remove-font').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          removeCustomFont(index);
+        });
+      });
+    }
+
+    // 移除自定义字体
+    function removeCustomFont(index) {
+      if (index < 0 || index >= customFonts.length) return;
+      
+      const fontName = customFonts[index].name;
+      
+      // 从下拉列表中移除
+      const fontSelect = document.getElementById('fontFamily');
+      for (let i = 0; i < fontSelect.options.length; i++) {
+        if (fontSelect.options[i].value === fontName) {
+          fontSelect.remove(i);
+          break;
+        }
+      }
+      
+      // 如果当前选中的是被删除的字体，切换到默认字体
+      if (fontSelect.value === fontName) {
+        fontSelect.value = 'Arial';
+        updateTextStyle();
+      }
+      
+      // 从自定义字体列表中移除
+      customFonts.splice(index, 1);
+      
+      // 更新字体列表显示
+      updateFontsList();
+    }
+
+    // 下载为PNG
+    function downloadAsPNG() {
+      const textPreview = document.getElementById('textPreview');
+      const text = textPreview.textContent;
+      
+      // 创建临时canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 设置canvas初始尺寸
+      canvas.width = 1000;
+      canvas.height = 500;
+      
+      // 清除背景
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 应用文本样式
+      const fontSize = parseInt(document.getElementById('fontSize').value);
+      const fontFamily = document.getElementById('fontFamily').value;
+      const textColor = document.getElementById('textColor').value;
+      const strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+      const strokeColor = document.getElementById('strokeColor').value;
+      const shadowOffsetX = parseInt(document.getElementById('shadowOffsetX').value);
+      const shadowOffsetY = parseInt(document.getElementById('shadowOffsetY').value);
+      const shadowBlur = parseInt(document.getElementById('shadowBlur').value);
+      const shadowColor = document.getElementById('shadowColor').value;
+      const letterSpacing = parseInt(document.getElementById('letterSpacing').value);
+      
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.fillStyle = textColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.shadowOffsetX = shadowOffsetX;
+      ctx.shadowOffsetY = shadowOffsetY;
+      ctx.shadowBlur = shadowBlur;
+      ctx.shadowColor = shadowColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // 先使用临时canvas测量文本尺寸
+      const textMetrics = ctx.measureText(text);
+      const textWidth = Math.ceil(textMetrics.width + strokeWidth * 2 + shadowBlur * 2 + Math.abs(shadowOffsetX) * 2);
+      const textHeight = Math.ceil(fontSize * 1.2 + strokeWidth * 2 + shadowBlur * 2 + Math.abs(shadowOffsetY) * 2);
+      
+      // 调整canvas尺寸到实际需要
+      canvas.width = textWidth;
+      canvas.height = textHeight;
+      
+      // 重新设置样式（因为改变canvas尺寸会重置上下文）
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.fillStyle = textColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.shadowOffsetX = shadowOffsetX;
+      ctx.shadowOffsetY = shadowOffsetY;
+      ctx.shadowBlur = shadowBlur;
+      ctx.shadowColor = shadowColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // 在中心绘制文本
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // 应用字距设置
+      if (letterSpacing !== 0) {
+        // 绘制带字距的文本
+        let currentX = centerX - (ctx.measureText(text).width / 2);
+        // 调整起始位置
+        currentX -= (letterSpacing * (text.length - 1)) / 2;
+        
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const charWidth = ctx.measureText(char).width;
+          
+          if (strokeWidth > 0) {
+            ctx.strokeText(char, currentX + (charWidth / 2), centerY);
+          }
+          ctx.fillText(char, currentX + (charWidth / 2), centerY);
+          
+          currentX += charWidth + letterSpacing;
+        }
+      } else {
+        // 正常绘制文本
+        if (strokeWidth > 0) {
+          ctx.strokeText(text, centerX, centerY);
+        }
+        ctx.fillText(text, centerX, centerY);
+      }
+      
+      // 裁剪掉透明区域
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+      
+      // 找到非透明像素的边界
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          const alpha = data[(y * canvas.width + x) * 4 + 3];
+          if (alpha > 0) {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+      
+      // 确保有非透明像素
+      if (minX <= maxX && minY <= maxY) {
+        // 添加一点边距
+        const padding = 10;
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(canvas.width - 1, maxX + padding);
+        maxY = Math.min(canvas.height - 1, maxY + padding);
+        
+        // 裁剪图像
+        const croppedWidth = maxX - minX + 1;
+        const croppedHeight = maxY - minY + 1;
+        
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = croppedWidth;
+        croppedCanvas.height = croppedHeight;
+        
+        const croppedCtx = croppedCanvas.getContext('2d');
+        croppedCtx.drawImage(
+          canvas,
+          minX, minY, croppedWidth, croppedHeight,
+          0, 0, croppedWidth, croppedHeight
+        );
+        
+        // 导出为PNG
+        const dataURL = croppedCanvas.toDataURL('image/png');
+        
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = `${text.substring(0, 20)}_text.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // 如果没有可见内容，导出整个canvas
+        const dataURL = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = `${text.substring(0, 20)}_text.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  </script>
+</body>
+</html>

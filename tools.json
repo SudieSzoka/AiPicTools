@@ -151,5 +151,14 @@
       "category": "image",
       "icon": "pintu",
       "show": true
+    },
+    {
+      "id": 14,
+      "name": "字体PNG",
+      "description": "生产美术字体",
+      "path": "tools/image-art-font",
+      "category": "image",
+      "icon": "font",
+      "show": true
     }
   ]
