@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九宫格图片生成工具</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            min-height: calc(100vh - 200px);
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.6s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 850px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Upload Area */
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .drop-zone i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .drop-zone p {
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .drop-zone span {
+            font-size: 0.85rem;
+            color: rgba(148, 163, 184, 0.6);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .input-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input[type="number"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary);
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .btn-generate {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-generate:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .btn-download {
+            background: #10b981;
+            margin-top: 10px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: none;
+            transition: all 0.3s;
+        }
+
+        .btn-download:hover {
+            background: #059669;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Preview Area */
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            min-height: 400px;
+            padding: 20px;
+            position: relative;
+        }
+
+        #preview-canvas {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background-image:
+                linear-gradient(45deg, #222 25%, transparent 25%),
+                linear-gradient(-45deg, #222 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #222 75%),
+                linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.2;
+            display: block;
+        }
+
+        /* Tooltip style info */
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+
+        .info-panel strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Responsive Canvas lines overlay (simplified) */
+        .canvas-container {
+            position: relative;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-wrapper">
+        <div class="container">
+            <header>
+                <h1>九宫格图片工具</h1>
+                <p class="subtitle">通过 9-Slice 算法拉伸图片，保护边角不失真</p>
+            </header>
+
+            <div class="main-layout">
+                <div class="upload-section">
+                    <div class="drop-zone" id="drop-zone">
+                        <i class="icon">🖼️</i>
+                        <p>拖拽图片到这里</p>
+                        <span>或点击上传图片</span>
+                        <input type="file" id="file-input" accept="image/*">
+                    </div>
+
+                    <div class="controls">
+                        <div class="control-group">
+                            <div class="input-item">
+                                <label>上边距 (Top)</label>
+                                <input type="number" id="slice-top" value="40" min="1">
+                            </div>
+                            <div class="input-item">
+                                <label>右边距 (Right)</label>
+                                <input type="number" id="slice-right" value="40" min="1">
+                            </div>
+                            <div class="input-item">
+                                <label>下边距 (Bottom)</label>
+                                <input type="number" id="slice-bottom" value="40" min="1">
+                            </div>
+                            <div class="input-item">
+                                <label>左边距 (Left)</label>
+                                <input type="number" id="slice-left" value="40" min="1">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="input-item">
+                                <label>目标宽度 (px)</label>
+                                <input type="number" id="target-width" value="500" min="1">
+                            </div>
+                            <div class="input-item">
+                                <label>目标高度 (px)</label>
+                                <input type="number" id="target-height" value="500" min="1">
+                            </div>
+                        </div>
+
+                        <button class="btn-generate" id="btn-generate">生成九宫格图</button>
+                        <a href="#" class="btn-download" id="btn-download" download="nine-grid-result.png">下载生成图</a>
+                    </div>
+
+                    <div class="info-panel">
+                        <strong>什么是九宫格拉伸？</strong>
+                        九宫格（9-Slice）是一种图像缩放技术。它将图片分为 9 个区域：4 个角保持原样，4 条边在单方向拉伸，中间区域在双向拉伸。这样可以保证按钮、边框等图片的圆角和边框不因拉伸而变形。
+                    </div>
+                </div>
+
+                <div class="preview-section" id="preview-section">
+                    <div class="empty-state" id="empty-state">
+                        <i>🎨</i>
+                        <p>预览区域</p>
+                        <span>上传图片后即可查看效果</span>
+                    </div>
+                    <div class="canvas-container" id="canvas-container">
+                        <canvas id="preview-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnDownload = document.getElementById('btn-download');
+        const canvas = document.getElementById('preview-canvas');
+        const ctx = canvas.getContext('2d');
+        const emptyState = document.getElementById('empty-state');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        const inputTop = document.getElementById('slice-top');
+        const inputRight = document.getElementById('slice-right');
+        const inputBottom = document.getElementById('slice-bottom');
+        const inputLeft = document.getElementById('slice-left');
+        const inputTargetW = document.getElementById('target-width');
+        const inputTargetH = document.getElementById('target-height');
+
+        let sourceImg = null;
+
+        // --- Event Listeners ---
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        btnGenerate.addEventListener('click', generateNineGrid);
+
+        // --- Functions ---
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('请上传图片文件');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                sourceImg = new Image();
+                sourceImg.onload = () => {
+                    // Initialize inputs based on image size
+                    const defaultMargin = Math.floor(Math.min(sourceImg.width, sourceImg.height) / 4);
+                    inputTop.value = defaultMargin;
+                    inputRight.value = defaultMargin;
+                    inputBottom.value = defaultMargin;
+                    inputLeft.value = defaultMargin;
+
+                    // Set target size to twice the original for demo purposes
+                    inputTargetW.value = sourceImg.width * 2;
+                    inputTargetH.value = sourceImg.height * 2;
+
+                    showCanvas();
+                    generateNineGrid();
+                };
+                sourceImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showCanvas() {
+            emptyState.style.display = 'none';
+            canvasContainer.style.display = 'block';
+            btnDownload.style.display = 'block';
+        }
+
+        function generateNineGrid() {
+            if (!sourceImg) {
+                alert('请先上传图片');
+                return;
+            }
+
+            const sW = sourceImg.width;
+            const sH = sourceImg.height;
+
+            const t = parseInt(inputTop.value);
+            const r = parseInt(inputRight.value);
+            const b = parseInt(inputBottom.value);
+            const l = parseInt(inputLeft.value);
+
+            const tW = parseInt(inputTargetW.value);
+            const tH = parseInt(inputTargetH.value);
+
+            if (t + b >= sH || l + r >= sW) {
+                alert('切片边距总和不能超过原图尺寸');
+                return;
+            }
+
+            canvas.width = tW;
+            canvas.height = tH;
+            ctx.clearRect(0, 0, tW, tH);
+
+            // Source regions
+            // 1: Top-Left, 2: Top-Center, 3: Top-Right
+            // 4: Mid-Left, 5: Mid-Center, 6: Mid-Right
+            // 7: Bot-Left, 8: Bot-Center, 9: Bot-Right
+
+            const regions = [
+                // [sx, sy, sw, sh, dx, dy, dw, dh]
+                // Corners
+                [0, 0, l, t, 0, 0, l, t], // 1
+                [sW - r, 0, r, t, tW - r, 0, r, t], // 3
+                [0, sH - b, l, b, 0, tH - b, l, b], // 7
+                [sW - r, sH - b, r, b, tW - r, tH - b, r, b], // 9
+
+                // Edges
+                [l, 0, sW - l - r, t, l, 0, tW - l - r, t], // 2 (Top)
+                [l, sH - b, sW - l - r, b, l, tH - b, tW - l - r, b], // 8 (Bottom)
+                [0, t, l, sH - t - b, 0, t, l, tH - t - b], // 4 (Left)
+                [sW - r, t, r, sH - t - b, tW - r, t, r, tH - t - b], // 6 (Right)
+
+                // Center
+                [l, t, sW - l - r, sH - t - b, l, t, tW - l - r, tH - t - b] // 5
+            ];
+
+            regions.forEach(reg => {
+                if (reg[2] > 0 && reg[3] > 0 && reg[6] > 0 && reg[7] > 0) {
+                    ctx.drawImage(sourceImg, reg[0], reg[1], reg[2], reg[3], reg[4], reg[5], reg[6], reg[7]);
+                }
+            });
+
+            // Update download button
+            btnDownload.href = canvas.toDataURL('image/png');
+        }
+    </script>
+</body>
+
+</html>

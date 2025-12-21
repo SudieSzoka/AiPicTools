@@ -7,15 +7,14 @@
         }
         
         :root {
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text: #1f2937;
-            --text-light: #6b7280;
-            --text-hover: #111827;
-            --bg: #ffffff;
-            --shadow: rgba(0, 0, 0, 0.05);
-            --border: #e5e7eb;
-            --transition: all 0.3s ease;
+            --c-primary: #3b82f6;
+            --c-primary-hover: #2563eb;
+            --c-text: #1f2937;
+            --c-text-light: #6b7280;
+            --c-bg: #ffffff;
+            --c-shadow: rgba(0, 0, 0, 0.05);
+            --c-border: #e5e7eb;
+            --c-transition: all 0.3s ease;
         }
         
         body {
@@ -32,9 +31,9 @@
         
         /* 页头样式 */
         .page-header {
-            background-color: var(--bg);
-            box-shadow: 0 1px 3px 0 var(--shadow);
-            border-bottom: 1px solid var(--border);
+            background-color: var(--c-bg);
+            box-shadow: 0 1px 3px 0 var(--c-shadow);
+            border-bottom: 1px solid var(--c-border);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -62,13 +61,13 @@
         .logo-link {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--text);
+            color: var(--c-text);
             text-decoration: none;
-            transition: var(--transition);
+            transition: var(--c-transition);
         }
         
         .logo-link:hover {
-            color: var(--primary);
+            color: var(--c-primary);
         }
         
         /* 导航菜单 */
@@ -89,18 +88,18 @@
         }
         
         .nav-link {
-            color: var(--text);
+            color: var(--c-text);
             padding: 8px 12px;
             border-radius: 6px;
             text-decoration: none;
             font-size: 0.875rem;
             font-weight: 500;
-            transition: var(--transition);
+            transition: var(--c-transition);
             display: inline-block;
         }
         
         .nav-link:hover {
-            color: var(--primary-hover);
+            color: var(--c-primary-hover);
             background-color: rgba(59, 130, 246, 0.1);
         }
         

@@ -1,164 +1,173 @@
 [
-    {
-      "id": 1,
-      "name": "图片网格排列",
-      "description": "选择多张图片，每行设定等数量排列",
-      "path": "tools/image-align.html",
-      "category": "image",
-      "icon": "image-align ",
-      "show": true
-    },
-    {
-      "id": 2,
-      "name": "图片文字生成",
-      "description": "选择图片，生成文字",
-      "path": "tools/image-text-generator.html",
-      "category": "image",
-      "icon": "image-text-generator",
-      "show": true
-    },
-    {
-      "id": 2,
-      "name": "图片自动分割",
-      "description": "将图片自动分割为小图片",
-      "path": "tools/image-auto-split-small.html",
-      "category": "image",
-      "icon": "image-split-small",
-      "show": true
-    },
-    {
-      "id": 3,
-      "name": "图片圆角矩形",
-      "description": "选择图片，将图片转换为圆角矩形",
-      "path": "tools/image-rounded-rect.html",
-      "category": "image",
-      "icon": "image-round-rect",
-      "show": true
-    },
-    {
-      "id": 3,
-      "name": "图片颜色分析",
-      "description": "选择图片，分析图片颜色",
-      "path": "tools/image-color-analyzer.html",
-      "category": "image",
-      "icon": "image-color-analyzer",
-      "show": true
-    },
-    {
-      "id": 3,
-      "name": "图片叠加",
-      "description": "将多张图片叠加为一张图片",
-      "path": "tools/image-overlay.html",
-      "category": "image",
-      "icon": "image-overlay",
-      "show": true
-    },
-    {
-      "id": 3,
-      "name": "批量图片渐变背景",
-      "description": "为多张图片添加渐变背景，支持批量处理和下载",
-      "path": "tools/image-batch-gradient.html",
-      "category": "image",
-      "icon": "image-batch-gradient",
-      "show": true
-    },
-    {
-      "id": 4,
-      "name": "图片缩放",
-      "description": "批量等比例缩放图片",
-      "path": "tools/image-scale.html",
-      "category": "image",
-      "icon": "scale",
-      "show": true
-    },
-    {
-      "id": 5,
-      "name": "图片裁剪",
-      "description": "选择图片，进行自由裁剪",
-      "path": "tools/image-crop.html",
-      "category": "image",
-      "icon": "image-crop",
-      "show": true
-    },
-    {
-      "id": 6,
-      "name": "图片去背景",
-      "description": "选择图片，去除RGB均小于指定值的区域",
-      "path": "tools/image-alpha-2-0.html",
-      "category": "image",
-      "icon": "image-alpha-2-0",
-      "show": false
-    },
-    {
-      "id": 7,
-      "name": "裁剪最大透明区",
-      "description": "选择图片，裁剪最大透明区域",
-      "path": "tools/image-crop-max-alpha.html",
-      "category": "image",
-      "icon": "image-crop-max-alpha",
-      "show": true
-    },
-    {
-      "id": 8,
-      "name": "图片缩放并居中",
-      "description": "批量等比例缩放图片，并居中显示",
-      "path": "tools/image-scale-set-mid.html",
-      "category": "image",
-      "icon": "image-scale-set-mid",
-      "show": true
-    },
-    {
-      "id": 9,
-      "name": "半透黑底抠透明区域",
-      "description": "设定半透明黑色地图，抠出来一个圆角矩形的透明区域",
-      "path": "tools/image-mid-transparent.html",
-      "category": "image",
-      "icon": "image-mid-transparent",
-      "show": false
-    },
-    {
-      "id": 10,
-      "name": "视频转帧",
-      "description": "选择视频，转帧",
-      "path": "tools/video-to-frames.html",
-      "category": "video",
-      "icon": "video-to-frames",
-      "show": true
-    },
-    {
-      "id": 11,
-      "name": "图片透明度调整",
-      "description": "选择图片，调整透明度",
-      "path": "tools/image-transparency-adjust.html",
-      "category": "image",
-      "icon": "transparency",
-      "show": true
-    },
-    {
-      "id": 12,
-      "name": "3级结构图",
-      "description": "3级结构，可下载",
-      "path": "tools/image-orangenation.html",
-      "category": "image",
-      "icon": "organization",
-      "show": true
-    },
-    {
-      "id": 13,
-      "name": "拼图",
-      "description": "上传1张或多张图片，生成拼图",
-      "path": "tools/image_pintu_tool",
-      "category": "image",
-      "icon": "pintu",
-      "show": true
-    },
-    {
-      "id": 14,
-      "name": "字体PNG",
-      "description": "生产美术字体",
-      "path": "tools/image-art-font",
-      "category": "image",
-      "icon": "font",
-      "show": true
-    }
-  ]
+  {
+    "id": 1,
+    "name": "图片网格排列",
+    "description": "选择多张图片，每行设定等数量排列",
+    "path": "tools/image-align.html",
+    "category": "image",
+    "icon": "image-align ",
+    "show": true
+  },
+  {
+    "id": 2,
+    "name": "图片文字生成",
+    "description": "选择图片，生成文字",
+    "path": "tools/image-text-generator.html",
+    "category": "image",
+    "icon": "image-text-generator",
+    "show": true
+  },
+  {
+    "id": 2,
+    "name": "图片自动分割",
+    "description": "将图片自动分割为小图片",
+    "path": "tools/image-auto-split-small.html",
+    "category": "image",
+    "icon": "image-split-small",
+    "show": true
+  },
+  {
+    "id": 3,
+    "name": "图片圆角矩形",
+    "description": "选择图片，将图片转换为圆角矩形",
+    "path": "tools/image-rounded-rect.html",
+    "category": "image",
+    "icon": "image-round-rect",
+    "show": true
+  },
+  {
+    "id": 3,
+    "name": "图片颜色分析",
+    "description": "选择图片，分析图片颜色",
+    "path": "tools/image-color-analyzer.html",
+    "category": "image",
+    "icon": "image-color-analyzer",
+    "show": true
+  },
+  {
+    "id": 3,
+    "name": "图片叠加",
+    "description": "将多张图片叠加为一张图片",
+    "path": "tools/image-overlay.html",
+    "category": "image",
+    "icon": "image-overlay",
+    "show": true
+  },
+  {
+    "id": 3,
+    "name": "批量图片渐变背景",
+    "description": "为多张图片添加渐变背景，支持批量处理和下载",
+    "path": "tools/image-batch-gradient.html",
+    "category": "image",
+    "icon": "image-batch-gradient",
+    "show": true
+  },
+  {
+    "id": 4,
+    "name": "图片缩放",
+    "description": "批量等比例缩放图片",
+    "path": "tools/image-scale.html",
+    "category": "image",
+    "icon": "scale",
+    "show": true
+  },
+  {
+    "id": 5,
+    "name": "图片裁剪",
+    "description": "选择图片，进行自由裁剪",
+    "path": "tools/image-crop.html",
+    "category": "image",
+    "icon": "image-crop",
+    "show": true
+  },
+  {
+    "id": 6,
+    "name": "图片去背景",
+    "description": "选择图片，去除RGB均小于指定值的区域",
+    "path": "tools/image-alpha-2-0.html",
+    "category": "image",
+    "icon": "image-alpha-2-0",
+    "show": false
+  },
+  {
+    "id": 7,
+    "name": "裁剪最大透明区",
+    "description": "选择图片，裁剪最大透明区域",
+    "path": "tools/image-crop-max-alpha.html",
+    "category": "image",
+    "icon": "image-crop-max-alpha",
+    "show": true
+  },
+  {
+    "id": 8,
+    "name": "图片缩放并居中",
+    "description": "批量等比例缩放图片，并居中显示",
+    "path": "tools/image-scale-set-mid.html",
+    "category": "image",
+    "icon": "image-scale-set-mid",
+    "show": true
+  },
+  {
+    "id": 9,
+    "name": "半透黑底抠透明区域",
+    "description": "设定半透明黑色地图，抠出来一个圆角矩形的透明区域",
+    "path": "tools/image-mid-transparent.html",
+    "category": "image",
+    "icon": "image-mid-transparent",
+    "show": false
+  },
+  {
+    "id": 10,
+    "name": "视频转帧",
+    "description": "选择视频，转帧",
+    "path": "tools/video-to-frames.html",
+    "category": "video",
+    "icon": "video-to-frames",
+    "show": true
+  },
+  {
+    "id": 11,
+    "name": "图片透明度调整",
+    "description": "选择图片，调整透明度",
+    "path": "tools/image-transparency-adjust.html",
+    "category": "image",
+    "icon": "transparency",
+    "show": true
+  },
+  {
+    "id": 12,
+    "name": "3级结构图",
+    "description": "3级结构，可下载",
+    "path": "tools/image-orangenation.html",
+    "category": "image",
+    "icon": "organization",
+    "show": true
+  },
+  {
+    "id": 13,
+    "name": "拼图",
+    "description": "上传1张或多张图片，生成拼图",
+    "path": "tools/image_pintu_tool.html",
+    "category": "image",
+    "icon": "pintu",
+    "show": true
+  },
+  {
+    "id": 14,
+    "name": "字体PNG",
+    "description": "生产美术字体",
+    "path": "tools/image-art-font.html",
+    "category": "image",
+    "icon": "font",
+    "show": true
+  },
+  {
+    "id": 15,
+    "name": "九宫格",
+    "description": "选择图片，生成九宫格图片",
+    "path": "tools/image-nine-grid.html",
+    "category": "image",
+    "icon": "nine",
+    "show": true
+  }
+]
