@@ -178,5 +178,14 @@
     "category": "image",
     "icon": "add_bg",
     "show": true
+  },
+  {
+    "id": 17,
+    "name": "图片格式转换",
+    "description": "批量转换图片格式，支持PNG、JPG、WebP、GIF、BMP、ICO等格式互转",
+    "path": "tools/image-format-convert.html",
+    "category": "image",
+    "icon": "switch",
+    "show": true
   }
 ]

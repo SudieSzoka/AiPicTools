@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片格式转换工具</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .upload-area:hover { border-color: #4CAF50; background: #f9f9f9; }
+        .upload-area.dragover { border-color: #4CAF50; background: #e8f5e9; }
+        input[type="file"] { display: none; }
+        .control-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        label { font-weight: bold; color: #555; }
+        select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            min-width: 120px;
+        }
+        .ico-options {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .ico-options.show { display: flex; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-blue { background: #2196F3; }
+        .btn-blue:hover { background: #1976D2; }
+        .preview-area {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        .image-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            background: #fafafa;
+        }
+        .image-item img {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            background: repeating-conic-gradient(#ddd 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+        }
+        .image-item .name {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        .image-item .download-btn {
+            width: 100%;
+            padding: 8px;
+            font-size: 13px;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tip { font-size: 13px; color: #888; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>图片格式转换工具</h1>
+        <div class="upload-area" id="uploadArea">
+            <p>点击选择图片或拖拽图片到此处</p>
+            <p class="tip">支持 JPG、PNG、GIF、BMP、WebP、ICO 等格式，可多选</p>
+            <input type="file" id="fileInput" multiple accept="image/*,.ico">
+        </div>
+        <div class="control-bar">
+            <label>转换为：</label>
+            <select id="formatSelect">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPG</option>
+                <option value="webp">WebP</option>
+                <option value="gif">GIF</option>
+                <option value="bmp">BMP</option>
+                <option value="ico">ICO</option>
+            </select>
+            <div class="ico-options" id="icoOptions">
+                <label>尺寸：</label>
+                <select id="icoSize">
+                    <option value="16">16x16</option>
+                    <option value="32" selected>32x32</option>
+                    <option value="48">48x48</option>
+                    <option value="64">64x64</option>
+                    <option value="128">128x128</option>
+                    <option value="256">256x256</option>
+                </select>
+            </div>
+            <button id="convertBtn" onclick="convertAll()">开始转换</button>
+            <button id="downloadAllBtn" class="btn-blue" onclick="downloadAll()" style="display:none;">全部下载</button>
+        </div>
+        <div class="preview-area" id="previewArea"></div>
+    </div>
+<script>
+let files = [];
+let converted = [];
+
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const formatSelect = document.getElementById('formatSelect');
+const icoOptions = document.getElementById('icoOptions');
+const previewArea = document.getElementById('previewArea');
+const convertBtn = document.getElementById('convertBtn');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+uploadArea.onclick = () => fileInput.click();
+fileInput.onchange = e => handleFiles(e.target.files);
+uploadArea.ondragover = e => { e.preventDefault(); uploadArea.classList.add('dragover'); };
+uploadArea.ondragleave = () => uploadArea.classList.remove('dragover');
+uploadArea.ondrop = e => { e.preventDefault(); uploadArea.classList.remove('dragover'); handleFiles(e.dataTransfer.files); };
+
+formatSelect.onchange = () => {
+    icoOptions.classList.toggle('show', formatSelect.value === 'ico');
+};
+
+function handleFiles(fileList) {
+    files = Array.from(fileList).filter(f => f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.ico'));
+    converted = [];
+    downloadAllBtn.style.display = 'none';
+    renderPreview();
+}
+
+function renderPreview() {
+    previewArea.innerHTML = '';
+    files.forEach((file, i) => {
+        const div = document.createElement('div');
+        div.className = 'image-item';
+        div.innerHTML = `<img id="img${i}"><div class="name">${file.name}</div><button class="download-btn btn-blue" id="dlBtn${i}" disabled>下载</button>`;
+        previewArea.appendChild(div);
+        const img = document.getElementById('img' + i);
+        const reader = new FileReader();
+        reader.onload = e => img.src = e.target.result;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function convertAll() {
+    if (!files.length) return;
+    const format = formatSelect.value;
+    const icoSize = parseInt(document.getElementById('icoSize').value);
+    convertBtn.disabled = true;
+    convertBtn.innerHTML = '转换中<span class="loading"></span>';
+    converted = [];
+    for (let i = 0; i < files.length; i++) {
+        try {
+            const blob = await convertImage(files[i], format, icoSize);
+            const ext = format === 'jpeg' ? 'jpg' : format;
+            const newName = files[i].name.replace(/\.[^.]+$/, '') + '.' + ext;
+            converted[i] = { blob, name: newName };
+            const btn = document.getElementById('dlBtn' + i);
+            btn.disabled = false;
+            btn.onclick = () => download(i);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    convertBtn.disabled = false;
+    convertBtn.textContent = '开始转换';
+    if (converted.filter(Boolean).length > 1) downloadAllBtn.style.display = '';
+}
+
+function convertImage(file, format, icoSize) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            let w = img.width, h = img.height;
+            if (format === 'ico') { w = h = icoSize; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            if (format === 'ico') {
+                resolve(canvasToIco(canvas));
+            } else {
+                const mime = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : format === 'gif' ? 'image/gif' : 'image/bmp';
+                canvas.toBlob(blob => blob ? resolve(blob) : reject('转换失败'), mime, 0.92);
+            }
+        };
+        img.onerror = () => reject('加载失败');
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+function canvasToIco(canvas) {
+    const size = canvas.width;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, size, size);
+    const data = imageData.data;
+    // BMP header for ICO
+    const bmpInfoHeaderSize = 40;
+    const pixelDataSize = size * size * 4;
+    const maskSize = Math.ceil(size / 8) * size;
+    const bmpSize = bmpInfoHeaderSize + pixelDataSize + maskSize;
+    const icoHeaderSize = 6;
+    const icoDirEntrySize = 16;
+    const fileSize = icoHeaderSize + icoDirEntrySize + bmpSize;
+    const buffer = new ArrayBuffer(fileSize);
+    const view = new DataView(buffer);
+    // ICO header
+    view.setUint16(0, 0, true); // reserved
+    view.setUint16(2, 1, true); // type: 1=ICO
+    view.setUint16(4, 1, true); // count
+    // ICO directory entry
+    view.setUint8(6, size < 256 ? size : 0);
+    view.setUint8(7, size < 256 ? size : 0);
+    view.setUint8(8, 0); // color palette
+    view.setUint8(9, 0); // reserved
+    view.setUint16(10, 1, true); // color planes
+    view.setUint16(12, 32, true); // bits per pixel
+    view.setUint32(14, bmpSize, true); // size of BMP
+    view.setUint32(18, icoHeaderSize + icoDirEntrySize, true); // offset
+    // BMP info header
+    let offset = icoHeaderSize + icoDirEntrySize;
+    view.setUint32(offset, bmpInfoHeaderSize, true); offset += 4;
+    view.setInt32(offset, size, true); offset += 4;
+    view.setInt32(offset, size * 2, true); offset += 4; // height * 2 for ICO
+    view.setUint16(offset, 1, true); offset += 2; // planes
+    view.setUint16(offset, 32, true); offset += 2; // bpp
+    view.setUint32(offset, 0, true); offset += 4; // compression
+    view.setUint32(offset, pixelDataSize + maskSize, true); offset += 4;
+    view.setUint32(offset, 0, true); offset += 4;
+    view.setUint32(offset, 0, true); offset += 4;
+    view.setUint32(offset, 0, true); offset += 4;
+    view.setUint32(offset, 0, true); offset += 4;
+    // Pixel data (BGRA, bottom-up)
+    for (let y = size - 1; y >= 0; y--) {
+        for (let x = 0; x < size; x++) {
+            const idx = (y * size + x) * 4;
+            view.setUint8(offset++, data[idx + 2]); // B
+            view.setUint8(offset++, data[idx + 1]); // G
+            view.setUint8(offset++, data[idx]);     // R
+            view.setUint8(offset++, data[idx + 3]); // A
+        }
+    }
+    // AND mask (all 0 = fully opaque)
+    for (let i = 0; i < maskSize; i++) view.setUint8(offset++, 0);
+    return new Blob([buffer], { type: 'image/x-icon' });
+}
+
+function download(i) {
+    if (!converted[i]) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(converted[i].blob);
+    a.download = converted[i].name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function downloadAll() {
+    converted.forEach((c, i) => c && download(i));
+}
+</script>
+</body>
+</html>
