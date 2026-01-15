@@ -169,5 +169,14 @@
     "category": "image",
     "icon": "nine",
     "show": true
+  },
+  {
+    "id": 16,
+    "name": "透明区域涂色",
+    "description": "涂抹PNG图片的透明区域，添加指定颜色背景",
+    "path": "tools/image-paint-transparent.html",
+    "category": "image",
+    "icon": "add_bg",
+    "show": true
   }
 ]
