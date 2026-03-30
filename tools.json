@@ -187,5 +187,14 @@
     "category": "image",
     "icon": "switch",
     "show": true
+  },
+  {
+    "id": 18,
+    "name": "图片扩展",
+    "description": "为单张图片添加统一边框或上下左右单边扩展，支持主色快捷取色",
+    "path": "tools/image-expand.html",
+    "category": "image",
+    "icon": "image-extend",
+    "show": true
   }
 ]
