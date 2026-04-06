@@ -706,19 +706,31 @@
             displayIcons(filteredIcons);
         }
         
+        // 生成格式化的序号
+        function formatIndex(index, total) {
+            // 如果总数小于10，不需要补0
+            if (total < 10) {
+                return String(index);
+            }
+            // 否则根据总位数补0
+            const digits = String(total).length;
+            return String(index).padStart(digits, '0');
+        }
+
         // 显示图标
         function displayIcons(icons) {
             iconsContainer.innerHTML = '';
-            
+
             if (icons.length === 0) {
                 iconsContainer.innerHTML = '<div class="no-icons">没有找到符合条件的图标</div>';
                 return;
             }
-            
+
             icons.forEach((icon, index) => {
                 const iconCard = document.createElement('div');
                 iconCard.className = 'icon-card';
-                
+                const formattedIndex = formatIndex(index + 1, icons.length);
+
                 iconCard.innerHTML = `
                     <div class="icon-preview">
                         <img src="${icon.dataURL}" alt="图标 ${index + 1}">
@@ -727,9 +739,9 @@
                         <div class="icon-size">${icon.width}×${icon.height}px</div>
                         <div>位置: (${icon.x}, ${icon.y})</div>
                     </div>
-                    <a href="${icon.dataURL}" download="icon_${index+1}.png" class="icon-download">下载</a>
+                    <a href="${icon.dataURL}" download="icon_${formattedIndex}.png" class="icon-download">下载</a>
                 `;
-                
+
                 iconsContainer.appendChild(iconCard);
             });
         }
@@ -737,23 +749,23 @@
         // 下载所有图标
         function downloadAllIcons() {
             if (extractedIcons.length === 0) return;
-            
+
             // 筛选当前显示的图标
             const minWidth = parseInt(minWidthInput.value) || 0;
             const minHeight = parseInt(minHeightInput.value) || 0;
-            
-            const filteredIcons = extractedIcons.filter(icon => 
+
+            const filteredIcons = extractedIcons.filter(icon =>
                 icon.width >= minWidth && icon.height >= minHeight
             );
-            
+
             // 禁用下载按钮防止重复点击
             downloadAllBtn.disabled = true;
             downloadAllBtn.textContent = '下载中...';
-            
+
             // 使用延迟下载避免浏览器限制
             let downloadCount = 0;
             const downloadDelay = 200; // 200ms延迟
-            
+
             function downloadNext() {
                 if (downloadCount >= filteredIcons.length) {
                     // 所有下载完成
@@ -762,15 +774,16 @@
                     statusElement.textContent = `已启动 ${filteredIcons.length} 个图标的下载`;
                     return;
                 }
-                
+
                 const icon = filteredIcons[downloadCount];
+                const formattedIndex = formatIndex(downloadCount + 1, filteredIcons.length);
                 const link = document.createElement('a');
                 link.href = icon.dataURL;
-                link.download = `icon_${downloadCount + 1}.png`;
+                link.download = `icon_${formattedIndex}.png`;
                 link.style.display = 'none';
                 document.body.appendChild(link);
                 link.click();
-                
+
                 // 延迟后移除链接并下载下一个
                 setTimeout(() => {
                     document.body.removeChild(link);
@@ -778,7 +791,7 @@
                     downloadNext();
                 }, downloadDelay);
             }
-            
+
             // 开始下载
             downloadNext();
         }
