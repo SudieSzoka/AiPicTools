@@ -75,6 +75,7 @@
         }
 
         .sub-setting-group {
+            display: none;
             margin-left: 20px;
             margin-top: 15px;
             padding: 15px;
@@ -122,6 +123,43 @@
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
         }
 
+        input[aria-invalid="true"] {
+            border-color: #e74c3c;
+        }
+
+        .field-help {
+            color: #7f8c8d;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            margin: -8px 0 18px;
+        }
+
+        .status-message,
+        .error-message {
+            border-radius: 8px;
+            line-height: 1.5;
+            margin: 12px 0;
+            padding: 12px 14px;
+        }
+
+        .status-message:empty,
+        .error-message:empty {
+            display: none;
+        }
+
+        .status-message {
+            background: #eef7ff;
+            border: 1px solid #b8dcff;
+            color: #1f5f8b;
+        }
+
+        .error-message {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            color: #8a1f11;
+            font-weight: 500;
+        }
+
         .file-upload {
             position: relative;
             margin: 25px 0;
@@ -142,6 +180,13 @@
         .drag-drop-area:hover {
             border-color: #3498db;
             background: #f0f8ff;
+        }
+
+        .drag-drop-area:focus-within,
+        .drag-drop-area:focus-visible {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
         }
 
         .drag-drop-area.drag-over {
@@ -199,6 +244,18 @@
             cursor: pointer;
         }
 
+        #backgroundImage {
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            padding: 8px;
+            width: 100%;
+        }
+
+        .button-icon {
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
         .batch-download-container {
             text-align: center;
             margin: 20px 0;
@@ -222,6 +279,13 @@
             background: #219653;
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(39, 174, 96, 0.4);
+        }
+
+        .batch-download-btn:disabled,
+        .download-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+            transform: none;
         }
 
         .preview-container {
@@ -372,27 +436,30 @@
 
 <body>
     <div class="container">
-        <header>
+        <header aria-label="图片居中缩放工具标题">
             <h1>图片居中缩放工具</h1>
             <p class="description">上传图片，自动等比例缩放并居中放置在指定大小的画布中</p>
         </header>
         <div class="file-upload">
-            <div class="drag-drop-area" id="dragDropArea">
-                <div class="upload-icon">📁</div>
+            <div class="drag-drop-area" id="dragDropArea" aria-describedby="uploadHint uploadStatus">
+                <div class="upload-icon" aria-hidden="true"></div>
                 <div class="upload-text">拖拽图片到此处或点击选择</div>
-                <div class="upload-hint">支持多选图片，每张图片将独立处理</div>
+                <div class="upload-hint" id="uploadHint">支持 PNG、JPG、WebP、GIF、BMP、AVIF，最多 50 张，每张不超过 25 MB</div>
                 <button class="upload-btn" type="button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        style="vertical-align: middle; margin-right: 8px;">
+                    <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
                     选择图片文件
                 </button>
-                <input type="file" id="fileInput" accept="image/*" multiple>
+                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif"
+                    multiple aria-label="选择图片文件" aria-describedby="uploadHint uploadError">
             </div>
+            <div class="status-message" id="uploadStatus" role="status"></div>
+            <div class="error-message" id="uploadError" role="alert"></div>
         </div>
         <div class="settings-panel">
             <h2 class="panel-title">
@@ -408,17 +475,20 @@
             <div class="settings-grid">
                 <div class="setting-group">
                     <label for="maxSize">最大尺寸（像素）</label>
-                    <input type="number" id="maxSize" min="50" max="2000" value="800">
+                    <input type="number" id="maxSize" min="50" max="2000" step="1" value="800"
+                        aria-describedby="dimensionHelp settingsError">
                 </div>
 
                 <div class="setting-group">
                     <label for="canvasWidth">画布宽度（像素）</label>
-                    <input type="number" id="canvasWidth" min="50" max="2000" value="1000">
+                    <input type="number" id="canvasWidth" min="50" max="2000" step="1" value="1000"
+                        aria-describedby="dimensionHelp settingsError">
                 </div>
 
                 <div class="setting-group">
                     <label for="canvasHeight">画布高度（像素）</label>
-                    <input type="number" id="canvasHeight" min="50" max="2000" value="800">
+                    <input type="number" id="canvasHeight" min="50" max="2000" step="1" value="800"
+                        aria-describedby="dimensionHelp settingsError">
                 </div>
 
                 <div class="setting-group">
@@ -431,16 +501,18 @@
                     </select>
                 </div>
             </div>
+            <p class="field-help" id="dimensionHelp">尺寸必须是 50-2000 的整数；导出画布最大 2000×2000，图片会等比例缩小并保持完整可见。</p>
+            <div class="error-message" id="settingsError" role="alert"></div>
 
             <!-- 背景设置子项 -->
-            <div class="sub-setting-group" id="solidColorGroup" style="display: none;">
+            <div class="sub-setting-group" id="solidColorGroup">
                 <div class="setting-group">
                     <label for="solidColor">背景颜色</label>
                     <input type="color" id="solidColor" value="#ffffff">
                 </div>
             </div>
 
-            <div class="sub-setting-group" id="gradientGroup" style="display: none;">
+            <div class="sub-setting-group" id="gradientGroup">
                 <div class="settings-grid">
                     <div class="setting-group">
                         <label for="gradientStart">渐变起始颜色</label>
@@ -464,12 +536,13 @@
                 </div>
             </div>
 
-            <div class="sub-setting-group" id="imageBackgroundGroup" style="display: none;">
+            <div class="sub-setting-group" id="imageBackgroundGroup">
                 <div class="settings-grid">
                     <div class="setting-group">
                         <label for="backgroundImage">背景图片</label>
-                        <input type="file" id="backgroundImage" accept="image/*"
-                            style="width: 100%; padding: 8px; border: 2px solid #e0e6ed; border-radius: 8px;">
+                        <input type="file" id="backgroundImage"
+                            accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif"
+                            aria-describedby="uploadHint uploadError">
                     </div>
 
                     <div class="setting-group">
@@ -482,18 +555,18 @@
         </div>
 
         <div class="batch-download-container" id="batchDownloadContainer">
-            <button class="batch-download-btn" id="batchDownloadBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="vertical-align: middle; margin-right: 8px;">
+            <button class="batch-download-btn" id="batchDownloadBtn" type="button">
+                <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                批量下载所有图片
+                <span id="batchDownloadText">批量下载所有图片</span>
             </button>
         </div>
-        <div class="preview-container" id="previewContainer">
+        <div class="preview-container" id="previewContainer" aria-live="polite">
             <!-- 预览区域将在这里动态生成 -->
         </div>
         <div class="instructions">
@@ -519,6 +592,24 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const LIMITS = {
+                minDimension: 50,
+                maxDimension: 2000,
+                maxCanvasPixels: 4000000,
+                maxFiles: 50,
+                maxFileSize: 25 * 1024 * 1024,
+                maxSourcePixels: 80000000
+            };
+            const allowedTypes = new Set([
+                'image/png',
+                'image/jpeg',
+                'image/webp',
+                'image/gif',
+                'image/bmp',
+                'image/avif'
+            ]);
+            const allowedExtensionPattern = /\.(png|jpe?g|webp|gif|bmp|avif)$/i;
+
             const fileInput = document.getElementById('fileInput');
             const previewContainer = document.getElementById('previewContainer');
             const maxSizeInput = document.getElementById('maxSize');
@@ -526,10 +617,13 @@
             const canvasHeightInput = document.getElementById('canvasHeight');
             const dragDropArea = document.getElementById('dragDropArea');
             const uploadBtn = document.querySelector('.upload-btn');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadError = document.getElementById('uploadError');
+            const settingsError = document.getElementById('settingsError');
             const batchDownloadContainer = document.getElementById('batchDownloadContainer');
             const batchDownloadBtn = document.getElementById('batchDownloadBtn');
+            const batchDownloadText = document.getElementById('batchDownloadText');
 
-            // 背景设置相关元素
             const backgroundType = document.getElementById('backgroundType');
             const solidColorGroup = document.getElementById('solidColorGroup');
             const gradientGroup = document.getElementById('gradientGroup');
@@ -542,10 +636,13 @@
             const gradientEnd = document.getElementById('gradientEnd');
             const gradientDirection = document.getElementById('gradientDirection');
 
-            // 存储所有处理后的canvas
             let processedCanvases = [];
+            let currentFiles = [];
+            let fileSelectionMessages = [];
+            let processVersion = 0;
+            let reprocessTimer = 0;
+            const defaultBatchDownloadText = batchDownloadText.textContent;
 
-            // 背景设置事件监听
             backgroundType.addEventListener('change', function () {
                 toggleBackgroundOptions();
                 reprocessAllImages();
@@ -555,320 +652,576 @@
                 reprocessAllImages();
             });
             backgroundImage.addEventListener('change', function () {
-                handleBackgroundImage();
+                fileSelectionMessages = validateBackgroundSelection();
                 reprocessAllImages();
             });
 
-            // 实时预览事件监听
             solidColor.addEventListener('change', reprocessAllImages);
             gradientStart.addEventListener('change', reprocessAllImages);
             gradientEnd.addEventListener('change', reprocessAllImages);
             gradientDirection.addEventListener('change', reprocessAllImages);
-            maxSizeInput.addEventListener('input', reprocessAllImages);
-            canvasWidthInput.addEventListener('input', reprocessAllImages);
-            canvasHeightInput.addEventListener('input', reprocessAllImages);
+            maxSizeInput.addEventListener('input', scheduleReprocessAllImages);
+            canvasWidthInput.addEventListener('input', scheduleReprocessAllImages);
+            canvasHeightInput.addEventListener('input', scheduleReprocessAllImages);
 
-            // 初始化背景设置显示
             toggleBackgroundOptions();
+            updateOpacityValue();
+            updateBatchDownloadVisibility();
 
-            // 文件选择事件
             fileInput.addEventListener('change', handleFileSelect);
-            uploadBtn.addEventListener('click', () => fileInput.click());
+            uploadBtn.addEventListener('click', function () {
+                fileInput.click();
+            });
 
-            // 拖拽功能
+            dragDropArea.addEventListener('keydown', handleUploadAreaKeydown);
             dragDropArea.addEventListener('dragover', handleDragOver);
             dragDropArea.addEventListener('dragleave', handleDragLeave);
             dragDropArea.addEventListener('drop', handleDrop);
 
-            // 批量下载功能
             batchDownloadBtn.addEventListener('click', handleBatchDownload);
 
-            // 背景设置相关函数
             function toggleBackgroundOptions() {
                 const type = backgroundType.value;
+                setGroupVisibility(solidColorGroup, type === 'solid');
+                setGroupVisibility(gradientGroup, type === 'gradient');
+                setGroupVisibility(imageBackgroundGroup, type === 'image');
+            }
 
-                // 隐藏所有选项组
-                solidColorGroup.style.display = 'none';
-                gradientGroup.style.display = 'none';
-                imageBackgroundGroup.style.display = 'none';
-
-                // 根据选择的类型显示相应选项
-                switch (type) {
-                    case 'solid':
-                        solidColorGroup.style.display = 'block';
-                        break;
-                    case 'gradient':
-                        gradientGroup.style.display = 'block';
-                        break;
-                    case 'image':
-                        imageBackgroundGroup.style.display = 'block';
-                        break;
-                }
+            function setGroupVisibility(group, visible) {
+                group.style.display = visible ? 'block' : 'none';
+                group.setAttribute('aria-hidden', String(!visible));
             }
 
             function updateOpacityValue() {
                 opacityValue.textContent = imageOpacity.value + '%';
             }
 
-            function handleBackgroundImage() {
-                // 背景图片改变时会自动重新处理所有图片
+            function handleUploadAreaKeydown(event) {
+                if (event.target !== dragDropArea) {
+                    return;
+                }
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    fileInput.click();
+                }
             }
 
-            // 拖拽功能
-            function handleDragOver(e) {
-                e.preventDefault();
+            function handleDragOver(event) {
+                event.preventDefault();
                 dragDropArea.classList.add('drag-over');
             }
 
-            function handleDragLeave(e) {
-                e.preventDefault();
+            function handleDragLeave(event) {
+                event.preventDefault();
                 dragDropArea.classList.remove('drag-over');
             }
 
-            function handleDrop(e) {
-                e.preventDefault();
+            function handleDrop(event) {
+                event.preventDefault();
                 dragDropArea.classList.remove('drag-over');
-
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    // 将文件列表转换为数组并过滤图片文件
-                    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-                    if (imageFiles.length > 0) {
-                        processFiles(imageFiles);
-                    }
+                if (event.dataTransfer.files.length > 0) {
+                    processFiles(Array.from(event.dataTransfer.files));
                 }
             }
 
-            // 重新处理所有图片
-            function reprocessAllImages() {
-                if (processedCanvases.length > 0) {
-                    const originalFiles = processedCanvases.map(item => item.file);
-                    processFiles(originalFiles);
-                }
-                updateBatchDownloadVisibility();
-            }
-
-            // 批量下载功能
-            async function handleBatchDownload() {
-                if (processedCanvases.length === 0) return;
-
-                const originalText = batchDownloadBtn.innerHTML;
-                batchDownloadBtn.disabled = true;
-
-                for (let i = 0; i < processedCanvases.length; i++) {
-                    const item = processedCanvases[i];
-                    // 更新按钮状态显示进度
-                    batchDownloadBtn.innerHTML = `正在下载... ${i + 1}/${processedCanvases.length}`;
-
-                    downloadCanvas(item.canvas, item.fileName);
-
-                    // 增加延迟到300毫秒，避免浏览器由短时间内由于下载请求过多而拦截部分下载
-                    // 21张图片如果是20张限制，增加间隔有助于重置浏览器计数器
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
-
-                // 恢复按钮状态
-                batchDownloadBtn.innerHTML = originalText;
-                batchDownloadBtn.disabled = false;
-            }
-
-            function updateBatchDownloadVisibility() {
-                batchDownloadContainer.style.display = processedCanvases.length > 1 ? 'block' : 'none';
-            }
-
-            function handleFileSelect(e) {
-                const files = Array.from(e.target.files);
+            function handleFileSelect(event) {
+                const files = Array.from(event.target.files);
                 if (files.length > 0) {
                     processFiles(files);
                 }
             }
 
             function processFiles(files) {
-                previewContainer.innerHTML = '';
-                processedCanvases = [];
+                const result = validateImageFiles(files);
+                fileSelectionMessages = result.messages.concat(validateBackgroundSelection());
+                currentFiles = result.files;
 
-                files.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        processImage(event.target.result, file.name, file);
-                    };
-                    reader.readAsDataURL(file);
-                });
+                if (currentFiles.length === 0) {
+                    cancelProcessing();
+                    clearResults();
+                    setStatus('');
+                    setUploadError(fileSelectionMessages.length > 0 ? fileSelectionMessages : ['请选择有效的图片文件。']);
+                    return;
+                }
+
+                renderCurrentFiles();
             }
 
-            function processImage(dataUrl, fileName, file) {
-                const img = new Image();
-                img.onload = function () {
-                    const maxSize = parseInt(maxSizeInput.value) || 800;
-                    const canvasWidth = parseInt(canvasWidthInput.value) || 1000;
-                    const canvasHeight = parseInt(canvasHeightInput.value) || 800;
+            function scheduleReprocessAllImages() {
+                window.clearTimeout(reprocessTimer);
+                reprocessTimer = window.setTimeout(reprocessAllImages, 250);
+            }
 
-                    // 计算缩放比例
-                    let scale = 1;
-                    if (img.width > img.height) {
-                        scale = Math.min(1, maxSize / img.width);
-                    } else {
-                        scale = Math.min(1, maxSize / img.height);
+            function reprocessAllImages() {
+                window.clearTimeout(reprocessTimer);
+                if (currentFiles.length === 0) {
+                    getValidatedSettings();
+                    setUploadError(fileSelectionMessages);
+                    return;
+                }
+                renderCurrentFiles();
+            }
+
+            async function renderCurrentFiles() {
+                const version = ++processVersion;
+                const settings = getValidatedSettings();
+                clearResults();
+
+                if (!settings) {
+                    setStatus('请修正参数后再处理图片。');
+                    setUploadError(fileSelectionMessages);
+                    return;
+                }
+
+                setStatus('正在处理 ' + currentFiles.length + ' 张图片...');
+                setUploadError(fileSelectionMessages);
+                batchDownloadBtn.disabled = true;
+
+                let successCount = 0;
+                const processMessages = [];
+                let backgroundResource = null;
+
+                try {
+                    backgroundResource = await loadOptionalBackground(settings, processMessages);
+                    if (version !== processVersion) {
+                        return;
                     }
 
-                    const scaledWidth = Math.round(img.width * scale);
-                    const scaledHeight = Math.round(img.height * scale);
-
-                    // 计算居中位置
-                    const x = Math.round((canvasWidth - scaledWidth) / 2);
-                    const y = Math.round((canvasHeight - scaledHeight) / 2);
-
-                    // 创建canvas
-                    const canvas = document.createElement('canvas');
-                    canvas.width = canvasWidth;
-                    canvas.height = canvasHeight;
-                    const ctx = canvas.getContext('2d');
-
-                    // 处理背景图片（如果有的话）
-                    const bgImageFile = backgroundImage.files[0];
-                    if (backgroundType.value === 'image' && bgImageFile) {
-                        const bgImg = new Image();
-                        bgImg.onload = function () {
-                            // 绘制背景图片
-                            const bgScale = Math.max(canvasWidth / bgImg.width, canvasHeight / bgImg.height);
-                            const bgScaledWidth = bgImg.width * bgScale;
-                            const bgScaledHeight = bgImg.height * bgScale;
-                            const bgX = (canvasWidth - bgScaledWidth) / 2;
-                            const bgY = (canvasHeight - bgScaledHeight) / 2;
-
-                            // 设置透明度
-                            const opacity = parseInt(imageOpacity.value) / 100;
-                            ctx.globalAlpha = opacity;
-
-                            // 绘制背景图片
-                            ctx.drawImage(bgImg, bgX, bgY, bgScaledWidth, bgScaledHeight);
-
-                            // 重置透明度
-                            ctx.globalAlpha = 1;
-
-                            // 绘制主图片
-                            ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-
-                            // 创建预览卡片并存储canvas
-                            createPreviewCard(canvas, fileName, file);
-                        };
-                        bgImg.src = URL.createObjectURL(bgImageFile);
-                    } else {
-                        // 绘制背景
-                        drawBackground(ctx, canvasWidth, canvasHeight);
-                        // 绘制主图片
-                        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-                        // 创建预览卡片并存储canvas
-                        createPreviewCard(canvas, fileName, file);
-                    }
-                };
-
-                img.src = dataUrl;
-
-                img.onerror = function () {
-                    console.error('无法加载图片:', fileName);
-                    // 可以选择提示用户
-                    // alert('无法加载图片: ' + fileName);
-                };
-            }
-
-            function createPreviewCard(canvas, fileName, file) {
-                const card = document.createElement('div');
-                card.className = 'preview-card';
-
-                // 移除文件扩展名
-                const displayName = fileName.replace(/\.[^/.]+$/, "");
-
-                card.innerHTML = `
-                    <div class="preview-title">${displayName}</div>
-                    <div class="image-container">
-                        <canvas width="${canvas.width}" height="${canvas.height}"></canvas>
-                    </div>
-                    <button class="download-btn">下载图片</button>
-                `;
-
-                // 复制canvas内容到预览
-                const previewCanvas = card.querySelector('canvas');
-                const previewCtx = previewCanvas.getContext('2d');
-                previewCtx.drawImage(canvas, 0, 0);
-
-                // 添加下载功能
-                const downloadBtn = card.querySelector('.download-btn');
-                downloadBtn.addEventListener('click', function () {
-                    downloadCanvas(canvas, fileName);
-                });
-
-                // 存储canvas信息用于批量下载
-                processedCanvases.push({
-                    canvas: canvas,
-                    fileName: fileName,
-                    file: file
-                });
-
-                previewContainer.appendChild(card);
-
-                // 更新批量下载按钮显示状态
-                updateBatchDownloadVisibility();
-            }
-
-            function drawBackground(ctx, width, height) {
-                const type = backgroundType.value;
-
-                switch (type) {
-                    case 'transparent':
-                        // 透明背景 - 不绘制任何内容
-                        ctx.clearRect(0, 0, width, height);
-                        break;
-
-                    case 'solid':
-                        // 纯色背景
-                        const solidColor = document.getElementById('solidColor').value;
-                        ctx.fillStyle = solidColor;
-                        ctx.fillRect(0, 0, width, height);
-                        break;
-
-                    case 'gradient':
-                        // 渐变背景
-                        const gradientStart = document.getElementById('gradientStart').value;
-                        const gradientEnd = document.getElementById('gradientEnd').value;
-                        const gradientDirection = document.getElementById('gradientDirection').value;
-
-                        let gradient;
-                        if (gradientDirection === 'to right') {
-                            gradient = ctx.createLinearGradient(0, 0, width, 0);
-                        } else if (gradientDirection === 'to bottom') {
-                            gradient = ctx.createLinearGradient(0, 0, 0, height);
-                        } else if (gradientDirection === '45deg') {
-                            gradient = ctx.createLinearGradient(0, 0, width, height);
-                        } else if (gradientDirection === 'to right bottom') {
-                            gradient = ctx.createLinearGradient(0, 0, width, height);
+                    for (const file of currentFiles) {
+                        if (version !== processVersion) {
+                            return;
                         }
 
-                        gradient.addColorStop(0, gradientStart);
-                        gradient.addColorStop(1, gradientEnd);
+                        try {
+                            const canvas = await renderImageToCanvas(file, settings, backgroundResource);
+                            if (version !== processVersion) {
+                                return;
+                            }
+                            createPreviewCard(canvas, file.name, file);
+                            successCount += 1;
+                        } catch (error) {
+                            processMessages.push(getShortName(file.name) + '：' + error.message);
+                        }
+
+                        await waitForUi();
+                    }
+                } finally {
+                    releaseImageResource(backgroundResource);
+                    if (version === processVersion) {
+                        updateBatchDownloadVisibility();
+                        batchDownloadBtn.disabled = processedCanvases.length === 0;
+                        const messages = fileSelectionMessages.concat(processMessages);
+                        setUploadError(messages);
+                        setStatus(successCount > 0
+                            ? '已处理 ' + successCount + '/' + currentFiles.length + ' 张图片。'
+                            : '未生成可下载图片。');
+                    }
+                }
+            }
+
+            async function loadOptionalBackground(settings, processMessages) {
+                if (settings.backgroundType !== 'image') {
+                    return null;
+                }
+
+                const backgroundFile = backgroundImage.files[0];
+                if (!backgroundFile) {
+                    processMessages.push('已选择图片背景，但未提供背景图片，将使用透明背景。');
+                    return null;
+                }
+
+                let resource = null;
+                try {
+                    resource = await loadImageFromFile(backgroundFile);
+                    ensureImageWithinLimits(resource.image, '背景图片');
+                    return resource;
+                } catch (error) {
+                    releaseImageResource(resource);
+                    processMessages.push('背景图片：' + error.message + '，将使用透明背景。');
+                    return null;
+                }
+            }
+
+            async function renderImageToCanvas(file, settings, backgroundResource) {
+                const resource = await loadImageFromFile(file);
+                try {
+                    const image = resource.image;
+                    ensureImageWithinLimits(image, getShortName(file.name));
+
+                    const sourceWidth = image.naturalWidth || image.width;
+                    const sourceHeight = image.naturalHeight || image.height;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = settings.canvasWidth;
+                    canvas.height = settings.canvasHeight;
+
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        throw new Error('浏览器无法创建 Canvas 上下文');
+                    }
+
+                    drawBackground(ctx, settings, backgroundResource);
+
+                    const scale = Math.min(
+                        1,
+                        settings.maxSize / sourceWidth,
+                        settings.maxSize / sourceHeight,
+                        settings.canvasWidth / sourceWidth,
+                        settings.canvasHeight / sourceHeight
+                    );
+                    const scaledWidth = Math.max(1, Math.round(sourceWidth * scale));
+                    const scaledHeight = Math.max(1, Math.round(sourceHeight * scale));
+                    const x = Math.round((settings.canvasWidth - scaledWidth) / 2);
+                    const y = Math.round((settings.canvasHeight - scaledHeight) / 2);
+
+                    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                    return canvas;
+                } finally {
+                    releaseImageResource(resource);
+                }
+            }
+
+            function drawBackground(ctx, settings, backgroundResource) {
+                const width = settings.canvasWidth;
+                const height = settings.canvasHeight;
+
+                switch (settings.backgroundType) {
+                    case 'transparent':
+                        ctx.clearRect(0, 0, width, height);
+                        break;
+                    case 'solid':
+                        ctx.fillStyle = settings.solidColor;
+                        ctx.fillRect(0, 0, width, height);
+                        break;
+                    case 'gradient': {
+                        const gradient = createGradient(ctx, width, height, settings.gradientDirection);
+                        gradient.addColorStop(0, settings.gradientStart);
+                        gradient.addColorStop(1, settings.gradientEnd);
                         ctx.fillStyle = gradient;
                         ctx.fillRect(0, 0, width, height);
                         break;
-
+                    }
                     case 'image':
-                        // 图片背景 - 这里只处理非图片背景的情况
-                        // 图片背景在processImage函数中单独处理
-                        ctx.clearRect(0, 0, width, height);
+                        if (backgroundResource) {
+                            drawBackgroundImage(ctx, settings, backgroundResource.image);
+                        } else {
+                            ctx.clearRect(0, 0, width, height);
+                        }
                         break;
-
                     default:
                         ctx.clearRect(0, 0, width, height);
                         break;
                 }
             }
 
-            function downloadCanvas(canvas, fileName) {
+            function createGradient(ctx, width, height, direction) {
+                if (direction === 'to right') {
+                    return ctx.createLinearGradient(0, 0, width, 0);
+                }
+                if (direction === 'to bottom') {
+                    return ctx.createLinearGradient(0, 0, 0, height);
+                }
+                return ctx.createLinearGradient(0, 0, width, height);
+            }
+
+            function drawBackgroundImage(ctx, settings, image) {
+                const width = settings.canvasWidth;
+                const height = settings.canvasHeight;
+                const imageWidth = image.naturalWidth || image.width;
+                const imageHeight = image.naturalHeight || image.height;
+                const scale = Math.max(width / imageWidth, height / imageHeight);
+                const scaledWidth = imageWidth * scale;
+                const scaledHeight = imageHeight * scale;
+                const x = (width - scaledWidth) / 2;
+                const y = (height - scaledHeight) / 2;
+
+                ctx.save();
+                ctx.globalAlpha = settings.imageOpacity;
+                ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+                ctx.restore();
+            }
+
+            function createPreviewCard(canvas, fileName, file) {
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+
+                const displayName = getDisplayName(fileName);
+                const title = document.createElement('div');
+                title.className = 'preview-title';
+                title.textContent = displayName;
+
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'image-container';
+
+                const previewCanvas = document.createElement('canvas');
+                previewCanvas.width = canvas.width;
+                previewCanvas.height = canvas.height;
+                previewCanvas.setAttribute('role', 'img');
+                previewCanvas.setAttribute('aria-label', displayName + ' 的处理结果预览');
+                const previewCtx = previewCanvas.getContext('2d');
+                previewCtx.drawImage(canvas, 0, 0);
+                imageContainer.appendChild(previewCanvas);
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-btn';
+                downloadBtn.type = 'button';
+                downloadBtn.textContent = '下载图片';
+                downloadBtn.addEventListener('click', async function () {
+                    downloadBtn.disabled = true;
+                    try {
+                        await downloadCanvas(canvas, fileName);
+                    } catch (error) {
+                        setUploadError([getShortName(fileName) + '：' + error.message]);
+                    } finally {
+                        downloadBtn.disabled = false;
+                    }
+                });
+
+                card.appendChild(title);
+                card.appendChild(imageContainer);
+                card.appendChild(downloadBtn);
+                previewContainer.appendChild(card);
+
+                processedCanvases.push({
+                    canvas: canvas,
+                    fileName: fileName,
+                    file: file
+                });
+                updateBatchDownloadVisibility();
+            }
+
+            async function handleBatchDownload() {
+                if (processedCanvases.length === 0) {
+                    return;
+                }
+
+                batchDownloadBtn.disabled = true;
+                setUploadError('');
+
+                try {
+                    for (let i = 0; i < processedCanvases.length; i += 1) {
+                        const item = processedCanvases[i];
+                        batchDownloadText.textContent = '正在下载... ' + (i + 1) + '/' + processedCanvases.length;
+                        await downloadCanvas(item.canvas, item.fileName);
+                        await new Promise(resolve => window.setTimeout(resolve, 300));
+                    }
+                } catch (error) {
+                    setUploadError(['批量下载失败：' + error.message]);
+                } finally {
+                    batchDownloadText.textContent = defaultBatchDownloadText;
+                    batchDownloadBtn.disabled = processedCanvases.length === 0;
+                }
+            }
+
+            function updateBatchDownloadVisibility() {
+                batchDownloadContainer.style.display = processedCanvases.length > 1 ? 'block' : 'none';
+                batchDownloadBtn.disabled = processedCanvases.length === 0;
+            }
+
+            function clearResults() {
+                previewContainer.replaceChildren();
+                processedCanvases = [];
+                updateBatchDownloadVisibility();
+            }
+
+            function cancelProcessing() {
+                processVersion += 1;
+                batchDownloadBtn.disabled = true;
+            }
+
+            function getValidatedSettings() {
+                const fields = [
+                    { input: maxSizeInput, label: '最大尺寸' },
+                    { input: canvasWidthInput, label: '画布宽度' },
+                    { input: canvasHeightInput, label: '画布高度' }
+                ];
+                const messages = [];
+                const values = {};
+
+                fields.forEach(field => {
+                    const value = Number(field.input.value);
+                    const invalid = !Number.isInteger(value)
+                        || value < LIMITS.minDimension
+                        || value > LIMITS.maxDimension;
+                    field.input.setAttribute('aria-invalid', String(invalid));
+
+                    if (invalid) {
+                        messages.push(field.label + '必须是 ' + LIMITS.minDimension + '-' + LIMITS.maxDimension + ' 的整数。');
+                    } else {
+                        values[field.input.id] = value;
+                    }
+                });
+
+                if (messages.length === 0 && values.canvasWidth * values.canvasHeight > LIMITS.maxCanvasPixels) {
+                    messages.push('画布面积不能超过 2000×2000 像素。');
+                    canvasWidthInput.setAttribute('aria-invalid', 'true');
+                    canvasHeightInput.setAttribute('aria-invalid', 'true');
+                }
+
+                setSettingsError(messages);
+                if (messages.length > 0) {
+                    return null;
+                }
+
+                return {
+                    maxSize: values.maxSize,
+                    canvasWidth: values.canvasWidth,
+                    canvasHeight: values.canvasHeight,
+                    backgroundType: backgroundType.value,
+                    solidColor: solidColor.value,
+                    gradientStart: gradientStart.value,
+                    gradientEnd: gradientEnd.value,
+                    gradientDirection: gradientDirection.value,
+                    imageOpacity: Number(imageOpacity.value) / 100
+                };
+            }
+
+            function validateImageFiles(files) {
+                const result = {
+                    files: [],
+                    messages: []
+                };
+                const incomingFiles = Array.from(files);
+
+                if (incomingFiles.length > LIMITS.maxFiles) {
+                    result.messages.push('一次最多处理 ' + LIMITS.maxFiles + ' 张图片，已保留前 ' + LIMITS.maxFiles + ' 张。');
+                }
+
+                incomingFiles.slice(0, LIMITS.maxFiles).forEach(file => {
+                    const fileLabel = getShortName(file.name);
+                    if (!isSupportedImageFile(file)) {
+                        result.messages.push(fileLabel + '：不支持的图片格式。');
+                        return;
+                    }
+                    if (file.size === 0) {
+                        result.messages.push(fileLabel + '：文件为空。');
+                        return;
+                    }
+                    if (file.size > LIMITS.maxFileSize) {
+                        result.messages.push(fileLabel + '：文件超过 25 MB 限制。');
+                        return;
+                    }
+                    result.files.push(file);
+                });
+
+                return result;
+            }
+
+            function validateBackgroundSelection() {
+                const file = backgroundImage.files[0];
+                if (!file) {
+                    backgroundImage.setAttribute('aria-invalid', 'false');
+                    return [];
+                }
+
+                const result = validateImageFiles([file]);
+                const invalid = result.files.length === 0;
+                backgroundImage.setAttribute('aria-invalid', String(invalid));
+                if (invalid) {
+                    backgroundImage.value = '';
+                    return result.messages.map(message => '背景图片' + message.replace(getShortName(file.name) + '：', '：'));
+                }
+                return [];
+            }
+
+            function isSupportedImageFile(file) {
+                if (file.type) {
+                    return allowedTypes.has(file.type.toLowerCase());
+                }
+                return allowedExtensionPattern.test(file.name);
+            }
+
+            function ensureImageWithinLimits(image, label) {
+                const width = image.naturalWidth || image.width;
+                const height = image.naturalHeight || image.height;
+                if (!width || !height) {
+                    throw new Error('图片没有可绘制尺寸');
+                }
+                if (width * height > LIMITS.maxSourcePixels) {
+                    throw new Error(label + ' 原图超过 8000 万像素限制');
+                }
+            }
+
+            function loadImageFromFile(file) {
+                return new Promise((resolve, reject) => {
+                    const objectUrl = URL.createObjectURL(file);
+                    const image = new Image();
+                    image.onload = function () {
+                        resolve({
+                            image: image,
+                            objectUrl: objectUrl
+                        });
+                    };
+                    image.onerror = function () {
+                        URL.revokeObjectURL(objectUrl);
+                        reject(new Error('无法加载图片，文件可能已损坏或浏览器不支持该格式'));
+                    };
+                    image.src = objectUrl;
+                });
+            }
+
+            function releaseImageResource(resource) {
+                if (resource && resource.objectUrl) {
+                    URL.revokeObjectURL(resource.objectUrl);
+                }
+            }
+
+            function canvasToBlob(canvas) {
+                return new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('图片导出失败'));
+                        }
+                    }, 'image/png');
+                });
+            }
+
+            async function downloadCanvas(canvas, fileName) {
+                const blob = await canvasToBlob(canvas);
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.download = 'centered-' + fileName;
-                link.href = canvas.toDataURL('image/png');
+                link.download = buildOutputFileName(fileName);
+                link.href = url;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                window.setTimeout(function () {
+                    URL.revokeObjectURL(url);
+                }, 1000);
+            }
+
+            function buildOutputFileName(fileName) {
+                const baseName = getDisplayName(fileName)
+                    .replace(/[\\/:*?"<>|\x00-\x1f]+/g, '_')
+                    .trim()
+                    .slice(0, 120) || 'image';
+                return 'centered-' + baseName + '.png';
+            }
+
+            function getDisplayName(fileName) {
+                return fileName.replace(/\.[^/.]+$/, '') || 'image';
+            }
+
+            function getShortName(fileName) {
+                return fileName.length > 80 ? fileName.slice(0, 77) + '...' : fileName;
+            }
+
+            function waitForUi() {
+                return new Promise(resolve => window.setTimeout(resolve, 0));
+            }
+
+            function setStatus(message) {
+                uploadStatus.textContent = message;
+            }
+
+            function setUploadError(messages) {
+                const normalizedMessages = Array.isArray(messages) ? messages : [messages];
+                uploadError.textContent = normalizedMessages.filter(Boolean).join('；');
+            }
+
+            function setSettingsError(messages) {
+                settingsError.textContent = messages.filter(Boolean).join('；');
             }
         });
     </script>

@@ -6,7 +6,7 @@
     <title>图片叠加工具</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;background:#f5f7fb;padding:20px;min-height:100vh}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;background:#f5f7fb;padding:20px;min-height:100dvh}
         .container{max-width:1100px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08);overflow:hidden}
         .header{background:linear-gradient(135deg,#6e8efb,#a777e3);color:#fff;padding:20px 24px}
         .header h1{font-size:20px;font-weight:600}
@@ -16,10 +16,10 @@
         .right{width:60%}
 
         .section-title{font-size:16px;color:#111827;margin-bottom:12px;font-weight:600}
-        .upload-area{border:2px dashed #cbd5e1;border-radius:10px;padding:24px;text-align:center;background:#f8fafc;transition:.2s;cursor:pointer}
+        .upload-area{display:block;width:100%;border:2px dashed #cbd5e1;border-radius:10px;padding:24px;text-align:center;background:#f8fafc;transition:.2s;cursor:pointer;color:inherit;font:inherit}
         .upload-area:hover{border-color:#60a5fa;background:#f1f5f9}
         .upload-area.dragover{border-color:#22c55e;background:#ecfdf5}
-        .upload-area p{color:#475569;font-size:14px}
+        .upload-area span{display:block;color:#475569;font-size:14px}
         input[type="file"]{display:none}
 
         .list{margin-top:14px;display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto}
@@ -37,12 +37,28 @@
         .btn.up{background:#6366f1}
         .btn.del{background:#ef4444}
         .btn:disabled{background:#cbd5e1;cursor:not-allowed}
+        .btn:focus-visible,.upload-area:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid rgba(59,130,246,.28);outline-offset:2px}
 
         .canvas-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:center;min-height:360px}
         canvas{max-width:100%;height:auto;background:repeating-conic-gradient(#f3f4f6 0% 25%,#fff 0% 50%) 50%/20px 20px}
         .actions{margin-top:14px;display:flex;gap:10px;align-items:center}
         .hint{font-size:12px;color:#6b7280}
         .error{color:#dc2626;font-size:13px;margin-top:8px}
+        .transparent-bg-section{margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+        .transparent-bg-toggle,.transparent-bg-size,.size-row{display:flex;align-items:center;gap:8px}
+        .transparent-bg-toggle{margin-bottom:8px}
+        .transparent-bg-size{display:none;gap:12px}
+        .transparent-bg-size.is-visible{display:flex}
+        .custom{display:none}
+        .checkbox{width:16px;height:16px}
+        .section-label{font-size:14px;color:#374151;cursor:pointer}
+        .row-label{font-size:13px;color:#6b7280}
+        .mini-label{font-size:12px;color:#6b7280}
+        .size-input{width:80px;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:12px}
+        .item-actions{display:flex;flex-direction:column;gap:8px}
+        .coord-input{width:90px}
+        .custom.is-visible{display:flex}
+        @media(max-width:800px){.main{display:block}.left,.right{width:100%;border-right:none}.left{border-bottom:1px solid #eef2f7}.transparent-bg-size,.size-row{flex-wrap:wrap}}
     </style>
     <!--
         说明：
@@ -62,35 +78,35 @@
                     <canvas id="canvas"></canvas>
                 </div>
                 <div class="actions">
-                    <button id="dlBtn" class="btn" disabled>下载 PNG</button>
+                    <button id="dlBtn" class="btn" type="button" disabled>下载 PNG</button>
                     <span class="hint">提示：任何修改都会自动更新预览</span>
                 </div>
-                <div id="err" class="error" style="display:none"></div>
+                <div id="err" class="error" aria-live="polite" hidden></div>
             </div>
             <div class="right">
                 <div class="section-title">图片与参数（第一张为背景）</div>
-                
                 <!-- 透明背景选项 -->
-                <div class="transparent-bg-section" style="margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="useTransparentBg" style="width: 16px; height: 16px;">
-                        <label for="useTransparentBg" style="font-size: 14px; color: #374151; cursor: pointer;">使用透明背景</label>
+                <div class="transparent-bg-section">
+                    <div class="transparent-bg-toggle">
+                        <input class="checkbox" type="checkbox" id="useTransparentBg">
+                        <label class="section-label" for="useTransparentBg">使用透明背景</label>
                     </div>
-                    <div id="transparentBgSize" style="display: none; gap: 12px; align-items: center;">
-                        <label style="font-size: 13px; color: #6b7280;">背景尺寸：</label>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <label style="font-size: 12px; color: #6b7280;">宽</label>
-                            <input type="number" id="transparentBgWidth" value="200" min="1" max="4000" style="width: 80px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-                            <label style="font-size: 12px; color: #6b7280;">高</label>
-                            <input type="number" id="transparentBgHeight" value="300" min="1" max="4000" style="width: 80px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+                    <div id="transparentBgSize" class="transparent-bg-size">
+                        <span class="row-label">背景尺寸：</span>
+                        <div class="size-row">
+                            <label class="mini-label" for="transparentBgWidth">宽</label>
+                            <input class="size-input" type="number" id="transparentBgWidth" value="200" min="1" max="4000">
+                            <label class="mini-label" for="transparentBgHeight">高</label>
+                            <input class="size-input" type="number" id="transparentBgHeight" value="300" min="1" max="4000">
                         </div>
                     </div>
                 </div>
-                
-                <div id="uploadArea" class="upload-area">
-                    <p>点击选择图片或拖拽图片到此处</p>
-                    <input id="fileInput" type="file" accept="image/*" multiple>
-                </div>
+
+                <button id="uploadArea" class="upload-area" type="button">
+                    <span>点击选择图片或拖拽图片到此处</span>
+                    <span>第一张作为背景，其余图片按列表顺序叠加。</span>
+                </button>
+                <input id="fileInput" type="file" accept="image/*" multiple>
                 <div class="list" id="list"></div>
             </div>
         </div>
@@ -114,6 +130,12 @@
 
         /** @type {{file:File,url:string,img?:HTMLImageElement,posMode:'anchor'|'custom',anchor:string,customX:number,customY:number,opacity:number}[]} */
         let items = [];
+        let renderToken = 0;
+        const MAX_FILES = 12;
+        const MAX_FILE_BYTES = 50 * 1024 * 1024;
+        const MAX_IMAGE_PIXELS = 24_000_000;
+        const MAX_CANVAS_SIDE = 16_384;
+        const MAX_CANVAS_PIXELS = 64_000_000;
 
         uploadArea.addEventListener('click', ()=> fileInput.click());
         uploadArea.addEventListener('dragover', (e)=>{ e.preventDefault(); uploadArea.classList.add('dragover'); });
@@ -123,17 +145,33 @@
         
         // 透明背景事件监听
         useTransparentBg.addEventListener('change', ()=>{
-            transparentBgSize.style.display = useTransparentBg.checked ? 'flex' : 'none';
+            transparentBgSize.classList.toggle('is-visible', useTransparentBg.checked);
             renderList(); // 重新渲染列表以更新背景标签和按钮状态
             scheduleGenerate();
         });
         
         transparentBgWidth.addEventListener('input', scheduleGenerate);
         transparentBgHeight.addEventListener('input', scheduleGenerate);
+        window.addEventListener('pagehide', releaseItems);
 
         function handleFiles(fileList){
-            const files = Array.from(fileList).filter(f=> f.type.startsWith('image/'));
-            items = files.map(f=>({
+            const nextFiles = [];
+            const rejected = [];
+            Array.from(fileList).forEach((file)=>{
+                if(!file.type.startsWith('image/')){
+                    rejected.push(`${file.name} 不是图片文件`);
+                    return;
+                }
+                if(file.size > MAX_FILE_BYTES){
+                    rejected.push(`${file.name} 超过 50MB`);
+                    return;
+                }
+                if(nextFiles.length < MAX_FILES) nextFiles.push(file);
+            });
+            if(fileList.length > MAX_FILES) rejected.push(`最多一次处理 ${MAX_FILES} 张图片，已忽略多余文件`);
+
+            releaseItems();
+            items = nextFiles.map(f=>({
                 file: f,
                 url: URL.createObjectURL(f),
                 posMode: 'anchor',
@@ -142,56 +180,30 @@
                 customY: 0,
                 opacity: 100
             }));
+            fileInput.value = '';
+            if(rejected.length) showErr(rejected.join('；'));
+            else hideErr();
             renderList();
             scheduleGenerate();
         }
 
         function renderList(){
-            listEl.innerHTML = '';
+            listEl.replaceChildren();
             items.forEach((it, index)=>{
                 const div = document.createElement('div');
                 div.className = 'item';
-                div.innerHTML = `
-                    <div class="idx" title="序号">${index+1}</div>
-                    <div class="thumb"><img src="${it.url}" alt="thumb"></div>
-                    <div class="meta">
-                        <span class="badge">${index===0 && !useTransparentBg.checked?'背景':'叠加'}</span>
-                        <div class="ctrl">
-                            <label>位置</label>
-                            <select data-k="anchor">
-                                <option value="lt">左上</option>
-                                <option value="lc">左中</option>
-                                <option value="lb">左下</option>
-                                <option value="ct">中上</option>
-                                <option value="cc">中间</option>
-                                <option value="cb">中下</option>
-                                <option value="rt">右上</option>
-                                <option value="rc">右中</option>
-                                <option value="rb">右下</option>
-                                <option value="custom">自定义坐标</option>
-                            </select>
-                            <span class="ctrl custom" style="display:none">
-                                <label>X</label><input type="number" data-k="customX" value="${it.customX}" style="width:90px">
-                                <label>Y</label><input type="number" data-k="customY" value="${it.customY}" style="width:90px">
-                            </span>
-                            <span class="opacity">
-                                <label>透明度</label>
-                                <input type="range" min="0" max="100" step="1" data-k="opacity" value="${it.opacity}">
-                                <span class="badge" data-k="opv">${it.opacity}%</span>
-                            </span>
-                        </div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:8px">
-                        <button class="btn up" ${index===0 && !useTransparentBg.checked?'disabled':''} title="上移">上移</button>
-                        <button class="btn del" title="删除">删除</button>
-                    </div>
-                `;
+                div.append(
+                    createIndexNode(index),
+                    createThumbNode(it),
+                    createMetaNode(it, index),
+                    createActionsNode(index)
+                );
 
                 // 初始化选择值
                 const sel = div.querySelector('select[data-k="anchor"]');
                 sel.value = it.posMode==='custom' ? 'custom' : it.anchor;
                 const customWrap = div.querySelector('.custom');
-                customWrap.style.display = sel.value==='custom' ? '' : 'none';
+                customWrap.classList.toggle('is-visible', sel.value==='custom');
 
                 // 事件：位置选择
                 sel.addEventListener('change', (e)=>{
@@ -202,7 +214,7 @@
                         it.posMode = 'anchor';
                         it.anchor = v;
                     }
-                    customWrap.style.display = it.posMode==='custom' ? '' : 'none';
+                    customWrap.classList.toggle('is-visible', it.posMode==='custom');
                     scheduleGenerate();
                 });
 
@@ -226,7 +238,7 @@
 
                 // 上移
                 div.querySelector('.btn.up').addEventListener('click', ()=>{
-                    if(index>0 || (index===0 && useTransparentBg.checked)){
+                    if(index>0){
                         const tmp = items[index-1];
                         items[index-1] = items[index];
                         items[index] = tmp;
@@ -246,32 +258,153 @@
             });
         }
 
+        function createIndexNode(index){
+            const node = document.createElement('div');
+            node.className = 'idx';
+            node.title = '序号';
+            node.textContent = index + 1;
+            return node;
+        }
+
+        function createThumbNode(item){
+            const wrap = document.createElement('div');
+            wrap.className = 'thumb';
+            const img = document.createElement('img');
+            img.src = item.url;
+            img.alt = `${item.file.name} 缩略图`;
+            img.decoding = 'async';
+            wrap.appendChild(img);
+            return wrap;
+        }
+
+        function createMetaNode(item, index){
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = index===0 && !useTransparentBg.checked ? '背景' : '叠加';
+
+            const ctrl = document.createElement('div');
+            ctrl.className = 'ctrl';
+
+            const positionLabel = document.createElement('label');
+            positionLabel.textContent = '位置';
+            const select = document.createElement('select');
+            select.dataset.k = 'anchor';
+            [
+                ['lt','左上'], ['lc','左中'], ['lb','左下'],
+                ['ct','中上'], ['cc','中间'], ['cb','中下'],
+                ['rt','右上'], ['rc','右中'], ['rb','右下'],
+                ['custom','自定义坐标']
+            ].forEach(([value, text])=>{
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                select.appendChild(option);
+            });
+
+            const custom = document.createElement('span');
+            custom.className = 'ctrl custom';
+            custom.append(
+                createTextLabel('X'),
+                createNumberInput('customX', item.customX),
+                createTextLabel('Y'),
+                createNumberInput('customY', item.customY)
+            );
+
+            const opacity = document.createElement('span');
+            opacity.className = 'opacity';
+            const opacityLabel = createTextLabel('透明度');
+            const range = document.createElement('input');
+            range.type = 'range';
+            range.min = '0';
+            range.max = '100';
+            range.step = '1';
+            range.dataset.k = 'opacity';
+            range.value = item.opacity;
+            const value = document.createElement('span');
+            value.className = 'badge';
+            value.dataset.k = 'opv';
+            value.textContent = `${item.opacity}%`;
+            opacity.append(opacityLabel, range, value);
+
+            ctrl.append(positionLabel, select, custom, opacity);
+            meta.append(badge, ctrl);
+            return meta;
+        }
+
+        function createActionsNode(index){
+            const actions = document.createElement('div');
+            actions.className = 'item-actions';
+            const up = document.createElement('button');
+            up.className = 'btn up';
+            up.type = 'button';
+            up.title = '上移';
+            up.textContent = '上移';
+            up.disabled = index === 0;
+            const del = document.createElement('button');
+            del.className = 'btn del';
+            del.type = 'button';
+            del.title = '删除';
+            del.textContent = '删除';
+            actions.append(up, del);
+            return actions;
+        }
+
+        function createTextLabel(text){
+            const label = document.createElement('label');
+            label.textContent = text;
+            return label;
+        }
+
+        function createNumberInput(key, value){
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.dataset.k = key;
+            input.value = value;
+            input.className = 'coord-input';
+            return input;
+        }
+
         async function generate(){
-            errEl.style.display = 'none';
+            const token = ++renderToken;
+            hideErr();
             if(items.length < 1 && !useTransparentBg.checked){
                 ctx.clearRect(0,0,canvas.width||0,canvas.height||0);
                 dlBtn.disabled = true;
                 return;
             }
+
+            try{
+                await Promise.all(items.map(loadItemImage));
+            }catch(ex){
+                return showErr('有图片加载失败，请重试');
+            }
+            if(token !== renderToken) return;
             
             // 如果使用透明背景
             if(useTransparentBg.checked){
-                const width = parseInt(transparentBgWidth.value) || 200;
-                const height = parseInt(transparentBgHeight.value) || 300;
+                const width = sanitizeCanvasSize(transparentBgWidth.value, 200);
+                const height = sanitizeCanvasSize(transparentBgHeight.value, 300);
+                transparentBgWidth.value = width;
+                transparentBgHeight.value = height;
+                if(!canUseCanvasSize(width, height)){
+                    dlBtn.disabled = true;
+                    return showErr('输出尺寸过大，请降低透明背景宽高。');
+                }
                 canvas.width = width;
                 canvas.height = height;
                 ctx.clearRect(0,0,canvas.width,canvas.height);
                 // 透明背景不需要绘制任何内容
             } else {
-                // 预加载所有图片
-                try{
-                    await Promise.all(items.map(loadItemImage));
-                }catch(ex){
-                    return showErr('有图片加载失败，请重试');
-                }
                 const bg = items[0].img;
                 if(!bg){ return showErr('背景图片加载失败'); }
                 // 以背景尺寸作为画布
+                if(!canUseCanvasSize(bg.width, bg.height)){
+                    dlBtn.disabled = true;
+                    return showErr('背景图片尺寸过大，无法安全生成预览。');
+                }
                 canvas.width = bg.width; canvas.height = bg.height;
                 ctx.clearRect(0,0,canvas.width,canvas.height);
                 ctx.globalAlpha = 1;
@@ -279,7 +412,8 @@
             }
 
             // 绘制叠加图片
-            for(let i=0;i<items.length;i++){
+            const startIndex = useTransparentBg.checked ? 0 : 1;
+            for(let i=startIndex;i<items.length;i++){
                 const it = items[i];
                 const img = it.img; if(!img) continue;
                 const pos = computePosition(it, canvas.width, canvas.height, img.width, img.height);
@@ -298,24 +432,41 @@
         }
 
         dlBtn.addEventListener('click', ()=>{
-            const url = canvas.toDataURL('image/png');
+            if(dlBtn.disabled) return;
+            if(!canvas.toBlob){
+                return showErr('当前浏览器不支持导出画布图片，请更新浏览器后重试。');
+            }
+            dlBtn.disabled = true;
             const a = document.createElement('a');
-            a.href = url;
-            a.download = getDownloadName();
-            a.click();
+            canvas.toBlob((blob)=>{
+                dlBtn.disabled = false;
+                if(!blob) return showErr('导出失败，请降低图片尺寸后重试。');
+                const url = URL.createObjectURL(blob);
+                a.href = url;
+                a.download = getDownloadName();
+                a.click();
+                setTimeout(()=>URL.revokeObjectURL(url), 0);
+            }, 'image/png');
         });
 
         function getDownloadName(){
             const bg = items[0]?.file?.name || 'image-overlay';
-            const base = bg.replace(/\.[^.]*$/, '') || 'image-overlay';
-            return base + '.png';
+            const base = (bg.replace(/\.[^.]*$/, '') || 'image-overlay').replace(/[\\/:*?"<>|]+/g, '-');
+            return base + '-overlay.png';
         }
 
         function loadItemImage(it){
             if(it.img && it.img.complete) return Promise.resolve();
             return new Promise((resolve, reject)=>{
                 const img = new Image();
-                img.onload = ()=>{ it.img = img; resolve(); };
+                img.onload = ()=>{
+                    if(!canUseCanvasSize(img.width, img.height)){
+                        reject(new Error('too large'));
+                        return;
+                    }
+                    it.img = img;
+                    resolve();
+                };
                 img.onerror = ()=> reject(new Error('load fail'));
                 img.src = it.url;
             });
@@ -340,7 +491,30 @@
             return { x: Math.round(p.x), y: Math.round(p.y) };
         }
 
-        function showErr(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+        function sanitizeCanvasSize(value, fallback){
+            const next = Number.parseInt(value, 10);
+            return Number.isNaN(next) ? fallback : Math.max(1, Math.min(4000, next));
+        }
+
+        function canUseCanvasSize(width, height){
+            return width > 0 && height > 0 && width <= MAX_CANVAS_SIDE && height <= MAX_CANVAS_SIDE && width * height <= MAX_CANVAS_PIXELS && width * height <= MAX_IMAGE_PIXELS;
+        }
+
+        function releaseItems(){
+            renderToken++;
+            items.forEach((item)=>URL.revokeObjectURL(item.url));
+            items = [];
+        }
+
+        function hideErr(){
+            errEl.textContent = '';
+            errEl.hidden = true;
+        }
+
+        function showErr(m){
+            errEl.textContent = m;
+            errEl.hidden = false;
+        }
     </script>
 </body>
 </html>

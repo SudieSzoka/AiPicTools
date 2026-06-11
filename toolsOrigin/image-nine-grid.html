@@ -26,7 +26,7 @@
         body {
             background: var(--bg-gradient);
             color: var(--text);
-            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .main-wrapper {
@@ -34,7 +34,7 @@
             align-items: center;
             justify-content: center;
             padding: 60px 20px;
-            min-height: calc(100vh - 200px);
+            min-height: calc(100dvh - 200px);
         }
 
         .container {
@@ -103,10 +103,13 @@
         }
 
         .drop-zone {
+            width: 100%;
             border: 2px dashed var(--border);
             border-radius: 16px;
             padding: 40px 20px;
             text-align: center;
+            color: inherit;
+            font: inherit;
             transition: all 0.3s;
             cursor: pointer;
             background: rgba(255, 255, 255, 0.03);
@@ -115,30 +118,61 @@
         }
 
         .drop-zone:hover,
-        .drop-zone.drag-over {
+        .drop-zone:focus-visible,
+        .drop-zone.drag-over,
+        .drop-zone.is-dragover {
             border-color: var(--primary);
             background: rgba(99, 102, 241, 0.05);
         }
 
-        .drop-zone i {
+        .drop-zone .icon {
             font-size: 3rem;
             color: var(--primary);
             margin-bottom: 15px;
             display: block;
         }
 
-        .drop-zone p {
+        .drop-zone .icon::before {
+            content: "+";
+        }
+
+        .drop-zone .upload-title {
+            display: block;
             color: var(--text-muted);
             margin-bottom: 5px;
         }
 
-        .drop-zone span {
+        .drop-zone span:not(.icon) {
             font-size: 0.85rem;
             color: rgba(148, 163, 184, 0.6);
         }
 
         #file-input {
             display: none;
+        }
+
+        .status-message,
+        .file-meta,
+        .field-hint {
+            color: var(--text-muted);
+            font-size: 0.86rem;
+            line-height: 1.5;
+        }
+
+        .status-message {
+            min-height: 1.5em;
+        }
+
+        .status-message[data-type="success"] {
+            color: #86efac;
+        }
+
+        .status-message[data-type="error"] {
+            color: #fca5a5;
+        }
+
+        .status-message[data-type="warning"] {
+            color: #fde68a;
         }
 
         /* Controls */
@@ -180,6 +214,11 @@
             border-color: var(--primary);
         }
 
+        input[aria-invalid="true"] {
+            border-color: #f87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+        }
+
         .full-width {
             grid-column: span 2;
         }
@@ -208,6 +247,13 @@
             transform: translateY(0);
         }
 
+        .btn-generate:disabled {
+            cursor: not-allowed;
+            opacity: 0.58;
+            transform: none;
+            box-shadow: none;
+        }
+
         .btn-download {
             background: #10b981;
             margin-top: 10px;
@@ -217,13 +263,17 @@
             padding: 16px;
             border-radius: 12px;
             font-weight: 600;
-            display: none;
+            display: block;
             transition: all 0.3s;
         }
 
         .btn-download:hover {
             background: #059669;
             box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-download[hidden] {
+            display: none;
         }
 
         /* Preview Area */
@@ -258,11 +308,15 @@
             color: var(--text-muted);
         }
 
-        .empty-state i {
+        .empty-state span[aria-hidden="true"] {
             font-size: 4rem;
             margin-bottom: 20px;
             opacity: 0.2;
             display: block;
+        }
+
+        .empty-state span[aria-hidden="true"]::before {
+            content: "3x3";
         }
 
         /* Tooltip style info */
@@ -286,12 +340,44 @@
         .canvas-container {
             position: relative;
             display: none;
+            width: 100%;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        @media (max-width: 560px) {
+            .main-wrapper {
+                padding: 24px 12px;
+            }
+
+            .container {
+                padding: 24px 18px;
+                border-radius: 18px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .control-group {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: span 1;
+            }
+
+            .preview-section {
+                min-height: 280px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="main-wrapper">
+    <main class="main-wrapper" id="main-content">
         <div class="container">
             <header>
                 <h1>九宫格图片工具</h1>
@@ -300,46 +386,50 @@
 
             <div class="main-layout">
                 <div class="upload-section">
-                    <div class="drop-zone" id="drop-zone">
-                        <i class="icon">🖼️</i>
-                        <p>拖拽图片到这里</p>
-                        <span>或点击上传图片</span>
-                        <input type="file" id="file-input" accept="image/*">
-                    </div>
+                    <button class="drop-zone" id="drop-zone" type="button" aria-describedby="upload-help status-message">
+                        <span class="icon" aria-hidden="true"></span>
+                        <span class="upload-title">拖拽图片到这里</span>
+                        <span id="upload-help">或点击上传 PNG、JPG、WebP、GIF、BMP 图片</span>
+                    </button>
+                    <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp">
+                    <p class="status-message" id="status-message" role="status" aria-live="polite" aria-atomic="true">请选择一张图片开始，所有处理都在本地浏览器完成。</p>
+                    <p class="file-meta" id="file-meta"></p>
 
                     <div class="controls">
                         <div class="control-group">
                             <div class="input-item">
-                                <label>上边距 (Top)</label>
-                                <input type="number" id="slice-top" value="40" min="1">
+                                <label for="slice-top">上边距 (Top)</label>
+                                <input type="number" id="slice-top" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
                             </div>
                             <div class="input-item">
-                                <label>右边距 (Right)</label>
-                                <input type="number" id="slice-right" value="40" min="1">
+                                <label for="slice-right">右边距 (Right)</label>
+                                <input type="number" id="slice-right" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
                             </div>
                             <div class="input-item">
-                                <label>下边距 (Bottom)</label>
-                                <input type="number" id="slice-bottom" value="40" min="1">
+                                <label for="slice-bottom">下边距 (Bottom)</label>
+                                <input type="number" id="slice-bottom" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
                             </div>
                             <div class="input-item">
-                                <label>左边距 (Left)</label>
-                                <input type="number" id="slice-left" value="40" min="1">
+                                <label for="slice-left">左边距 (Left)</label>
+                                <input type="number" id="slice-left" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
                             </div>
+                            <p class="field-hint full-width" id="slice-hint">边距必须小于原图尺寸，且上下、左右相加后仍要留出可拉伸区域。</p>
                         </div>
 
                         <div class="control-group">
                             <div class="input-item">
-                                <label>目标宽度 (px)</label>
-                                <input type="number" id="target-width" value="500" min="1">
+                                <label for="target-width">目标宽度 (px)</label>
+                                <input type="number" id="target-width" value="500" min="1" max="4096" step="1" inputmode="numeric" aria-describedby="target-hint">
                             </div>
                             <div class="input-item">
-                                <label>目标高度 (px)</label>
-                                <input type="number" id="target-height" value="500" min="1">
+                                <label for="target-height">目标高度 (px)</label>
+                                <input type="number" id="target-height" value="500" min="1" max="4096" step="1" inputmode="numeric" aria-describedby="target-hint">
                             </div>
+                            <p class="field-hint full-width" id="target-hint">为兼容移动端 Canvas，目标宽高上限为 4096px，且总像素不超过 4096 × 4096。</p>
                         </div>
 
-                        <button class="btn-generate" id="btn-generate">生成九宫格图</button>
-                        <a href="#" class="btn-download" id="btn-download" download="nine-grid-result.png">下载生成图</a>
+                        <button class="btn-generate" id="btn-generate" type="button" disabled>生成九宫格图</button>
+                        <a class="btn-download" id="btn-download" href="#" download="nine-grid-result.png" hidden aria-disabled="true">下载生成图</a>
                     </div>
 
                     <div class="info-panel">
@@ -350,17 +440,17 @@
 
                 <div class="preview-section" id="preview-section">
                     <div class="empty-state" id="empty-state">
-                        <i>🎨</i>
+                        <span aria-hidden="true"></span>
                         <p>预览区域</p>
                         <span>上传图片后即可查看效果</span>
                     </div>
                     <div class="canvas-container" id="canvas-container">
-                        <canvas id="preview-canvas"></canvas>
+                        <canvas id="preview-canvas">当前浏览器不支持 Canvas，无法生成预览。</canvas>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
         const dropZone = document.getElementById('drop-zone');
@@ -371,6 +461,8 @@
         const ctx = canvas.getContext('2d');
         const emptyState = document.getElementById('empty-state');
         const canvasContainer = document.getElementById('canvas-container');
+        const statusMessage = document.getElementById('status-message');
+        const fileMeta = document.getElementById('file-meta');
 
         const inputTop = document.getElementById('slice-top');
         const inputRight = document.getElementById('slice-right');
@@ -378,20 +470,52 @@
         const inputLeft = document.getElementById('slice-left');
         const inputTargetW = document.getElementById('target-width');
         const inputTargetH = document.getElementById('target-height');
+        const numericInputs = [
+            inputTop,
+            inputRight,
+            inputBottom,
+            inputLeft,
+            inputTargetW,
+            inputTargetH
+        ];
+
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+        const MAX_CANVAS_SIZE = 4096;
+        const MAX_CANVAS_AREA = MAX_CANVAS_SIZE * MAX_CANVAS_SIZE;
+        const SUPPORTED_MIME_TYPES = new Set([
+            'image/png',
+            'image/jpeg',
+            'image/webp',
+            'image/gif',
+            'image/bmp'
+        ]);
+        const SUPPORTED_EXTENSIONS = /\.(png|jpe?g|webp|gif|bmp)$/i;
 
         let sourceImg = null;
+        let sourceObjectUrl = '';
+        let downloadObjectUrl = '';
+        let uploadSequence = 0;
+        let renderSequence = 0;
 
         // --- Event Listeners ---
 
-        dropZone.addEventListener('click', () => fileInput.click());
+        if (!ctx) {
+            setStatus('当前浏览器不支持 Canvas 2D，无法使用此工具。', 'error');
+        }
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
 
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('drag-over');
         });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
+        dropZone.addEventListener('dragleave', (event) => {
+            if (!dropZone.contains(event.relatedTarget)) {
+                dropZone.classList.remove('drag-over');
+            }
         });
 
         dropZone.addEventListener('drop', (e) => {
@@ -406,104 +530,356 @@
             if (e.target.files.length) {
                 handleFile(e.target.files[0]);
             }
+            fileInput.value = '';
         });
 
         btnGenerate.addEventListener('click', generateNineGrid);
 
+        numericInputs.forEach((input) => {
+            input.addEventListener('input', () => {
+                input.removeAttribute('aria-invalid');
+                renderSequence += 1;
+                clearDownload();
+                if (sourceImg) {
+                    setStatus('参数已修改，请重新生成九宫格图。', 'warning');
+                }
+            });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            revokeDownloadUrl();
+            revokeSourceUrl();
+        });
+
         // --- Functions ---
 
         function handleFile(file) {
-            if (!file.type.startsWith('image/')) {
-                alert('请上传图片文件');
+            const validationMessage = validateFile(file);
+            if (validationMessage) {
+                setStatus(validationMessage, 'error');
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                sourceImg = new Image();
-                sourceImg.onload = () => {
-                    // Initialize inputs based on image size
-                    const defaultMargin = Math.floor(Math.min(sourceImg.width, sourceImg.height) / 4);
-                    inputTop.value = defaultMargin;
-                    inputRight.value = defaultMargin;
-                    inputBottom.value = defaultMargin;
-                    inputLeft.value = defaultMargin;
+            const token = uploadSequence + 1;
+            uploadSequence = token;
+            renderSequence += 1;
+            sourceImg = null;
+            clearDownload();
+            clearInputErrors();
+            setGenerateBusy(true, '读取图片中...');
+            setStatus(`正在读取 ${file.name}...`, 'info');
+            fileMeta.textContent = '';
 
-                    // Set target size to twice the original for demo purposes
-                    inputTargetW.value = sourceImg.width * 2;
-                    inputTargetH.value = sourceImg.height * 2;
+            const objectUrl = URL.createObjectURL(file);
+            const image = new Image();
+            image.decoding = 'async';
 
-                    showCanvas();
-                    generateNineGrid();
-                };
-                sourceImg.src = e.target.result;
+            image.onload = () => {
+                if (token !== uploadSequence) {
+                    URL.revokeObjectURL(objectUrl);
+                    return;
+                }
+
+                const sourceWidth = image.naturalWidth || image.width;
+                const sourceHeight = image.naturalHeight || image.height;
+
+                if (sourceWidth < 3 || sourceHeight < 3) {
+                    URL.revokeObjectURL(objectUrl);
+                    setGenerateBusy(false);
+                    hideCanvas();
+                    setStatus('图片尺寸至少需要 3 × 3 像素，才能设置九宫格边距。', 'error');
+                    return;
+                }
+
+                revokeSourceUrl();
+                sourceObjectUrl = objectUrl;
+                sourceImg = image;
+
+                initializeInputs(sourceWidth, sourceHeight);
+                showCanvas();
+                fileMeta.textContent = `${file.name} · ${sourceWidth} × ${sourceHeight}px · ${formatBytes(file.size)}`;
+                setStatus('图片已载入，已按原图尺寸预设边距和目标尺寸。', 'success');
+                generateNineGrid();
             };
-            reader.readAsDataURL(file);
+
+            image.onerror = () => {
+                if (token !== uploadSequence) {
+                    URL.revokeObjectURL(objectUrl);
+                    return;
+                }
+
+                URL.revokeObjectURL(objectUrl);
+                setGenerateBusy(false);
+                hideCanvas();
+                setStatus('图片读取失败，请换一张常见位图格式图片。', 'error');
+            };
+
+            image.src = objectUrl;
+        }
+
+        function validateFile(file) {
+            if (!file) {
+                return '没有获取到文件，请重新选择图片。';
+            }
+
+            const hasSupportedType = file.type ? SUPPORTED_MIME_TYPES.has(file.type) : false;
+            const hasSupportedExtension = SUPPORTED_EXTENSIONS.test(file.name);
+
+            if (!hasSupportedType && !hasSupportedExtension) {
+                return '仅支持 PNG、JPG、WebP、GIF、BMP 位图图片。';
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                return '图片文件不能超过 50MB，请先压缩后再处理。';
+            }
+
+            return '';
+        }
+
+        function initializeInputs(sourceWidth, sourceHeight) {
+            const defaultMargin = Math.max(1, Math.floor(Math.min(sourceWidth, sourceHeight) / 4));
+            const maxDefaultMargin = Math.floor((Math.min(sourceWidth, sourceHeight, MAX_CANVAS_SIZE) - 1) / 2);
+            const safeMargin = Math.min(defaultMargin, maxDefaultMargin);
+            const targetWidth = clamp(sourceWidth * 2, safeMargin * 2, MAX_CANVAS_SIZE);
+            const targetHeight = clamp(sourceHeight * 2, safeMargin * 2, MAX_CANVAS_SIZE);
+
+            inputTop.max = String(sourceHeight - 1);
+            inputBottom.max = String(sourceHeight - 1);
+            inputLeft.max = String(sourceWidth - 1);
+            inputRight.max = String(sourceWidth - 1);
+
+            inputTop.value = String(safeMargin);
+            inputRight.value = String(safeMargin);
+            inputBottom.value = String(safeMargin);
+            inputLeft.value = String(safeMargin);
+            inputTargetW.value = String(targetWidth);
+            inputTargetH.value = String(targetHeight);
         }
 
         function showCanvas() {
             emptyState.style.display = 'none';
             canvasContainer.style.display = 'block';
-            btnDownload.style.display = 'block';
+        }
+
+        function hideCanvas() {
+            emptyState.style.display = 'block';
+            canvasContainer.style.display = 'none';
+            canvas.width = 0;
+            canvas.height = 0;
         }
 
         function generateNineGrid() {
+            const token = renderSequence + 1;
+            renderSequence = token;
+            clearDownload();
+            clearInputErrors();
+
+            if (!ctx) {
+                setStatus('当前浏览器不支持 Canvas 2D，无法生成图片。', 'error');
+                setGenerateBusy(false);
+                return;
+            }
+
             if (!sourceImg) {
-                alert('请先上传图片');
+                setStatus('请先上传图片。', 'error');
+                setGenerateBusy(false);
                 return;
             }
 
-            const sW = sourceImg.width;
-            const sH = sourceImg.height;
-
-            const t = parseInt(inputTop.value);
-            const r = parseInt(inputRight.value);
-            const b = parseInt(inputBottom.value);
-            const l = parseInt(inputLeft.value);
-
-            const tW = parseInt(inputTargetW.value);
-            const tH = parseInt(inputTargetH.value);
-
-            if (t + b >= sH || l + r >= sW) {
-                alert('切片边距总和不能超过原图尺寸');
+            let settings;
+            try {
+                settings = readSettings();
+            } catch (error) {
+                setStatus(error.message, 'error');
+                setGenerateBusy(false);
                 return;
             }
 
-            canvas.width = tW;
-            canvas.height = tH;
-            ctx.clearRect(0, 0, tW, tH);
+            setGenerateBusy(true, '生成中...');
 
-            // Source regions
-            // 1: Top-Left, 2: Top-Center, 3: Top-Right
-            // 4: Mid-Left, 5: Mid-Center, 6: Mid-Right
-            // 7: Bot-Left, 8: Bot-Center, 9: Bot-Right
+            const { sW, sH, t, r, b, l, tW, tH } = settings;
 
-            const regions = [
-                // [sx, sy, sw, sh, dx, dy, dw, dh]
-                // Corners
-                [0, 0, l, t, 0, 0, l, t], // 1
-                [sW - r, 0, r, t, tW - r, 0, r, t], // 3
-                [0, sH - b, l, b, 0, tH - b, l, b], // 7
-                [sW - r, sH - b, r, b, tW - r, tH - b, r, b], // 9
+            try {
+                canvas.width = tW;
+                canvas.height = tH;
+                ctx.clearRect(0, 0, tW, tH);
 
-                // Edges
-                [l, 0, sW - l - r, t, l, 0, tW - l - r, t], // 2 (Top)
-                [l, sH - b, sW - l - r, b, l, tH - b, tW - l - r, b], // 8 (Bottom)
-                [0, t, l, sH - t - b, 0, t, l, tH - t - b], // 4 (Left)
-                [sW - r, t, r, sH - t - b, tW - r, t, r, tH - t - b], // 6 (Right)
+                // Source regions:
+                // 1: Top-Left, 2: Top-Center, 3: Top-Right
+                // 4: Mid-Left, 5: Mid-Center, 6: Mid-Right
+                // 7: Bot-Left, 8: Bot-Center, 9: Bot-Right
+                const regions = [
+                    [0, 0, l, t, 0, 0, l, t],
+                    [sW - r, 0, r, t, tW - r, 0, r, t],
+                    [0, sH - b, l, b, 0, tH - b, l, b],
+                    [sW - r, sH - b, r, b, tW - r, tH - b, r, b],
 
-                // Center
-                [l, t, sW - l - r, sH - t - b, l, t, tW - l - r, tH - t - b] // 5
-            ];
+                    [l, 0, sW - l - r, t, l, 0, tW - l - r, t],
+                    [l, sH - b, sW - l - r, b, l, tH - b, tW - l - r, b],
+                    [0, t, l, sH - t - b, 0, t, l, tH - t - b],
+                    [sW - r, t, r, sH - t - b, tW - r, t, r, tH - t - b],
 
-            regions.forEach(reg => {
-                if (reg[2] > 0 && reg[3] > 0 && reg[6] > 0 && reg[7] > 0) {
-                    ctx.drawImage(sourceImg, reg[0], reg[1], reg[2], reg[3], reg[4], reg[5], reg[6], reg[7]);
-                }
+                    [l, t, sW - l - r, sH - t - b, l, t, tW - l - r, tH - t - b]
+                ];
+
+                regions.forEach((region) => {
+                    if (region.every(Number.isFinite) && region[2] > 0 && region[3] > 0 && region[6] > 0 && region[7] > 0) {
+                        ctx.drawImage(sourceImg, region[0], region[1], region[2], region[3], region[4], region[5], region[6], region[7]);
+                    }
+                });
+            } catch (error) {
+                setGenerateBusy(false);
+                setStatus(`绘制失败：${error.message}`, 'error');
+                return;
+            }
+
+            createDownloadUrl(token, tW, tH);
+        }
+
+        function readSettings() {
+            const sW = sourceImg.naturalWidth || sourceImg.width;
+            const sH = sourceImg.naturalHeight || sourceImg.height;
+            const t = readInteger(inputTop, '上边距', 1, sH - 1);
+            const r = readInteger(inputRight, '右边距', 1, sW - 1);
+            const b = readInteger(inputBottom, '下边距', 1, sH - 1);
+            const l = readInteger(inputLeft, '左边距', 1, sW - 1);
+            const tW = readInteger(inputTargetW, '目标宽度', 1, MAX_CANVAS_SIZE);
+            const tH = readInteger(inputTargetH, '目标高度', 1, MAX_CANVAS_SIZE);
+
+            if (t + b >= sH) {
+                markInvalid(inputTop, inputBottom);
+                throw new Error('上边距和下边距之和必须小于原图高度。');
+            }
+
+            if (l + r >= sW) {
+                markInvalid(inputLeft, inputRight);
+                throw new Error('左边距和右边距之和必须小于原图宽度。');
+            }
+
+            if (tW < l + r) {
+                markInvalid(inputTargetW);
+                throw new Error('目标宽度不能小于左右固定边距之和。');
+            }
+
+            if (tH < t + b) {
+                markInvalid(inputTargetH);
+                throw new Error('目标高度不能小于上下固定边距之和。');
+            }
+
+            if (tW * tH > MAX_CANVAS_AREA) {
+                markInvalid(inputTargetW, inputTargetH);
+                throw new Error('目标图片总像素不能超过 4096 × 4096。');
+            }
+
+            return { sW, sH, t, r, b, l, tW, tH };
+        }
+
+        function readInteger(input, label, min, max) {
+            const value = Number(input.value);
+
+            if (!Number.isInteger(value)) {
+                markInvalid(input);
+                throw new Error(`${label}必须是整数。`);
+            }
+
+            if (value < min || value > max) {
+                markInvalid(input);
+                throw new Error(`${label}必须在 ${min} 到 ${max} 之间。`);
+            }
+
+            return value;
+        }
+
+        function createDownloadUrl(token, width, height) {
+            try {
+                canvas.toBlob((blob) => {
+                    if (token !== renderSequence) {
+                        return;
+                    }
+
+                    if (!blob) {
+                        setGenerateBusy(false);
+                        setStatus('生成下载文件失败，请降低目标尺寸后重试。', 'error');
+                        return;
+                    }
+
+                    revokeDownloadUrl();
+                    downloadObjectUrl = URL.createObjectURL(blob);
+                    btnDownload.href = downloadObjectUrl;
+                    btnDownload.hidden = false;
+                    btnDownload.removeAttribute('aria-disabled');
+                    setGenerateBusy(false);
+                    setStatus(`已生成 ${width} × ${height}px PNG，可直接下载。`, 'success');
+                }, 'image/png');
+            } catch (error) {
+                setGenerateBusy(false);
+                setStatus(`生成下载文件失败：${error.message}`, 'error');
+            }
+        }
+
+        function setGenerateBusy(isBusy, label) {
+            btnGenerate.disabled = isBusy || !sourceImg || !ctx;
+            btnGenerate.textContent = label || '生成九宫格图';
+        }
+
+        function clearDownload() {
+            revokeDownloadUrl();
+            btnDownload.hidden = true;
+            btnDownload.href = '#';
+            btnDownload.setAttribute('aria-disabled', 'true');
+        }
+
+        function revokeDownloadUrl() {
+            if (downloadObjectUrl) {
+                URL.revokeObjectURL(downloadObjectUrl);
+                downloadObjectUrl = '';
+            }
+        }
+
+        function revokeSourceUrl() {
+            if (sourceObjectUrl) {
+                URL.revokeObjectURL(sourceObjectUrl);
+                sourceObjectUrl = '';
+            }
+        }
+
+        function setStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.dataset.type = type || 'info';
+            statusMessage.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        }
+
+        function clearInputErrors() {
+            numericInputs.forEach((input) => {
+                input.removeAttribute('aria-invalid');
             });
+        }
 
-            // Update download button
-            btnDownload.href = canvas.toDataURL('image/png');
+        function markInvalid(...inputs) {
+            inputs.forEach((input) => {
+                input.setAttribute('aria-invalid', 'true');
+            });
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function formatBytes(bytes) {
+            if (!Number.isFinite(bytes) || bytes <= 0) {
+                return '0 B';
+            }
+
+            const units = ['B', 'KB', 'MB'];
+            let size = bytes;
+            let unitIndex = 0;
+
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex += 1;
+            }
+
+            return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
         }
     </script>
 </body>

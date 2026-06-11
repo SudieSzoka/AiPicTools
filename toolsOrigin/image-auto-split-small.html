@@ -3,786 +3,1701 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图像元素提取工具</title>
+    <meta name="description" content="在浏览器中按透明区域或背景色自动分割图片，并将切片导出为 PNG 或 ZIP。">
+    <title>图片自动分割 - 图像元素提取工具</title>
     <style>
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        body {
-            color: #fff;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        
-        h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
 
+        body {
+            min-height: 100dvh;
+            margin: 0;
+            padding: 20px;
+            background: #0b1d1a;
+            color: #fff;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            max-width: 700px;
+
+        .container {
+            width: min(1400px, 100%);
             margin: 0 auto;
-            line-height: 1.6;
+            padding: 20px;
         }
-        
+
+        .tool-hero {
+            margin-bottom: 30px;
+            padding: 24px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .tool-hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+        }
+
+        .subtitle {
+            max-width: 760px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+            line-height: 1.65;
+            opacity: 0.9;
+        }
+
         .main-content {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.7fr);
             gap: 30px;
-            flex-wrap: wrap;
         }
-        
-        .controls {
-            flex: 1;
-            min-width: 300px;
-            background: rgba(0, 0, 0, 0.25);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        
+
+        .controls,
         .preview-section {
-            flex: 2;
-            min-width: 500px;
-            background: rgba(0, 0, 0, 0.25);
+            min-width: 0;
             padding: 25px;
             border-radius: 15px;
+            background: rgba(0, 0, 0, 0.25);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        
+
         .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
+            margin: 0 0 20px;
             padding-bottom: 10px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            color: #ff7e5f;
+            color: #ff9a80;
+            font-size: 1.45rem;
         }
-        
+
         .upload-area {
-            border: 3px dashed rgba(255, 255, 255, 0.3);
+            display: block;
+            width: 100%;
+            margin: 0 0 22px;
+            padding: 28px 20px;
+            border: 3px dashed rgba(255, 255, 255, 0.35);
             border-radius: 10px;
-            padding: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            color: inherit;
             text-align: center;
-            margin-bottom: 25px;
-            transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.2);
             cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
         }
-        
-        .upload-area:hover {
-            border-color: #ff7e5f;
-            background: rgba(0, 0, 0, 0.3);
+
+        .upload-area:hover,
+        .upload-area.is-dragover {
+            border-color: #ff9a80;
+            background: rgba(255, 126, 95, 0.12);
         }
-        
+
+        .upload-area:focus-visible,
+        .action-btn:focus-visible,
+        .icon-download:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 3px solid #ffd166;
+            outline-offset: 3px;
+        }
+
         .upload-area i {
-            font-size: 4rem;
-            margin-bottom: 15px;
-            color: #ff7e5f;
+            display: block;
+            width: 52px;
+            height: 42px;
+            margin: 0 auto 14px;
+            border: 3px solid currentColor;
+            border-radius: 6px;
+            color: #ff9a80;
+            position: relative;
         }
-        
+
+        .upload-area i::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: 5px;
+            width: 20px;
+            height: 10px;
+            border: 3px solid currentColor;
+            border-bottom: 0;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .upload-text,
+        .upload-hint {
+            display: block;
+        }
+
         .upload-text {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
+            font-size: 1.15rem;
+            font-weight: 700;
         }
-        
-        #file-input {
-            display: none;
+
+        .upload-hint {
+            font-size: 0.92rem;
+            line-height: 1.5;
+            opacity: 0.78;
         }
-        
+
         .filter-controls {
-            background: rgba(0, 0, 0, 0.2);
+            margin-bottom: 22px;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 25px;
-        }
-        
-        .filter-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-        
-        label {
-            width: 120px;
-            font-weight: 500;
-        }
-        
-        input[type="number"] {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-            width: 100px;
-        }
-        
-        input[type="number"]:focus {
-            outline: 2px solid #ff7e5f;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-        
-        button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex: 1;
-            min-width: 150px;
-        }
-        
-        .process-btn {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            color: white;
-        }
-        
-        .download-btn {
-            background: linear-gradient(to right, #1a2a6c, #3a7bd5);
-            color: white;
-        }
-        
-        .reset-btn {
-            background: linear-gradient(to right, #606c88, #3f4c6b);
-            color: white;
-        }
-        
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .icons-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 20px;
-            max-height: 600px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        
-        .icon-card {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .icon-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            background: rgba(0, 0, 0, 0.4);
-        }
-        
-        .icon-preview {
-            width: 100%;
-            height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             background: rgba(0, 0, 0, 0.2);
         }
-        
-        .icon-preview img {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
+
+        .filter-controls h3 {
+            margin: 0 0 16px;
+            font-size: 1.1rem;
         }
-        
-        .icon-info {
-            padding: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-            background: rgba(0, 0, 0, 0.4);
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: minmax(105px, 1fr) minmax(0, 1fr);
+            gap: 8px 12px;
+            align-items: center;
+            margin-bottom: 14px;
         }
-        
-        .icon-size {
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-row label {
             font-weight: 600;
-            color: #ff7e5f;
         }
-        
-        .icon-download {
-            display: block;
-            padding: 5px;
-            background: rgba(255, 126, 95, 0.2);
-            color: #ff7e5f;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
+
+        .input-with-unit {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
         }
-        
-        .icon-download:hover {
-            background: rgba(255, 126, 95, 0.4);
+
+        input[type="number"],
+        input[type="color"],
+        select {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: inherit;
+            font: inherit;
         }
-        
-        .no-icons {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.2rem;
-            opacity: 0.7;
+
+        input[type="color"] {
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        select option {
+            color: #111;
+        }
+
+        input:disabled,
+        select:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .field-help {
             grid-column: 1 / -1;
+            margin: -2px 0 0;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.82rem;
+            line-height: 1.45;
         }
-        
-        .status {
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            min-height: 46px;
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 8px;
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .process-btn {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+        }
+
+        .download-btn {
+            background: linear-gradient(to right, #1a2a6c, #3a7bd5);
+        }
+
+        .reset-btn {
+            background: linear-gradient(to right, #606c88, #3f4c6b);
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
             margin-top: 20px;
             padding: 15px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 0.88rem;
+        }
+
+        .stat-item {
+            min-width: 0;
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            margin-top: 5px;
+            color: #ff9a80;
+            font-size: 1.15rem;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .scope-note {
+            margin-top: 16px;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .preview-note {
+            min-height: 1.4em;
+            margin: -8px 0 12px;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 0.88rem;
+        }
+
+        .icons-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+            gap: 18px;
+            max-height: 640px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .icon-card {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .icon-preview {
+            display: flex;
+            min-height: 120px;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.92);
+            background-image:
+                linear-gradient(45deg, #d8d8d8 25%, transparent 25%),
+                linear-gradient(-45deg, #d8d8d8 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #d8d8d8 75%),
+                linear-gradient(-45deg, transparent 75%, #d8d8d8 75%);
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+            background-size: 16px 16px;
+        }
+
+        .icon-preview img {
+            max-width: 100%;
+            max-height: 110px;
+            object-fit: contain;
+        }
+
+        .icon-info {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.35);
+            text-align: center;
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .icon-size {
+            color: #ff9a80;
+            font-weight: 700;
+        }
+
+        .icon-download {
+            display: block;
+            padding: 9px;
+            background: rgba(255, 126, 95, 0.18);
+            color: #ffb09d;
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .icon-download:hover {
+            background: rgba(255, 126, 95, 0.34);
+        }
+
+        .no-icons {
+            grid-column: 1 / -1;
+            padding: 46px 20px;
+            text-align: center;
+            font-size: 1.05rem;
+            opacity: 0.75;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 14px;
+            border: 1px solid transparent;
             border-radius: 8px;
             background: rgba(0, 0, 0, 0.3);
             text-align: center;
+            line-height: 1.5;
         }
-        
+
+        .status[data-state="success"] {
+            border-color: rgba(98, 210, 150, 0.55);
+        }
+
+        .status[data-state="warning"] {
+            border-color: rgba(255, 209, 102, 0.7);
+        }
+
+        .status[data-state="error"] {
+            border-color: rgba(255, 112, 112, 0.8);
+            color: #ffd4d4;
+        }
+
         .canvas-container {
             display: none;
         }
-        
-        .statistics {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #ff7e5f;
-        }
-        
-        @media (max-width: 900px) {
+
+        @media (max-width: 980px) {
             .main-content {
-                flex-direction: column;
+                grid-template-columns: 1fr;
             }
-            
-            .preview-section, .controls {
-                min-width: 100%;
+
+            .icons-container {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 620px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 8px;
+            }
+
+            .controls,
+            .preview-section,
+            .tool-hero {
+                padding: 18px;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .field-help {
+                grid-column: auto;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>图像元素自动提取工具</h1>
-            <p class="subtitle">上传大图后自动提取所有小图标元素，无需手动操作。支持预览和筛选。基于Canvas实现，无需服务器处理，所有操作均在浏览器中完成。</p>
+    <main class="container" id="main-content">
+        <header class="tool-hero">
+            <h1 id="page-title">图片自动分割</h1>
+            <p class="subtitle">从透明底素材图或纯色背景图中识别相互分离的元素，预览后逐个下载，或一次导出为 ZIP。全部处理均在当前浏览器中完成。</p>
         </header>
-        
+
         <div class="main-content">
-            <div class="controls">
-                <h2 class="section-title">图像处理控制</h2>
-                
-                <div class="upload-area" id="drop-area">
-                    <i>📁</i>
-                    <p class="upload-text">拖放图像文件到此处或点击上传</p>
-                    <p>支持PNG、JPG格式，上传后自动开始处理</p>
-                    <input type="file" id="file-input" accept="image/*">
-                </div>
-                
+            <section class="controls" aria-labelledby="controls-title">
+                <h2 class="section-title" id="controls-title">分割设置</h2>
+
+                <button class="upload-area" id="drop-area" type="button" aria-describedby="upload-hint">
+                    <i aria-hidden="true"></i>
+                    <span class="upload-text">拖放图片到此处，或点击选择</span>
+                    <span class="upload-hint" id="upload-hint">支持静态 PNG、JPG、WebP；单图不超过 50 MB、1200 万像素</span>
+                </button>
+                <input class="visually-hidden" type="file" id="file-input" accept="image/png,image/jpeg,image/webp">
+
                 <div class="filter-controls">
-                    <h3>筛选设置</h3>
+                    <h3>识别方式</h3>
                     <div class="filter-row">
-                        <label for="min-width">最小宽度:</label>
-                        <input type="number" id="min-width" min="0" value="50">
-                        <span>像素</span>
-                    </div>
-                    <div class="filter-row">
-                        <label for="min-height">最小高度:</label>
-                        <input type="number" id="min-height" min="0" value="50">
-                        <span>像素</span>
-                    </div>
-                    <div class="filter-row">
-                        <label>提取模式:</label>
+                        <label for="extraction-mode">分割模式</label>
                         <select id="extraction-mode">
-                            <option value="alpha">使用透明度通道</option>
-                            <option value="grayscale">使用灰度阈值</option>
+                            <option value="auto">自动判断</option>
+                            <option value="alpha">透明区域</option>
+                            <option value="color">背景颜色</option>
                         </select>
+                        <p class="field-help" id="mode-help">优先检查透明区域；不透明图片会从边缘估计背景色。</p>
+                    </div>
+                    <div class="filter-row">
+                        <label for="alpha-threshold">Alpha 阈值</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="alpha-threshold" min="1" max="254" value="8" inputmode="numeric">
+                            <span>/ 255</span>
+                        </div>
+                        <p class="field-help">低于阈值的近透明像素视为背景。</p>
+                    </div>
+                    <div class="filter-row">
+                        <label for="background-color">背景颜色</label>
+                        <input type="color" id="background-color" value="#ffffff" disabled>
+                        <p class="field-help">仅“背景颜色”模式使用；自动模式会从四周取主色。</p>
+                    </div>
+                    <div class="filter-row">
+                        <label for="color-tolerance">颜色容差</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="color-tolerance" min="0" max="255" value="24" inputmode="numeric">
+                            <span>级</span>
+                        </div>
+                        <p class="field-help">值越大，越多接近背景的压缩噪点会被移除。</p>
                     </div>
                 </div>
-                
+
+                <div class="filter-controls">
+                    <h3>结果筛选</h3>
+                    <div class="filter-row">
+                        <label for="min-width">最小宽度</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="min-width" min="1" max="8192" value="16" inputmode="numeric">
+                            <span>像素</span>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <label for="min-height">最小高度</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="min-height" min="1" max="8192" value="16" inputmode="numeric">
+                            <span>像素</span>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <label for="output-padding">透明留白</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="output-padding" min="0" max="64" value="0" inputmode="numeric">
+                            <span>像素</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="button-group">
-                    <button id="download-all" class="download-btn" disabled>下载全部</button>
-                    <button id="reset-btn" class="reset-btn">重置</button>
+                    <button id="process-btn" class="action-btn process-btn" type="button" disabled>重新分析</button>
+                    <button id="download-all" class="action-btn download-btn" type="button" disabled>下载 ZIP</button>
+                    <button id="reset-btn" class="action-btn reset-btn" type="button">重置</button>
                 </div>
-                
-                <div class="statistics">
+
+                <section class="statistics" aria-labelledby="statistics-title">
+                    <h3 class="visually-hidden" id="statistics-title">处理统计</h3>
                     <div class="stat-item">
-                        <div>检测到图标</div>
-                        <div id="total-icons" class="stat-value">0</div>
+                        <span>检测到</span>
+                        <output id="total-icons" class="stat-value">0</output>
                     </div>
                     <div class="stat-item">
-                        <div>当前显示</div>
-                        <div id="displayed-icons" class="stat-value">0</div>
+                        <span>符合筛选</span>
+                        <output id="displayed-icons" class="stat-value">0</output>
                     </div>
                     <div class="stat-item">
-                        <div>处理时间</div>
-                        <div id="process-time" class="stat-value">0ms</div>
+                        <span>处理时间</span>
+                        <output id="process-time" class="stat-value">0ms</output>
                     </div>
-                </div>
-            </div>
-            
-            <div class="preview-section">
-                <h2 class="section-title">图标预览</h2>
+                </section>
+
+                <p class="scope-note">适合元素之间有透明间隔或背景较均匀的素材图。照片、渐变背景、阴影相连或元素彼此接触时，自动结果可能需要先在图像编辑器中清理背景。</p>
+            </section>
+
+            <section class="preview-section" id="preview-section" aria-labelledby="preview-title" aria-busy="false">
+                <h2 class="section-title" id="preview-title">切片预览</h2>
+                <p class="preview-note" id="preview-note"></p>
                 <div class="icons-container" id="icons-container">
-                    <div class="no-icons">上传图像后会自动开始处理</div>
+                    <div class="no-icons">选择图片后会自动开始分析</div>
                 </div>
-                <div class="status" id="status">就绪</div>
-            </div>
+                <div class="status" id="status" role="status" aria-live="polite" aria-atomic="true">就绪</div>
+            </section>
         </div>
-    </div>
-    
-    <div class="canvas-container">
+    </main>
+
+    <div class="canvas-container" aria-hidden="true">
         <canvas id="source-canvas"></canvas>
-        <canvas id="mask-canvas"></canvas>
     </div>
-    
+
     <script>
-        // 全局变量
-        let originalImage = null;
-        let extractedIcons = [];
-        let processing = false;
-        
-        // DOM元素
-        const fileInput = document.getElementById('file-input');
-        const dropArea = document.getElementById('drop-area');
-        const downloadAllBtn = document.getElementById('download-all');
-        const resetBtn = document.getElementById('reset-btn');
-        const minWidthInput = document.getElementById('min-width');
-        const minHeightInput = document.getElementById('min-height');
-        const iconsContainer = document.getElementById('icons-container');
-        const statusElement = document.getElementById('status');
-        const totalIconsElement = document.getElementById('total-icons');
-        const displayedIconsElement = document.getElementById('displayed-icons');
-        const processTimeElement = document.getElementById('process-time');
-        const extractionModeSelect = document.getElementById('extraction-mode');
-        
-        // 事件监听
-        dropArea.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', handleFileSelect);
-        downloadAllBtn.addEventListener('click', downloadAllIcons);
-        resetBtn.addEventListener('click', resetApp);
-        minWidthInput.addEventListener('change', filterIcons);
-        minHeightInput.addEventListener('change', filterIcons);
-        
-        // 拖放功能
-        dropArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropArea.style.borderColor = '#ff7e5f';
-            dropArea.style.backgroundColor = 'rgba(255, 126, 95, 0.1)';
-        });
-        
-        dropArea.addEventListener('dragleave', () => {
-            dropArea.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            dropArea.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-        });
-        
-        dropArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropArea.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            dropArea.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-            
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelect();
-            }
-        });
-        
-        // 处理文件选择
-        function handleFileSelect() {
-            if (!fileInput.files || !fileInput.files[0]) return;
-            
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                originalImage = new Image();
-                originalImage.onload = function() {
-                    statusElement.textContent = `已加载图像: ${file.name} (${originalImage.width}×${originalImage.height}像素)，正在自动处理...`;
-                    // 自动开始处理图像
-                    processImage();
-                };
-                originalImage.src = e.target.result;
+        (() => {
+            "use strict";
+
+            const MAX_FILE_SIZE = 50 * 1024 * 1024;
+            const MAX_PIXELS = 12_000_000;
+            const MAX_DIMENSION = 8192;
+            const MAX_COMPONENTS = 5000;
+            const MAX_PREVIEWS = 200;
+            const MAX_EXPORT_BYTES = 256 * 1024 * 1024;
+            const UNVISITED = 0xffff;
+            const YIELD_INTERVAL = 300_000;
+
+            const DEFAULTS = {
+                mode: "auto",
+                alphaThreshold: 8,
+                colorTolerance: 24,
+                backgroundColor: "#ffffff",
+                minWidth: 16,
+                minHeight: 16,
+                padding: 0
             };
-            
-            reader.readAsDataURL(file);
-        }
-        
-        // 处理图像并提取图标
-        function processImage() {
-            if (!originalImage || processing) return;
-            
-            processing = true;
-            statusElement.textContent = "正在处理图像...";
-            
-            // 记录开始时间
-            const startTime = performance.now();
-            
-            // 创建Canvas
-            const sourceCanvas = document.getElementById('source-canvas');
-            const maskCanvas = document.getElementById('mask-canvas');
-            
-            const width = originalImage.width;
-            const height = originalImage.height;
-            
-            sourceCanvas.width = width;
-            sourceCanvas.height = height;
-            maskCanvas.width = width;
-            maskCanvas.height = height;
-            
-            const sourceCtx = sourceCanvas.getContext('2d');
-            const maskCtx = maskCanvas.getContext('2d');
-            
-            // 绘制原始图像
-            sourceCtx.clearRect(0, 0, width, height);
-            sourceCtx.drawImage(originalImage, 0, 0);
-            
-            // 获取图像数据
-            const imageData = sourceCtx.getImageData(0, 0, width, height);
-            const data = imageData.data;
-            
-            // 创建掩码
-            maskCtx.clearRect(0, 0, width, height);
-            
-            // 检查是否使用透明度通道
-            const useAlpha = extractionModeSelect.value === 'alpha';
-            let hasTransparency = false;
-            
-            if (useAlpha) {
-                // 检查是否有透明度
-                for (let i = 3; i < data.length; i += 4) {
-                    if (data[i] < 255) {
-                        hasTransparency = true;
-                        break;
+
+            const fileInput = document.getElementById("file-input");
+            const dropArea = document.getElementById("drop-area");
+            const processBtn = document.getElementById("process-btn");
+            const downloadAllBtn = document.getElementById("download-all");
+            const resetBtn = document.getElementById("reset-btn");
+            const minWidthInput = document.getElementById("min-width");
+            const minHeightInput = document.getElementById("min-height");
+            const outputPaddingInput = document.getElementById("output-padding");
+            const iconsContainer = document.getElementById("icons-container");
+            const previewSection = document.getElementById("preview-section");
+            const previewNote = document.getElementById("preview-note");
+            const statusElement = document.getElementById("status");
+            const totalIconsElement = document.getElementById("total-icons");
+            const displayedIconsElement = document.getElementById("displayed-icons");
+            const processTimeElement = document.getElementById("process-time");
+            const extractionModeSelect = document.getElementById("extraction-mode");
+            const modeHelp = document.getElementById("mode-help");
+            const alphaThresholdInput = document.getElementById("alpha-threshold");
+            const backgroundColorInput = document.getElementById("background-color");
+            const colorToleranceInput = document.getElementById("color-tolerance");
+            const sourceCanvas = document.getElementById("source-canvas");
+
+            let sourceImage = null;
+            let sourceFile = null;
+            let components = [];
+            let analysisState = null;
+            let processing = false;
+            let exporting = false;
+            let operationId = 0;
+            let renderId = 0;
+            let outputVersion = 0;
+            let scheduledProcess = null;
+
+            class CancelledError extends Error {
+                constructor() {
+                    super("操作已取消");
+                    this.name = "CancelledError";
+                }
+            }
+
+            dropArea.addEventListener("click", () => fileInput.click());
+            fileInput.addEventListener("change", () => {
+                const file = fileInput.files && fileInput.files[0];
+                fileInput.value = "";
+                if (file) {
+                    void handleFile(file);
+                }
+            });
+
+            dropArea.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                if (event.dataTransfer) {
+                    event.dataTransfer.dropEffect = "copy";
+                }
+                dropArea.classList.add("is-dragover");
+            });
+
+            dropArea.addEventListener("dragleave", (event) => {
+                if (!dropArea.contains(event.relatedTarget)) {
+                    dropArea.classList.remove("is-dragover");
+                }
+            });
+
+            dropArea.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropArea.classList.remove("is-dragover");
+                const file = event.dataTransfer && event.dataTransfer.files[0];
+                if (file) {
+                    void handleFile(file);
+                }
+            });
+
+            processBtn.addEventListener("click", startProcessing);
+            downloadAllBtn.addEventListener("click", () => void downloadAllIcons());
+            resetBtn.addEventListener("click", resetApp);
+
+            extractionModeSelect.addEventListener("change", () => {
+                updateModeControls();
+                scheduleProcessing();
+            });
+            alphaThresholdInput.addEventListener("change", scheduleProcessing);
+            backgroundColorInput.addEventListener("change", scheduleProcessing);
+            colorToleranceInput.addEventListener("change", scheduleProcessing);
+
+            minWidthInput.addEventListener("input", filterIcons);
+            minHeightInput.addEventListener("input", filterIcons);
+            outputPaddingInput.addEventListener("change", () => {
+                normalizeNumberInput(outputPaddingInput, 0, 64, DEFAULTS.padding);
+                invalidateIconBlobs();
+                filterIcons();
+            });
+
+            [alphaThresholdInput, colorToleranceInput, minWidthInput, minHeightInput].forEach((input) => {
+                input.addEventListener("change", () => {
+                    const limits = {
+                        "alpha-threshold": [1, 254, DEFAULTS.alphaThreshold],
+                        "color-tolerance": [0, 255, DEFAULTS.colorTolerance],
+                        "min-width": [1, MAX_DIMENSION, DEFAULTS.minWidth],
+                        "min-height": [1, MAX_DIMENSION, DEFAULTS.minHeight]
+                    };
+                    normalizeNumberInput(input, ...limits[input.id]);
+                });
+            });
+
+            window.addEventListener("beforeunload", () => {
+                disposeSourceImage();
+                disposeAnalysis();
+            });
+
+            function getSettings() {
+                return {
+                    mode: extractionModeSelect.value,
+                    alphaThreshold: readNumber(alphaThresholdInput, 1, 254, DEFAULTS.alphaThreshold),
+                    colorTolerance: readNumber(colorToleranceInput, 0, 255, DEFAULTS.colorTolerance),
+                    backgroundColor: backgroundColorInput.value,
+                    minWidth: readNumber(minWidthInput, 1, MAX_DIMENSION, DEFAULTS.minWidth),
+                    minHeight: readNumber(minHeightInput, 1, MAX_DIMENSION, DEFAULTS.minHeight),
+                    padding: readNumber(outputPaddingInput, 0, 64, DEFAULTS.padding)
+                };
+            }
+
+            function readNumber(input, min, max, fallback) {
+                const value = Number.parseInt(input.value, 10);
+                return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+            }
+
+            function normalizeNumberInput(input, min, max, fallback) {
+                input.value = String(readNumber(input, min, max, fallback));
+            }
+
+            function updateModeControls() {
+                const mode = extractionModeSelect.value;
+                alphaThresholdInput.disabled = mode === "color";
+                backgroundColorInput.disabled = mode !== "color";
+                colorToleranceInput.disabled = mode === "alpha";
+
+                const help = {
+                    auto: "优先检查透明区域；不透明图片会从边缘估计背景色。",
+                    alpha: "仅把达到 Alpha 阈值的像素视为元素，适合透明底 PNG 或 WebP。",
+                    color: "把与所选背景色差异超过容差的像素视为元素，适合纯色底图片。"
+                };
+                modeHelp.textContent = help[mode];
+            }
+
+            function scheduleProcessing() {
+                if (!sourceImage) {
+                    return;
+                }
+                window.clearTimeout(scheduledProcess);
+                scheduledProcess = window.setTimeout(startProcessing, 220);
+            }
+
+            async function handleFile(file) {
+                const token = ++operationId;
+                window.clearTimeout(scheduledProcess);
+                scheduledProcess = null;
+                processing = true;
+                exporting = false;
+                disposeSourceImage();
+                disposeAnalysis();
+                sourceFile = null;
+                setBusy(true);
+                setStatus(`正在读取 ${file.name || "图片"}…`);
+
+                try {
+                    validateFile(file);
+                    const image = await decodeImage(file);
+                    assertCurrent(token);
+
+                    const width = image.width || image.naturalWidth;
+                    const height = image.height || image.naturalHeight;
+                    validateDimensions(width, height);
+
+                    sourceImage = image;
+                    sourceFile = file;
+                    await analyzeImage(token);
+                } catch (error) {
+                    if (error instanceof CancelledError) {
+                        return;
+                    }
+                    disposeSourceImage();
+                    disposeAnalysis();
+                    sourceFile = null;
+                    setStatus(toUserMessage(error), "error");
+                } finally {
+                    if (token === operationId) {
+                        processing = false;
+                        setBusy(false);
                     }
                 }
             }
-            
-            // 创建二值掩码
-            const maskData = maskCtx.createImageData(width, height);
-            const maskPixels = maskData.data;
-            
-            if (useAlpha && hasTransparency) {
-                // 使用透明度通道
-                for (let i = 0; i < data.length; i += 4) {
-                    const alpha = data[i + 3];
-                    const value = alpha > 1 ? 255 : 0;
-                    
-                    maskPixels[i] = value;     // R
-                    maskPixels[i + 1] = value; // G
-                    maskPixels[i + 2] = value; // B
-                    maskPixels[i + 3] = 255;   // A
+
+            function startProcessing() {
+                if (!sourceImage) {
+                    return;
                 }
-            } else {
-                // 使用灰度阈值
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-                    
-                    // 计算灰度
-                    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                    const value = gray > 1 ? 255 : 0;
-                    
-                    maskPixels[i] = value;     // R
-                    maskPixels[i + 1] = value; // G
-                    maskPixels[i + 2] = value; // B
-                    maskPixels[i + 3] = 255;   // A
+                const token = ++operationId;
+                window.clearTimeout(scheduledProcess);
+                scheduledProcess = null;
+                processing = true;
+                exporting = false;
+                disposeAnalysis();
+                setBusy(true);
+                void analyzeImage(token)
+                    .catch((error) => {
+                        if (!(error instanceof CancelledError) && token === operationId) {
+                            disposeAnalysis();
+                            setStatus(toUserMessage(error), "error");
+                        }
+                    })
+                    .finally(() => {
+                        if (token === operationId) {
+                            processing = false;
+                            setBusy(false);
+                        }
+                    });
+            }
+
+            async function analyzeImage(token) {
+                const startedAt = performance.now();
+                const settings = getSettings();
+                const width = sourceImage.width || sourceImage.naturalWidth;
+                const height = sourceImage.height || sourceImage.naturalHeight;
+                const pixelCount = width * height;
+
+                setStatus(`正在分析 ${width}×${height} 像素图片…`);
+                await yieldToBrowser();
+                assertCurrent(token);
+
+                sourceCanvas.width = width;
+                sourceCanvas.height = height;
+                const context = sourceCanvas.getContext("2d", { willReadFrequently: true });
+                if (!context) {
+                    throw new Error("当前浏览器无法创建 Canvas 2D 上下文。");
                 }
-            }
-            
-            maskCtx.putImageData(maskData, 0, 0);
-            
-            // 查找轮廓
-            extractedIcons = findConnectedComponents(sourceCanvas, maskCanvas);
-            
-            // 记录结束时间
-            const endTime = performance.now();
-            const processTime = Math.round(endTime - startTime);
-            
-            // 更新状态
-            statusElement.textContent = `处理完成! 找到 ${extractedIcons.length} 个图标 (${processTime}ms)`;
-            totalIconsElement.textContent = extractedIcons.length;
-            processTimeElement.textContent = `${processTime}ms`;
-            
-            // 启用下载按钮
-            downloadAllBtn.disabled = false;
-            processing = false;
-            
-            // 筛选并显示图标
-            filterIcons();
-        }
-        
-        // 查找连通组件
-        function findConnectedComponents(sourceCanvas, maskCanvas) {
-            const width = maskCanvas.width;
-            const height = maskCanvas.height;
-            
-            const maskCtx = maskCanvas.getContext('2d');
-            const maskData = maskCtx.getImageData(0, 0, width, height);
-            const pixels = maskData.data;
-            
-            // 创建访问标记数组
-            const visited = new Array(height);
-            for (let y = 0; y < height; y++) {
-                visited[y] = new Array(width).fill(false);
-            }
-            
-            const components = [];
-            
-            // 洪水填充函数
-            function floodFill(x, y) {
-                const stack = [{x, y}];
-                const component = {
-                    minX: x, 
-                    maxX: x, 
-                    minY: y, 
-                    maxY: y,
-                    pixels: []
+
+                context.clearRect(0, 0, width, height);
+                context.drawImage(sourceImage, 0, 0, width, height);
+
+                let imageData;
+                try {
+                    imageData = context.getImageData(0, 0, width, height);
+                } catch (error) {
+                    throw new Error(`无法读取图片像素：${error.message || "浏览器拒绝访问 Canvas"}`);
+                }
+
+                let appliedMode = settings.mode;
+                let background = null;
+                let transparentCount = 0;
+
+                if (settings.mode !== "color") {
+                    setStatus("正在检查透明区域…");
+                    transparentCount = await countTransparentPixels(
+                        imageData.data,
+                        settings.alphaThreshold,
+                        token
+                    );
+                    const minimumTransparent = Math.max(16, Math.floor(pixelCount * 0.0001));
+                    const hasUsefulTransparency = transparentCount >= minimumTransparent;
+
+                    if (settings.mode === "alpha" && !hasUsefulTransparency) {
+                        throw new Error("图片没有足够的透明像素，请改用“自动判断”或“背景颜色”模式。");
+                    }
+                    if (settings.mode === "auto") {
+                        appliedMode = hasUsefulTransparency ? "alpha" : "color";
+                    }
+                }
+
+                if (appliedMode === "color") {
+                    background = settings.mode === "color"
+                        ? hexToRgb(settings.backgroundColor)
+                        : estimateBorderBackground(imageData.data, width, height);
+                    if (settings.mode === "auto") {
+                        backgroundColorInput.value = rgbToHex(background);
+                    }
+                }
+
+                setStatus("正在生成前景掩码…");
+                const maskResult = await buildLabelMask(
+                    imageData.data,
+                    width,
+                    height,
+                    appliedMode,
+                    background,
+                    settings,
+                    token
+                );
+                imageData = null;
+                assertCurrent(token);
+
+                let detectedComponents = [];
+                if (maskResult.foregroundCount > 0) {
+                    setStatus("正在识别相互分离的元素…");
+                    detectedComponents = await findConnectedComponents(maskResult.labels, width, height, token);
+                }
+
+                detectedComponents.sort((a, b) => (
+                    a.y - b.y || a.x - b.x || a.height - b.height || a.width - b.width
+                ));
+                detectedComponents.forEach((component, index) => {
+                    component.order = index + 1;
+                    component.cache = null;
+                });
+
+                assertCurrent(token);
+                analysisState = {
+                    token,
+                    width,
+                    height,
+                    labels: maskResult.labels,
+                    appliedMode,
+                    background
                 };
-                
-                while (stack.length > 0) {
-                    const p = stack.pop();
-                    const px = p.x;
-                    const py = p.y;
-                    
-                    if (px < 0 || px >= width || py < 0 || py >= height || visited[py][px]) {
+                components = detectedComponents;
+
+                const elapsed = Math.round(performance.now() - startedAt);
+                totalIconsElement.textContent = String(components.length);
+                processTimeElement.textContent = `${elapsed}ms`;
+
+                const modeText = appliedMode === "alpha"
+                    ? "透明区域"
+                    : `背景色 ${rgbToHex(background).toUpperCase()}`;
+                const foregroundRatio = maskResult.foregroundCount / pixelCount;
+                const suspiciousFullImage = appliedMode === "color" && foregroundRatio > 0.95;
+
+                if (components.length === 0) {
+                    setStatus(`分析完成，但没有识别到元素。当前方式：${modeText}。`, "warning");
+                } else if (suspiciousFullImage) {
+                    setStatus(`识别到 ${components.length} 个元素，但前景覆盖超过 95%，背景色或容差可能不合适。`, "warning");
+                } else {
+                    setStatus(`分析完成：使用${modeText}识别到 ${components.length} 个元素。`, "success");
+                }
+                filterIcons();
+            }
+
+            async function countTransparentPixels(data, alphaThreshold, token) {
+                let count = 0;
+                let processed = 0;
+                for (let index = 3; index < data.length; index += 4) {
+                    if (data[index] < alphaThreshold) {
+                        count++;
+                    }
+                    processed++;
+                    if (processed % 1_000_000 === 0) {
+                        assertCurrent(token);
+                        await yieldToBrowser();
+                    }
+                }
+                return count;
+            }
+
+            async function buildLabelMask(data, width, height, mode, background, settings, token) {
+                const pixelCount = width * height;
+                let labels;
+                try {
+                    labels = new Uint16Array(pixelCount);
+                } catch {
+                    throw new Error("图片过大，浏览器无法分配识别所需内存。");
+                }
+
+                const tolerance = settings.colorTolerance;
+                const alphaThreshold = settings.alphaThreshold;
+                let foregroundCount = 0;
+
+                for (let pixel = 0, offset = 0; pixel < pixelCount; pixel++, offset += 4) {
+                    let foreground;
+                    if (mode === "alpha") {
+                        foreground = data[offset + 3] >= alphaThreshold;
+                    } else if (data[offset + 3] < alphaThreshold) {
+                        foreground = false;
+                    } else {
+                        const redDistance = Math.abs(data[offset] - background.r);
+                        const greenDistance = Math.abs(data[offset + 1] - background.g);
+                        const blueDistance = Math.abs(data[offset + 2] - background.b);
+                        foreground = Math.max(redDistance, greenDistance, blueDistance) > tolerance;
+                    }
+
+                    if (foreground) {
+                        labels[pixel] = UNVISITED;
+                        foregroundCount++;
+                    }
+
+                    if (pixel > 0 && pixel % 1_000_000 === 0) {
+                        assertCurrent(token);
+                        await yieldToBrowser();
+                    }
+                }
+
+                return { labels, foregroundCount };
+            }
+
+            async function findConnectedComponents(labels, width, height, token) {
+                const pixelCount = labels.length;
+                let queue;
+                try {
+                    queue = new Uint32Array(pixelCount);
+                } catch {
+                    throw new Error("图片过大，浏览器无法分配连通域分析内存。");
+                }
+
+                const found = [];
+                let componentId = 1;
+                let operations = 0;
+
+                for (let start = 0; start < pixelCount; start++) {
+                    if (labels[start] !== UNVISITED) {
+                        if (start > 0 && start % 1_000_000 === 0) {
+                            assertCurrent(token);
+                            await yieldToBrowser();
+                        }
                         continue;
                     }
-                    
-                    // 检查是否为前景（白色）
-                    const idx = (py * width + px) * 4;
-                    if (pixels[idx] === 255) {
-                        visited[py][px] = true;
-                        component.pixels.push({x: px, y: py});
-                        
-                        // 更新边界
-                        if (px < component.minX) component.minX = px;
-                        if (px > component.maxX) component.maxX = px;
-                        if (py < component.minY) component.minY = py;
-                        if (py > component.maxY) component.maxY = py;
-                        
-                        // 检查四个方向
-                        stack.push({x: px + 1, y: py});
-                        stack.push({x: px - 1, y: py});
-                        stack.push({x: px, y: py + 1});
-                        stack.push({x: px, y: py - 1});
+
+                    if (componentId > MAX_COMPONENTS) {
+                        throw new Error(`识别结果超过 ${MAX_COMPONENTS} 个，通常表示背景容差过低或图片噪点过多。`);
+                    }
+
+                    let head = 0;
+                    let tail = 0;
+                    let minX = width;
+                    let minY = height;
+                    let maxX = 0;
+                    let maxY = 0;
+                    let area = 0;
+
+                    labels[start] = componentId;
+                    queue[tail++] = start;
+
+                    while (head < tail) {
+                        const index = queue[head++];
+                        const y = Math.floor(index / width);
+                        const x = index - y * width;
+
+                        area++;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+
+                        if (x > 0) enqueue(index - 1);
+                        if (x + 1 < width) enqueue(index + 1);
+                        if (y > 0) {
+                            enqueue(index - width);
+                            if (x > 0) enqueue(index - width - 1);
+                            if (x + 1 < width) enqueue(index - width + 1);
+                        }
+                        if (y + 1 < height) {
+                            enqueue(index + width);
+                            if (x > 0) enqueue(index + width - 1);
+                            if (x + 1 < width) enqueue(index + width + 1);
+                        }
+
+                        operations++;
+                        if (operations % YIELD_INTERVAL === 0) {
+                            assertCurrent(token);
+                            await yieldToBrowser();
+                        }
+                    }
+
+                    found.push({
+                        id: componentId,
+                        x: minX,
+                        y: minY,
+                        width: maxX - minX + 1,
+                        height: maxY - minY + 1,
+                        area
+                    });
+                    componentId++;
+
+                    function enqueue(index) {
+                        if (labels[index] === UNVISITED) {
+                            labels[index] = componentId;
+                            queue[tail++] = index;
+                        }
                     }
                 }
-                
-                return component;
+
+                return found;
             }
-            
-            // 遍历所有像素
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    if (!visited[y][x]) {
-                        const idx = (y * width + x) * 4;
-                        
-                        // 如果是白色像素且未访问过
-                        if (pixels[idx] === 255) {
-                            const component = floodFill(x, y);
-                            
-                            // 计算宽度和高度
-                            const w = component.maxX - component.minX + 1;
-                            const h = component.maxY - component.minY + 1;
-                            
-                            // 裁剪图标
-                            const tempCanvas = document.createElement('canvas');
-                            tempCanvas.width = w;
-                            tempCanvas.height = h;
-                            const tempCtx = tempCanvas.getContext('2d');
-                            
-                            tempCtx.drawImage(
-                                sourceCanvas,
-                                component.minX, component.minY, w, h,
-                                0, 0, w, h
-                            );
-                            
-                            // 保存图标数据
-                            components.push({
-                                x: component.minX,
-                                y: component.minY,
-                                width: w,
-                                height: h,
-                                dataURL: tempCanvas.toDataURL('image/png')
-                            });
-                        } else {
-                            visited[y][x] = true;
+
+            function estimateBorderBackground(data, width, height) {
+                const histogram = new Uint32Array(32768);
+                const samples = [];
+                const perimeter = Math.max(1, width * 2 + height * 2 - 4);
+                const step = Math.max(1, Math.floor(perimeter / 4096));
+
+                for (let position = 0; position < perimeter; position += step) {
+                    const coordinate = borderCoordinate(position, width, height);
+                    const offset = (coordinate.y * width + coordinate.x) * 4;
+                    if (data[offset + 3] < 128) {
+                        continue;
+                    }
+                    const red = data[offset];
+                    const green = data[offset + 1];
+                    const blue = data[offset + 2];
+                    const key = ((red >> 3) << 10) | ((green >> 3) << 5) | (blue >> 3);
+                    histogram[key]++;
+                    samples.push({ key, red, green, blue });
+                }
+
+                let dominantKey = 0;
+                for (let index = 1; index < histogram.length; index++) {
+                    if (histogram[index] > histogram[dominantKey]) {
+                        dominantKey = index;
+                    }
+                }
+
+                let redTotal = 0;
+                let greenTotal = 0;
+                let blueTotal = 0;
+                let count = 0;
+                for (const sample of samples) {
+                    if (sample.key === dominantKey) {
+                        redTotal += sample.red;
+                        greenTotal += sample.green;
+                        blueTotal += sample.blue;
+                        count++;
+                    }
+                }
+
+                if (count === 0) {
+                    return { r: 255, g: 255, b: 255 };
+                }
+                return {
+                    r: Math.round(redTotal / count),
+                    g: Math.round(greenTotal / count),
+                    b: Math.round(blueTotal / count)
+                };
+            }
+
+            function borderCoordinate(position, width, height) {
+                if (position < width) {
+                    return { x: position, y: 0 };
+                }
+                position -= width;
+                if (position < height - 1) {
+                    return { x: width - 1, y: position + 1 };
+                }
+                position -= height - 1;
+                if (position < width - 1) {
+                    return { x: width - 2 - position, y: height - 1 };
+                }
+                position -= width - 1;
+                return { x: 0, y: Math.max(0, height - 2 - position) };
+            }
+
+            function filterIcons() {
+                const filtered = getFilteredComponents();
+                displayedIconsElement.textContent = String(filtered.length);
+                updateActionState(filtered.length);
+                void renderIcons(filtered);
+            }
+
+            function getFilteredComponents() {
+                const settings = getSettings();
+                return components.filter((component) => (
+                    component.width >= settings.minWidth && component.height >= settings.minHeight
+                ));
+            }
+
+            async function renderIcons(filtered) {
+                const token = ++renderId;
+                iconsContainer.replaceChildren();
+                previewNote.textContent = "";
+
+                if (!analysisState) {
+                    iconsContainer.append(createEmptyState("选择图片后会自动开始分析"));
+                    return;
+                }
+                if (filtered.length === 0) {
+                    iconsContainer.append(createEmptyState("没有符合当前尺寸筛选的切片"));
+                    return;
+                }
+
+                const visible = filtered.slice(0, MAX_PREVIEWS);
+                if (filtered.length > MAX_PREVIEWS) {
+                    previewNote.textContent = `为控制内存，仅预览前 ${MAX_PREVIEWS} 个；ZIP 仍会包含全部 ${filtered.length} 个结果。`;
+                }
+
+                const fragment = document.createDocumentFragment();
+                const cards = visible.map((icon, index) => {
+                    const card = createIconCard(icon, index, filtered.length);
+                    fragment.appendChild(card.element);
+                    return card;
+                });
+                iconsContainer.appendChild(fragment);
+
+                const version = outputVersion;
+                for (let index = 0; index < visible.length; index++) {
+                    try {
+                        const asset = await ensureIconAsset(visible[index], version);
+                        if (token !== renderId || version !== outputVersion) {
+                            return;
+                        }
+                        cards[index].image.src = asset.url;
+                        cards[index].link.href = asset.url;
+                        cards[index].link.removeAttribute("aria-disabled");
+                        cards[index].link.textContent = "下载 PNG";
+                    } catch (error) {
+                        if (!(error instanceof CancelledError) && token === renderId) {
+                            cards[index].link.textContent = "生成失败";
                         }
                     }
                 }
             }
-            
-            return components;
-        }
-        
-        // 筛选图标
-        function filterIcons() {
-            if (extractedIcons.length === 0) return;
-            
-            const minWidth = parseInt(minWidthInput.value) || 0;
-            const minHeight = parseInt(minHeightInput.value) || 0;
-            
-            const filteredIcons = extractedIcons.filter(icon => 
-                icon.width >= minWidth && icon.height >= minHeight
-            );
-            
-            // 更新显示数量
-            displayedIconsElement.textContent = filteredIcons.length;
-            
-            // 显示图标
-            displayIcons(filteredIcons);
-        }
-        
-        // 生成格式化的序号
-        function formatIndex(index, total) {
-            // 如果总数小于10，不需要补0
-            if (total < 10) {
-                return String(index);
+
+            function createIconCard(icon, index, total) {
+                const element = document.createElement("article");
+                element.className = "icon-card";
+
+                const preview = document.createElement("div");
+                preview.className = "icon-preview";
+
+                const image = document.createElement("img");
+                image.alt = `切片 ${index + 1}，尺寸 ${icon.width}×${icon.height} 像素`;
+                image.loading = "lazy";
+                image.decoding = "async";
+                preview.appendChild(image);
+
+                const info = document.createElement("div");
+                info.className = "icon-info";
+
+                const size = document.createElement("div");
+                size.className = "icon-size";
+                size.textContent = `${icon.width}×${icon.height}px`;
+
+                const position = document.createElement("div");
+                position.textContent = `位置 (${icon.x}, ${icon.y}) · ${icon.area} 像素`;
+
+                const link = document.createElement("a");
+                link.className = "icon-download";
+                link.textContent = "正在生成…";
+                link.download = getSliceFileName(index + 1, total);
+                link.setAttribute("aria-label", `下载第 ${index + 1} 个切片 PNG`);
+                link.setAttribute("aria-disabled", "true");
+                link.addEventListener("click", (event) => {
+                    if (link.getAttribute("aria-disabled") === "true") {
+                        event.preventDefault();
+                    }
+                });
+
+                info.append(size, position);
+                element.append(preview, info, link);
+                return { element, image, link };
             }
-            // 否则根据总位数补0
-            const digits = String(total).length;
-            return String(index).padStart(digits, '0');
-        }
 
-        // 显示图标
-        function displayIcons(icons) {
-            iconsContainer.innerHTML = '';
-
-            if (icons.length === 0) {
-                iconsContainer.innerHTML = '<div class="no-icons">没有找到符合条件的图标</div>';
-                return;
+            function createEmptyState(message) {
+                const element = document.createElement("div");
+                element.className = "no-icons";
+                element.textContent = message;
+                return element;
             }
 
-            icons.forEach((icon, index) => {
-                const iconCard = document.createElement('div');
-                iconCard.className = 'icon-card';
-                const formattedIndex = formatIndex(index + 1, icons.length);
+            async function ensureIconAsset(icon, version) {
+                const padding = getSettings().padding;
+                if (icon.cache && icon.cache.padding === padding) {
+                    if (icon.cache.blob && icon.cache.url) {
+                        return icon.cache;
+                    }
+                    if (icon.cache.promise) {
+                        return icon.cache.promise;
+                    }
+                }
 
-                iconCard.innerHTML = `
-                    <div class="icon-preview">
-                        <img src="${icon.dataURL}" alt="图标 ${index + 1}">
-                    </div>
-                    <div class="icon-info">
-                        <div class="icon-size">${icon.width}×${icon.height}px</div>
-                        <div>位置: (${icon.x}, ${icon.y})</div>
-                    </div>
-                    <a href="${icon.dataURL}" download="icon_${formattedIndex}.png" class="icon-download">下载</a>
-                `;
+                const cache = {
+                    padding,
+                    blob: null,
+                    url: "",
+                    promise: null
+                };
+                icon.cache = cache;
+                cache.promise = createIconBlob(icon, padding, version)
+                    .then((blob) => {
+                        if (version !== outputVersion || icon.cache !== cache) {
+                            throw new CancelledError();
+                        }
+                        cache.blob = blob;
+                        cache.url = URL.createObjectURL(blob);
+                        cache.promise = null;
+                        return cache;
+                    })
+                    .catch((error) => {
+                        if (icon.cache === cache) {
+                            icon.cache = null;
+                        }
+                        throw error;
+                    });
+                return cache.promise;
+            }
 
-                iconsContainer.appendChild(iconCard);
-            });
-        }
-        
-        // 下载所有图标
-        function downloadAllIcons() {
-            if (extractedIcons.length === 0) return;
+            async function createIconBlob(icon, padding, version) {
+                if (!analysisState || version !== outputVersion) {
+                    throw new CancelledError();
+                }
 
-            // 筛选当前显示的图标
-            const minWidth = parseInt(minWidthInput.value) || 0;
-            const minHeight = parseInt(minHeightInput.value) || 0;
+                const canvas = document.createElement("canvas");
+                canvas.width = icon.width + padding * 2;
+                canvas.height = icon.height + padding * 2;
+                const context = canvas.getContext("2d", { willReadFrequently: true });
+                if (!context) {
+                    throw new Error("无法创建切片 Canvas。");
+                }
 
-            const filteredIcons = extractedIcons.filter(icon =>
-                icon.width >= minWidth && icon.height >= minHeight
-            );
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(
+                    sourceCanvas,
+                    icon.x,
+                    icon.y,
+                    icon.width,
+                    icon.height,
+                    padding,
+                    padding,
+                    icon.width,
+                    icon.height
+                );
 
-            // 禁用下载按钮防止重复点击
-            downloadAllBtn.disabled = true;
-            downloadAllBtn.textContent = '下载中...';
+                const crop = context.getImageData(padding, padding, icon.width, icon.height);
+                const cropData = crop.data;
+                const labels = analysisState.labels;
+                const sourceWidth = analysisState.width;
 
-            // 使用延迟下载避免浏览器限制
-            let downloadCount = 0;
-            const downloadDelay = 200; // 200ms延迟
+                for (let y = 0; y < icon.height; y++) {
+                    const sourceRow = (icon.y + y) * sourceWidth + icon.x;
+                    const cropRow = y * icon.width;
+                    for (let x = 0; x < icon.width; x++) {
+                        if (labels[sourceRow + x] !== icon.id) {
+                            cropData[(cropRow + x) * 4 + 3] = 0;
+                        }
+                    }
+                }
+                context.putImageData(crop, padding, padding);
 
-            function downloadNext() {
-                if (downloadCount >= filteredIcons.length) {
-                    // 所有下载完成
-                    downloadAllBtn.disabled = false;
-                    downloadAllBtn.textContent = '下载全部';
-                    statusElement.textContent = `已启动 ${filteredIcons.length} 个图标的下载`;
+                const blob = await canvasToBlob(canvas, "image/png");
+                canvas.width = 1;
+                canvas.height = 1;
+                if (version !== outputVersion) {
+                    throw new CancelledError();
+                }
+                return blob;
+            }
+
+            function canvasToBlob(canvas, type) {
+                return new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error("浏览器未能生成 PNG 文件。"));
+                        }
+                    }, type);
+                });
+            }
+
+            async function downloadAllIcons() {
+                const filtered = getFilteredComponents();
+                if (!analysisState || filtered.length === 0 || processing || exporting) {
                     return;
                 }
 
-                const icon = filteredIcons[downloadCount];
-                const formattedIndex = formatIndex(downloadCount + 1, filteredIcons.length);
-                const link = document.createElement('a');
-                link.href = icon.dataURL;
-                link.download = `icon_${formattedIndex}.png`;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
+                const token = operationId;
+                const version = outputVersion;
+                exporting = true;
+                previewSection.setAttribute("aria-busy", "true");
+                updateActionState(filtered.length);
+                downloadAllBtn.textContent = "正在打包…";
 
-                // 延迟后移除链接并下载下一个
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    downloadCount++;
-                    downloadNext();
-                }, downloadDelay);
+                try {
+                    const entries = [];
+                    let totalBytes = 0;
+                    for (let index = 0; index < filtered.length; index++) {
+                        assertCurrent(token);
+                        setStatus(`正在生成切片 ${index + 1}/${filtered.length}…`);
+                        const asset = await ensureIconAsset(filtered[index], version);
+                        totalBytes += asset.blob.size;
+                        if (totalBytes > MAX_EXPORT_BYTES) {
+                            throw new Error("导出内容超过 256 MB，请提高最小尺寸筛选值后重试。");
+                        }
+                        entries.push({
+                            name: getSliceFileName(index + 1, filtered.length),
+                            blob: asset.blob
+                        });
+                        if ((index + 1) % 10 === 0) {
+                            await yieldToBrowser();
+                        }
+                    }
+
+                    setStatus("正在创建 ZIP 文件…");
+                    const zipBlob = await createStoredZip(entries, token);
+                    assertCurrent(token);
+                    downloadBlob(zipBlob, `${getBaseName()}_split_${filtered.length}.zip`);
+                    setStatus(`已生成包含 ${filtered.length} 个 PNG 的 ZIP 文件。`, "success");
+                } catch (error) {
+                    if (!(error instanceof CancelledError)) {
+                        setStatus(toUserMessage(error), "error");
+                    }
+                } finally {
+                    if (token === operationId) {
+                        exporting = false;
+                        previewSection.setAttribute("aria-busy", "false");
+                        downloadAllBtn.textContent = "下载 ZIP";
+                        updateActionState(getFilteredComponents().length);
+                    }
+                }
             }
 
-            // 开始下载
-            downloadNext();
-        }
-        
-        // 重置应用
-        function resetApp() {
-            originalImage = null;
-            extractedIcons = [];
-            fileInput.value = '';
-            downloadAllBtn.disabled = true;
-            minWidthInput.value = '50';
-            minHeightInput.value = '50';
-            extractionModeSelect.value = 'alpha';
-            iconsContainer.innerHTML = '<div class="no-icons">上传图像后会自动开始处理</div>';
-            statusElement.textContent = '就绪';
-            totalIconsElement.textContent = '0';
-            displayedIconsElement.textContent = '0';
-            processTimeElement.textContent = '0ms';
-        }
+            async function createStoredZip(entries, token) {
+                if (entries.length > 0xffff) {
+                    throw new Error("ZIP 文件数量超过标准格式上限。");
+                }
+
+                const encoder = new TextEncoder();
+                const localParts = [];
+                const centralParts = [];
+                const timestamp = toDosTimestamp(new Date());
+                let offset = 0;
+                let centralSize = 0;
+
+                for (let index = 0; index < entries.length; index++) {
+                    assertCurrent(token);
+                    const entry = entries[index];
+                    const nameBytes = encoder.encode(entry.name);
+                    const data = new Uint8Array(await entry.blob.arrayBuffer());
+                    const size = data.byteLength;
+                    const checksum = crc32(data);
+                    const localHeader = new Uint8Array(30 + nameBytes.length);
+                    const localView = new DataView(localHeader.buffer);
+
+                    localView.setUint32(0, 0x04034b50, true);
+                    localView.setUint16(4, 20, true);
+                    localView.setUint16(6, 0x0800, true);
+                    localView.setUint16(8, 0, true);
+                    localView.setUint16(10, timestamp.time, true);
+                    localView.setUint16(12, timestamp.date, true);
+                    localView.setUint32(14, checksum, true);
+                    localView.setUint32(18, size, true);
+                    localView.setUint32(22, size, true);
+                    localView.setUint16(26, nameBytes.length, true);
+                    localView.setUint16(28, 0, true);
+                    localHeader.set(nameBytes, 30);
+
+                    const centralHeader = new Uint8Array(46 + nameBytes.length);
+                    const centralView = new DataView(centralHeader.buffer);
+                    centralView.setUint32(0, 0x02014b50, true);
+                    centralView.setUint16(4, 20, true);
+                    centralView.setUint16(6, 20, true);
+                    centralView.setUint16(8, 0x0800, true);
+                    centralView.setUint16(10, 0, true);
+                    centralView.setUint16(12, timestamp.time, true);
+                    centralView.setUint16(14, timestamp.date, true);
+                    centralView.setUint32(16, checksum, true);
+                    centralView.setUint32(20, size, true);
+                    centralView.setUint32(24, size, true);
+                    centralView.setUint16(28, nameBytes.length, true);
+                    centralView.setUint16(30, 0, true);
+                    centralView.setUint16(32, 0, true);
+                    centralView.setUint16(34, 0, true);
+                    centralView.setUint16(36, 0, true);
+                    centralView.setUint32(38, 0, true);
+                    centralView.setUint32(42, offset, true);
+                    centralHeader.set(nameBytes, 46);
+
+                    localParts.push(localHeader, entry.blob);
+                    centralParts.push(centralHeader);
+                    offset += localHeader.length + size;
+                    centralSize += centralHeader.length;
+
+                    if (offset + centralSize >= 0xffffffff) {
+                        throw new Error("导出内容超过标准 ZIP 的 4 GB 上限。");
+                    }
+                    if ((index + 1) % 10 === 0) {
+                        await yieldToBrowser();
+                    }
+                }
+
+                const endRecord = new Uint8Array(22);
+                const endView = new DataView(endRecord.buffer);
+                endView.setUint32(0, 0x06054b50, true);
+                endView.setUint16(4, 0, true);
+                endView.setUint16(6, 0, true);
+                endView.setUint16(8, entries.length, true);
+                endView.setUint16(10, entries.length, true);
+                endView.setUint32(12, centralSize, true);
+                endView.setUint32(16, offset, true);
+                endView.setUint16(20, 0, true);
+
+                return new Blob([...localParts, ...centralParts, endRecord], { type: "application/zip" });
+            }
+
+            const CRC_TABLE = (() => {
+                const table = new Uint32Array(256);
+                for (let index = 0; index < 256; index++) {
+                    let value = index;
+                    for (let bit = 0; bit < 8; bit++) {
+                        value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+                    }
+                    table[index] = value >>> 0;
+                }
+                return table;
+            })();
+
+            function crc32(bytes) {
+                let value = 0xffffffff;
+                for (let index = 0; index < bytes.length; index++) {
+                    value = CRC_TABLE[(value ^ bytes[index]) & 0xff] ^ (value >>> 8);
+                }
+                return (value ^ 0xffffffff) >>> 0;
+            }
+
+            function toDosTimestamp(date) {
+                const year = Math.min(2107, Math.max(1980, date.getFullYear()));
+                return {
+                    time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+                    date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate()
+                };
+            }
+
+            function downloadBlob(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = filename;
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+            }
+
+            function getSliceFileName(index, total) {
+                const digits = Math.max(1, String(total).length);
+                return `${getBaseName()}_${String(index).padStart(digits, "0")}.png`;
+            }
+
+            function getBaseName() {
+                const original = sourceFile && sourceFile.name ? sourceFile.name.replace(/\.[^.]+$/, "") : "image";
+                const sanitized = original
+                    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
+                    .replace(/[.\s]+$/g, "")
+                    .trim()
+                    .slice(0, 80);
+                return sanitized || "image";
+            }
+
+            function invalidateIconBlobs() {
+                outputVersion++;
+                renderId++;
+                for (const component of components) {
+                    if (component.cache && component.cache.url) {
+                        URL.revokeObjectURL(component.cache.url);
+                    }
+                    component.cache = null;
+                }
+            }
+
+            function disposeAnalysis() {
+                invalidateIconBlobs();
+                components = [];
+                analysisState = null;
+                totalIconsElement.textContent = "0";
+                displayedIconsElement.textContent = "0";
+                processTimeElement.textContent = "0ms";
+                previewNote.textContent = "";
+                sourceCanvas.width = 1;
+                sourceCanvas.height = 1;
+                iconsContainer.replaceChildren(createEmptyState(sourceImage
+                    ? "正在等待重新分析"
+                    : "选择图片后会自动开始分析"));
+            }
+
+            function disposeSourceImage() {
+                if (sourceImage && typeof sourceImage.close === "function") {
+                    sourceImage.close();
+                }
+                sourceImage = null;
+            }
+
+            function resetApp() {
+                operationId++;
+                window.clearTimeout(scheduledProcess);
+                scheduledProcess = null;
+                processing = false;
+                exporting = false;
+                disposeSourceImage();
+                sourceFile = null;
+                disposeAnalysis();
+                fileInput.value = "";
+
+                extractionModeSelect.value = DEFAULTS.mode;
+                alphaThresholdInput.value = String(DEFAULTS.alphaThreshold);
+                colorToleranceInput.value = String(DEFAULTS.colorTolerance);
+                backgroundColorInput.value = DEFAULTS.backgroundColor;
+                minWidthInput.value = String(DEFAULTS.minWidth);
+                minHeightInput.value = String(DEFAULTS.minHeight);
+                outputPaddingInput.value = String(DEFAULTS.padding);
+
+                updateModeControls();
+                downloadAllBtn.textContent = "下载 ZIP";
+                setStatus("就绪");
+                setBusy(false);
+            }
+
+            function setBusy(isBusy) {
+                previewSection.setAttribute("aria-busy", String(isBusy));
+                processBtn.disabled = isBusy || !sourceImage;
+                processBtn.textContent = isBusy ? "处理中…" : "重新分析";
+                updateActionState(getFilteredComponents().length);
+            }
+
+            function updateActionState(filteredCount) {
+                processBtn.disabled = processing || exporting || !sourceImage;
+                downloadAllBtn.disabled = processing || exporting || !analysisState || filteredCount === 0;
+            }
+
+            function setStatus(message, state = "info") {
+                statusElement.textContent = message;
+                statusElement.dataset.state = state;
+            }
+
+            function validateFile(file) {
+                if (!file || file.size === 0) {
+                    throw new Error("请选择非空图片文件。");
+                }
+                if (file.size > MAX_FILE_SIZE) {
+                    throw new Error("文件超过 50 MB，请先压缩或缩小图片。");
+                }
+
+                const supportedTypes = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
+                const supportedExtension = /\.(png|jpe?g|webp)$/i.test(file.name || "");
+                if (!supportedTypes.has(file.type) && !(file.type === "" && supportedExtension)) {
+                    throw new Error("仅支持静态 PNG、JPG 和 WebP 图片。");
+                }
+            }
+
+            function validateDimensions(width, height) {
+                if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
+                    throw new Error("图片尺寸无效或文件已损坏。");
+                }
+                if (width > MAX_DIMENSION || height > MAX_DIMENSION || width * height > MAX_PIXELS) {
+                    throw new Error(`图片为 ${width}×${height}，超过 8192 像素边长或 1200 万像素限制。`);
+                }
+            }
+
+            async function decodeImage(file) {
+                if ("createImageBitmap" in window) {
+                    try {
+                        return await createImageBitmap(file, { imageOrientation: "from-image" });
+                    } catch {
+                        // Fall through to HTMLImageElement for browsers with partial bitmap support.
+                    }
+                }
+
+                const url = URL.createObjectURL(file);
+                try {
+                    const image = new Image();
+                    image.decoding = "async";
+                    await new Promise((resolve, reject) => {
+                        image.onload = resolve;
+                        image.onerror = () => reject(new Error("浏览器无法解码该图片。"));
+                        image.src = url;
+                    });
+                    return image;
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            function hexToRgb(hex) {
+                const value = Number.parseInt(hex.slice(1), 16);
+                return {
+                    r: (value >> 16) & 0xff,
+                    g: (value >> 8) & 0xff,
+                    b: value & 0xff
+                };
+            }
+
+            function rgbToHex(color) {
+                return `#${[color.r, color.g, color.b]
+                    .map((value) => value.toString(16).padStart(2, "0"))
+                    .join("")}`;
+            }
+
+            function assertCurrent(token) {
+                if (token !== operationId) {
+                    throw new CancelledError();
+                }
+            }
+
+            function yieldToBrowser() {
+                return new Promise((resolve) => window.setTimeout(resolve, 0));
+            }
+
+            function toUserMessage(error) {
+                if (error instanceof Error && error.message) {
+                    return error.message;
+                }
+                return "处理失败，请检查图片后重试。";
+            }
+
+            updateModeControls();
+            updateActionState(0);
+        })();
     </script>
 </body>
 </html>

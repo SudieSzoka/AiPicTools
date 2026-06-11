@@ -2,8 +2,6 @@
 <html lang="zh-CN">
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图像透明区域裁剪工具</title>
@@ -256,75 +254,74 @@
             }
         }
     </style>
+
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
+  <script src="scripts/common.js" defer></script>
 </head>
-<body>
+<body class="tool-page" data-tool-page="image-crop-max-alpha">
 <!-- COMMON_HEADER -->
-<!-- 固定页头 -->
-<header class="page-header">
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<header class="page-header" aria-label="站点页头">
     <div class="header-container">
         <div class="header-inner">
-            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link">我的工具站</a>
+                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
+                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
+                    <span>我的工具站</span>
+                </a>
             </div>
-
-            <!-- 导航菜单 -->
-            <nav class="nav-desktop">
+            <nav class="nav-desktop" aria-label="主要导航">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">首页</a>
+                    <a href="../index.html" class="nav-link">工具首页</a>
                 </div>
             </nav>
-
-            <!-- 移动端菜单按钮 -->
-            <div class="mobile-menu-btn">
-                <i data-lucide="menu"></i>
-            </div>
         </div>
     </div>
 </header>
 <!-- END_COMMON_HEADER -->
     <div class="container">
-        <header>
+        <header aria-label="透明边缘裁剪工具标题">
             <h1>图像透明区域裁剪工具</h1>
             <p class="subtitle">上传带有透明背景的PNG图像，自动裁剪掉多余的透明区域，优化图像尺寸并保留透明通道</p>
         </header>
-        
+
         <div class="content">
             <div class="upload-area">
-                <div class="drop-zone" id="dropZone">
-                    <i>📁</i>
-                    <p>拖放图像文件到此处<br>或点击选择文件</p>
-                </div>
+                <button class="drop-zone" id="dropZone" type="button" aria-describedby="uploadHelp">
+                    <i aria-hidden="true"></i>
+                    <span id="uploadHelp">拖放 PNG 图像到此处<br>或点击选择文件</span>
+                </button>
                 <input type="file" id="fileInput" accept="image/png" class="hidden">
-                <button id="processBtn" class="button" disabled>
+                <button id="processBtn" class="button" type="button" disabled>
                     <span>重新处理</span>
                 </button>
-                
+
                 <div id="statusArea" class="status info hidden">
                     请上传PNG格式的图像文件，上传后将自动处理
                 </div>
             </div>
-            
+
             <div class="preview-area">
                 <div class="preview-title">
                     <h2>预览结果</h2>
-                    <button id="downloadBtn" class="button" disabled>
+                    <button id="downloadBtn" class="button" type="button" disabled>
                         <span>下载裁剪图像</span>
                     </button>
                 </div>
-                
+
                 <div class="image-container">
                     <div class="image-box original">
-                        <img id="originalPreview" src="" alt="原始图像预览">
+                        <img id="originalPreview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="原始图像预览">
                         <div class="image-label">原始图像</div>
                     </div>
-                    
+
                     <div class="image-box">
-                        <img id="croppedPreview" src="" alt="裁剪后图像预览">
+                        <img id="croppedPreview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="裁剪后图像预览">
                         <div class="image-label">裁剪后图像</div>
                     </div>
                 </div>
-                
+
                 <div id="resultInfo" class="status hidden">
                     <!-- 裁剪结果信息将显示在这里 -->
                 </div>
@@ -334,6 +331,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const EMPTY_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+            const MAX_FILE_BYTES = 50 * 1024 * 1024;
+            const MAX_PIXELS = 24_000_000;
+            const MAX_DIMENSION = 16_384;
+
             const fileInput = document.getElementById('fileInput');
             const dropZone = document.getElementById('dropZone');
             const processBtn = document.getElementById('processBtn');
@@ -344,13 +346,18 @@
             const resultInfo = document.getElementById('resultInfo');
             
             let originalImage = null;
-            let croppedImageDataUrl = null;
+            let sourceObjectUrl = '';
+            let croppedObjectUrl = '';
+            let croppedBlob = null;
+            let originalFileName = 'image.png';
+            let originalFileSize = 0;
+            let loadToken = 0;
             
             // 点击拖放区域触发文件选择
             dropZone.addEventListener('click', () => {
                 fileInput.click();
             });
-            
+
             // 拖放功能处理
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 dropZone.addEventListener(eventName, preventDefaults, false);
@@ -389,58 +396,125 @@
             // 处理文件选择
             fileInput.addEventListener('change', () => {
                 handleFiles(fileInput.files);
+                fileInput.value = '';
             });
             
             function handleFiles(files) {
                 if (files.length === 0) return;
                 
                 const file = files[0];
-                if (!file.type.match('image.*')) {
-                    showStatus('请选择图像文件', 'error');
+                const validationMessage = validateFile(file);
+                if (validationMessage) {
+                    showStatus(validationMessage, 'error');
                     return;
                 }
-                
-                if (!file.type.match('image/png')) {
-                    showStatus('请选择PNG格式的图像文件', 'error');
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    originalImage = new Image();
-                    originalImage.onload = () => {
-                        originalPreview.src = e.target.result;
-                        processBtn.disabled = false;
-                        showStatus('图像已加载，正在自动裁剪透明区域...', 'info');
-                        resultInfo.classList.add('hidden');
-                        downloadBtn.disabled = true;
-                        croppedPreview.src = '';
-                        
-                        // 自动开始处理
-                        processImage();
-                    };
-                    originalImage.src = e.target.result;
+
+                const token = ++loadToken;
+                releaseSource();
+                releaseCropped();
+                originalFileName = file.name || 'image.png';
+                originalFileSize = file.size;
+                sourceObjectUrl = URL.createObjectURL(file);
+                originalImage = new Image();
+                originalImage.decoding = 'async';
+                originalImage.onload = () => {
+                    if (token !== loadToken) return;
+                    const dimensionMessage = validateDimensions(originalImage.naturalWidth, originalImage.naturalHeight);
+                    if (dimensionMessage) {
+                        releaseSource();
+                        showStatus(dimensionMessage, 'error');
+                        return;
+                    }
+
+                    originalPreview.src = sourceObjectUrl;
+                    processBtn.disabled = false;
+                    showStatus('图像已加载，正在自动裁剪透明边缘...', 'info');
+                    resultInfo.classList.add('hidden');
+                    downloadBtn.disabled = true;
+                    croppedPreview.src = EMPTY_IMAGE_SRC;
+
+                    void processImage();
                 };
-                reader.readAsDataURL(file);
+                originalImage.onerror = () => {
+                    if (token !== loadToken) return;
+                    releaseSource();
+                    showStatus('图片解码失败，文件可能已损坏。', 'error');
+                };
+                originalImage.src = sourceObjectUrl;
             }
-            
+
+            function validateFile(file) {
+                if (!file || file.size === 0) {
+                    return '请选择非空 PNG 图像文件';
+                }
+                const isPng = file.type === 'image/png' || (!file.type && /\.png$/i.test(file.name || ''));
+                if (!isPng) {
+                    return '请选择 PNG 格式的图像文件，其他格式可能不包含可保留的透明通道';
+                }
+                if (file.size > MAX_FILE_BYTES) {
+                    return '文件超过 50 MB，请先压缩或缩小图片';
+                }
+                return '';
+            }
+
+            function validateDimensions(width, height) {
+                if (!width || !height) {
+                    return '图片没有有效尺寸';
+                }
+                if (width > MAX_DIMENSION || height > MAX_DIMENSION || width * height > MAX_PIXELS) {
+                    return '图片尺寸过大，请使用最长边不超过 16384 px、总像素不超过 2400 万的 PNG';
+                }
+                return '';
+            }
+
+            function releaseSource() {
+                if (sourceObjectUrl) {
+                    URL.revokeObjectURL(sourceObjectUrl);
+                    sourceObjectUrl = '';
+                }
+                originalImage = null;
+                originalPreview.src = EMPTY_IMAGE_SRC;
+                processBtn.disabled = true;
+            }
+
+            function releaseCropped() {
+                if (croppedObjectUrl) {
+                    URL.revokeObjectURL(croppedObjectUrl);
+                    croppedObjectUrl = '';
+                }
+                croppedBlob = null;
+                croppedPreview.src = EMPTY_IMAGE_SRC;
+                downloadBtn.disabled = true;
+            }
             // 图像处理函数
-            function processImage() {
+            async function processImage() {
                 if (!originalImage) return;
+                releaseCropped();
+                showStatus('正在扫描非透明像素边界...', 'info');
                 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    showStatus('当前浏览器无法创建 Canvas，不能处理图片', 'error');
+                    return;
+                }
                 
                 // 设置canvas尺寸与图像相同
-                canvas.width = originalImage.width;
-                canvas.height = originalImage.height;
+                canvas.width = originalImage.naturalWidth || originalImage.width;
+                canvas.height = originalImage.naturalHeight || originalImage.height;
                 
                 // 绘制图像到canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(originalImage, 0, 0);
                 
                 // 获取图像数据
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let imageData;
+                try {
+                    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                } catch (error) {
+                    showStatus('无法读取图片像素，请确认文件未损坏。', 'error');
+                    return;
+                }
                 const data = imageData.data;
                 
                 // 寻找非透明区域的边界
@@ -471,7 +545,7 @@
                 
                 // 检查图像是否完全透明
                 if (width <= 0 || height <= 0) {
-                    showStatus('图像完全透明，无法裁剪', 'error');
+                    showStatus('图像完全透明，没有可保留的非透明内容。', 'error');
                     return;
                 }
                 
@@ -481,6 +555,10 @@
                 croppedCanvas.height = height;
                 
                 const croppedCtx = croppedCanvas.getContext('2d');
+                if (!croppedCtx) {
+                    showStatus('当前浏览器无法创建导出 Canvas。', 'error');
+                    return;
+                }
                 
                 // 设置背景为透明
                 croppedCtx.clearRect(0, 0, width, height);
@@ -492,46 +570,79 @@
                     0, 0, width, height
                 );
                 
-                // 获取裁剪后图像的数据URL
-                croppedImageDataUrl = croppedCanvas.toDataURL('image/png');
-                croppedPreview.src = croppedImageDataUrl;
+                let blob;
+                try {
+                    blob = await canvasToBlob(croppedCanvas);
+                } catch (error) {
+                    showStatus('PNG 导出失败，请缩小图片后重试。', 'error');
+                    return;
+                }
+
+                croppedBlob = blob;
+                croppedObjectUrl = URL.createObjectURL(blob);
+                croppedPreview.src = croppedObjectUrl;
                 downloadBtn.disabled = false;
                 
                 // 显示裁剪信息
-                const originalSize = formatBytes(originalImage.src.length * 0.75); // 近似计算
-                const croppedSize = formatBytes(croppedImageDataUrl.length * 0.75);
-                
-                const sizeReduction = Math.round(
-                    (1 - croppedImageDataUrl.length / originalImage.src.length) * 100
+                const sizeReduction = Math.max(0, Math.round(
+                    (1 - (width * height) / (canvas.width * canvas.height)) * 100
+                ));
+
+                resultInfo.replaceChildren(
+                    createInfoLine(`原始尺寸: ${canvas.width}×${canvas.height} (${formatBytes(originalFileSize)})`),
+                    createInfoLine(`裁剪尺寸: ${width}×${height} (${formatBytes(blob.size)})`),
+                    createInfoLine(`像素面积减少: ${sizeReduction}%`)
                 );
-                
-                resultInfo.innerHTML = `
-                    <p>原始尺寸: ${originalImage.width}×${originalImage.height} (${originalSize})</p>
-                    <p>裁剪尺寸: ${width}×${height} (${croppedSize})</p>
-                    <p>尺寸减少: ${sizeReduction}%</p>
-                `;
                 resultInfo.classList.remove('hidden');
                 resultInfo.className = 'status success';
                 
-                showStatus(`透明区域裁剪完成！尺寸减少 ${sizeReduction}%`, 'success');
+                showStatus(`透明边缘裁剪完成，像素面积减少 ${sizeReduction}%。`, 'success');
             }
             
             // 保留按钮点击事件作为备用
             processBtn.addEventListener('click', () => {
-                processImage();
+                void processImage();
             });
             
             // 下载裁剪后的图像
             downloadBtn.addEventListener('click', () => {
-                if (!croppedImageDataUrl) return;
+                if (!croppedObjectUrl || !croppedBlob) return;
                 
                 const link = document.createElement('a');
-                link.href = croppedImageDataUrl;
-                link.download = 'cropped-image.png';
+                link.href = croppedObjectUrl;
+                link.download = `${getSafeBaseName(originalFileName)}-trimmed.png`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
             });
+
+            window.addEventListener('beforeunload', () => {
+                releaseSource();
+                releaseCropped();
+            });
+
+            function canvasToBlob(canvas) {
+                return new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('PNG 编码失败'));
+                    }, 'image/png');
+                });
+            }
+
+            function createInfoLine(text) {
+                const paragraph = document.createElement('p');
+                paragraph.textContent = text;
+                return paragraph;
+            }
+
+            function getSafeBaseName(name) {
+                return String(name || 'image')
+                    .replace(/\.[^.]+$/, '')
+                    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
+                    .trim()
+                    .slice(0, 80) || 'image';
+            }
             
             // 辅助函数：显示状态信息
             function showStatus(message, type = 'info') {
@@ -555,50 +666,19 @@
         });
     </script>
 <!-- COMMON_FOOTER -->
-<!-- 固定页脚 -->
 <footer class="page-footer">
-  <div class="footer-container">
-      <div class="footer-brand">
-          <a href="../index.html" class="footer-logo">我的工具站</a>
-          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
-      </div>
-      
-      <div class="footer-links">
-          <div class="footer-column">
-              <h3>产品</h3>
-              <ul>
-                  <li><a href="#">所有工具</a></li>
-                  <li><a href="#">热门工具</a></li>
-                  <li><a href="#">新工具</a></li>
-                  <li><a href="#">API</a></li>
-              </ul>
-          </div>
-          
-          <div class="footer-column">
-              <h3>资源</h3>
-              <ul>
-                  <li><a href="#">帮助中心</a></li>
-                  <li><a href="#">使用教程</a></li>
-                  <li><a href="#">博客</a></li>
-                  <li><a href="#">更新日志</a></li>
-              </ul>
-          </div>
-          
-          <div class="footer-column">
-              <h3>公司</h3>
-              <ul>
-                  <li><a href="#">关于我们</a></li>
-                  <li><a href="#">联系我们</a></li>
-                  <li><a href="#">隐私政策</a></li>
-                  <li><a href="#">服务条款</a></li>
-              </ul>
-          </div>
-      </div>
-  </div>
-  
-  <div class="footer-bottom">
-      <p>© 2023 我的工具站 版权所有</p>
-  </div>
+    <div class="footer-container">
+        <div class="footer-brand">
+            <a href="../index.html" class="footer-logo">我的工具站</a>
+            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
+        </div>
+        <nav class="footer-links" aria-label="页脚导航">
+            <a href="../index.html">全部工具</a>
+        </nav>
+    </div>
+    <div class="footer-bottom">
+        <p>© <span data-current-year>2026</span> 我的工具站</p>
+    </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>

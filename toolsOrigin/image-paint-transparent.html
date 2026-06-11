@@ -11,7 +11,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', system-ui, sans-serif;
         }
-        
+
         .container {
             max-width: 1000px;
             width: 100%;
@@ -21,33 +21,33 @@
             overflow: hidden;
             margin: 20px auto;
         }
-        
+
         .header {
             background: linear-gradient(135deg, #9b59b6, #8e44ad);
             color: white;
             padding: 25px 30px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        
+
         h1 {
             font-size: 1.8rem;
             font-weight: 500;
             margin-bottom: 5px;
         }
-        
+
         .subtitle {
             font-size: 1rem;
             opacity: 0.9;
             font-weight: 300;
         }
-        
+
         .main-content {
             padding: 30px;
             display: flex;
             flex-direction: column;
             gap: 25px;
         }
-        
+
         .upload-section {
             display: flex;
             flex-direction: column;
@@ -59,23 +59,28 @@
             background-color: #f8f4fc;
             transition: all 0.3s ease;
         }
-        
+
         .upload-section:hover {
             background-color: #f0e6f6;
             border-color: #8e44ad;
         }
-        
+
+        .upload-section.dragover {
+            background-color: #f0e6f6;
+            border-color: #8e44ad;
+        }
+
         .upload-icon {
             font-size: 3.5rem;
             color: #9b59b6;
         }
-        
+
         .upload-text {
             font-size: 1.2rem;
             color: #2c3e50;
             text-align: center;
         }
-        
+
         .btn {
             background: linear-gradient(90deg, #9b59b6, #8e44ad);
             color: white;
@@ -88,36 +93,42 @@
             font-weight: 500;
             box-shadow: 0 4px 6px rgba(155, 89, 182, 0.2);
         }
-        
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(155, 89, 182, 0.3);
         }
-        
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+        }
+
         .btn-download {
             background: linear-gradient(90deg, #27ae60, #219653);
             box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);
         }
-        
+
         .btn-download:hover {
             box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
         }
-        
+
         .btn-reset {
             background: linear-gradient(90deg, #e74c3c, #c0392b);
             box-shadow: 0 4px 6px rgba(231, 76, 60, 0.2);
         }
-        
+
         .hidden {
             display: none !important;
         }
-        
+
         .editor-section {
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
-        
+
         .section-title {
             font-size: 1.4rem;
             color: #2c3e50;
@@ -125,7 +136,7 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
-        
+
         .toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -136,24 +147,24 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .tool-group {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
+
         .tool-group label {
             font-weight: 500;
             color: #555;
         }
-        
+
         .color-options {
             display: flex;
             gap: 8px;
             align-items: center;
         }
-        
+
         .color-btn {
             width: 32px;
             height: 32px;
@@ -162,16 +173,25 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        
+
         .color-btn:hover {
             transform: scale(1.1);
         }
-        
+
         .color-btn.active {
             border-color: #9b59b6;
             box-shadow: 0 0 0 2px white, 0 0 0 4px #9b59b6;
         }
-        
+
+        .color-white {
+            background: #ffffff;
+            border-color: #ccc;
+        }
+
+        .color-black {
+            background: #000000;
+        }
+
         #custom-color {
             width: 32px;
             height: 32px;
@@ -180,12 +200,12 @@
             cursor: pointer;
             padding: 0;
         }
-        
+
         #brush-size {
             width: 150px;
             cursor: pointer;
         }
-        
+
         .canvas-container {
             position: relative;
             background: repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 50% / 20px 20px;
@@ -196,13 +216,14 @@
             align-items: center;
             min-height: 300px;
         }
-        
+
         #main-canvas {
             max-width: 100%;
             max-height: 500px;
             cursor: none;
+            touch-action: none;
         }
-        
+
         .brush-cursor {
             position: absolute;
             border: 2px solid #9b59b6;
@@ -211,35 +232,42 @@
             display: none;
             box-shadow: 0 0 0 1px white;
         }
-        
+
         .controls {
             display: flex;
             justify-content: center;
             gap: 15px;
             flex-wrap: wrap;
         }
-        
+
         .instructions {
             background-color: #f3e5f5;
             border-left: 4px solid #9b59b6;
             padding: 15px;
             border-radius: 0 8px 8px 0;
         }
-        
+
         .instructions h3 {
             color: #2c3e50;
             margin-bottom: 8px;
         }
-        
+
         .instructions ol {
             padding-left: 20px;
         }
-        
+
         .instructions li {
             margin-bottom: 8px;
             line-height: 1.5;
         }
-        
+
+        .status-message {
+            min-height: 1.5em;
+            color: #8e44ad;
+            text-align: center;
+            font-size: 0.92rem;
+        }
+
         @media (max-width: 768px) {
             .toolbar {
                 flex-direction: column;
@@ -254,48 +282,49 @@
     <div class="container">
         <div class="header">
             <h1>透明区域涂色工具</h1>
-            <div class="subtitle">上传PNG图片 · 涂抹透明区域 · 添加背景色</div>
+            <div class="subtitle">上传 PNG 图片，涂抹透明区域并添加背景色。</div>
         </div>
-        
+
         <div class="main-content">
             <div class="upload-section" id="upload-section">
-                <div class="upload-icon">🎨</div>
+                <div class="upload-icon" aria-hidden="true"></div>
                 <div class="upload-text">拖放PNG图片到此处或点击下方按钮上传</div>
                 <input type="file" id="file-input" accept="image/png" hidden>
-                <button class="btn" id="upload-btn">选择PNG图片</button>
+                <button class="btn" id="upload-btn" type="button">选择PNG图片</button>
             </div>
-            
+            <div class="status-message" id="status-message" aria-live="polite"></div>
+
             <div class="editor-section hidden" id="editor-section">
                 <h2 class="section-title">涂抹编辑</h2>
-                
+
                 <div class="toolbar">
                     <div class="tool-group">
                         <label>画笔颜色：</label>
                         <div class="color-options">
-                            <button class="color-btn active" data-color="#ffffff" style="background:#ffffff;border:1px solid #ccc;" title="白色"></button>
-                            <button class="color-btn" data-color="#000000" style="background:#000000;" title="黑色"></button>
+                            <button class="color-btn color-white active" type="button" data-color="#ffffff" title="白色" aria-label="白色"></button>
+                            <button class="color-btn color-black" type="button" data-color="#000000" title="黑色" aria-label="黑色"></button>
                             <input type="color" id="custom-color" value="#ff0000" title="自定义颜色">
                         </div>
                     </div>
-                    
+
                     <div class="tool-group">
-                        <label>画笔大小：<span id="brush-size-value">30</span>px</label>
+                        <label for="brush-size">画笔大小：<span id="brush-size-value">30</span>px</label>
                         <input type="range" id="brush-size" min="5" max="100" value="30">
                     </div>
                 </div>
-                
+
                 <div class="canvas-container" id="canvas-container">
                     <canvas id="main-canvas"></canvas>
                     <div class="brush-cursor" id="brush-cursor"></div>
                 </div>
-                
+
                 <div class="controls">
-                    <button class="btn" id="undo-btn">↩ 撤销</button>
-                    <button class="btn btn-reset" id="reset-btn">🔄 重置</button>
-                    <button class="btn btn-download" id="download-btn">💾 下载PNG</button>
+                    <button class="btn" id="undo-btn" type="button">↩ 撤销</button>
+                    <button class="btn btn-reset" id="reset-btn" type="button">重置</button>
+                    <button class="btn btn-download" id="download-btn" type="button">下载 PNG</button>
                 </div>
             </div>
-            
+
             <div class="instructions">
                 <h3>使用说明：</h3>
                 <ol>
@@ -326,71 +355,115 @@
             const undoBtn = document.getElementById('undo-btn');
             const resetBtn = document.getElementById('reset-btn');
             const downloadBtn = document.getElementById('download-btn');
-            
+            const statusMessage = document.getElementById('status-message');
+
+            const MAX_FILE_BYTES = 50 * 1024 * 1024;
+            const MAX_IMAGE_PIXELS = 24_000_000;
+            const MAX_CANVAS_SIDE = 16_384;
+            const HISTORY_LIMIT = 12;
+
             let originalImageData = null;
             let history = [];
             let currentColor = '#ffffff';
             let brushSize = 30;
             let isDrawing = false;
             let originalImage = null;
-            
+            let originalFileName = 'painted-image';
+            let sourceObjectUrl = '';
+            let loadToken = 0;
+
             // 上传按钮
             uploadBtn.addEventListener('click', () => fileInput.click());
-            
+
             // 拖放
             uploadSection.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                uploadSection.style.backgroundColor = '#f0e6f6';
+                uploadSection.classList.add('dragover');
             });
-            
+
             uploadSection.addEventListener('dragleave', () => {
-                uploadSection.style.backgroundColor = '#f8f4fc';
+                uploadSection.classList.remove('dragover');
             });
-            
+
             uploadSection.addEventListener('drop', (e) => {
                 e.preventDefault();
-                uploadSection.style.backgroundColor = '#f8f4fc';
+                uploadSection.classList.remove('dragover');
                 if (e.dataTransfer.files.length) {
                     handleFile(e.dataTransfer.files[0]);
                 }
             });
-            
+
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length) {
                     handleFile(e.target.files[0]);
                 }
             });
-            
+
             function handleFile(file) {
-                if (!file.type.match('image/png')) {
-                    alert('请选择PNG格式的图片！');
+                if (!isPngFile(file)) {
+                    setStatus('请选择 PNG 格式的图片。');
                     return;
                 }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    originalImage = new Image();
-                    originalImage.onload = function() {
-                        initCanvas();
-                    };
-                    originalImage.src = e.target.result;
+
+                if (file.size > MAX_FILE_BYTES) {
+                    setStatus('图片文件过大，请选择 50MB 以内的 PNG。');
+                    return;
+                }
+
+                const token = ++loadToken;
+                const objectUrl = URL.createObjectURL(file);
+                const img = new Image();
+
+                img.onload = function() {
+                    if (token !== loadToken) {
+                        URL.revokeObjectURL(objectUrl);
+                        return;
+                    }
+
+                    const width = img.naturalWidth || img.width;
+                    const height = img.naturalHeight || img.height;
+                    if (!canUseImageSize(width, height)) {
+                        URL.revokeObjectURL(objectUrl);
+                        setStatus('图片尺寸过大，请选择不超过 2400 万像素且单边不超过 16384px 的 PNG。');
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    releaseSourceObjectUrl();
+                    sourceObjectUrl = objectUrl;
+                    originalImage = img;
+                    originalFileName = file.name.replace(/\.[^.]+$/, '') || 'painted-image';
+                    initCanvas(width, height);
+                    releaseSourceObjectUrl();
                 };
-                reader.readAsDataURL(file);
+
+                img.onerror = function() {
+                    URL.revokeObjectURL(objectUrl);
+                    if (token === loadToken) {
+                        setStatus('图片无法加载，可能是文件损坏或不是有效 PNG。');
+                        fileInput.value = '';
+                    }
+                };
+
+                img.src = objectUrl;
             }
-            
-            function initCanvas() {
-                canvas.width = originalImage.width;
-                canvas.height = originalImage.height;
+
+            function initCanvas(width, height) {
+                canvas.width = width;
+                canvas.height = height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(originalImage, 0, 0);
                 originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 history = [];
                 saveHistory();
-                
+
                 uploadSection.classList.add('hidden');
                 editorSection.classList.remove('hidden');
+                fileInput.value = '';
+                setStatus('图片已加载。只能涂抹完全透明像素，半透明边缘会被保留。');
                 updateBrushCursor();
             }
-            
+
             // 颜色选择
             colorBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -399,74 +472,93 @@
                     currentColor = btn.dataset.color;
                 });
             });
-            
+
             customColor.addEventListener('input', (e) => {
                 colorBtns.forEach(b => b.classList.remove('active'));
                 currentColor = e.target.value;
             });
-            
+
             // 画笔大小
             brushSizeSlider.addEventListener('input', (e) => {
                 brushSize = parseInt(e.target.value);
                 brushSizeValue.textContent = brushSize;
                 updateBrushCursor();
             });
-            
+
             function updateBrushCursor() {
                 brushCursor.style.width = brushSize + 'px';
                 brushCursor.style.height = brushSize + 'px';
             }
-            
+
             // 画布事件
-            canvasContainer.addEventListener('mouseenter', () => {
+            canvasContainer.addEventListener('pointerenter', () => {
                 brushCursor.style.display = 'block';
             });
-            
-            canvasContainer.addEventListener('mouseleave', () => {
+
+            canvasContainer.addEventListener('pointerleave', () => {
                 brushCursor.style.display = 'none';
-                isDrawing = false;
+                endDrawing();
             });
-            
-            canvasContainer.addEventListener('mousemove', (e) => {
+
+            canvasContainer.addEventListener('pointermove', (e) => {
+                updateCursorPosition(e);
+                if (isDrawing) paint(e);
+            });
+
+            canvas.addEventListener('pointerdown', (e) => {
+                if (!originalImageData) return;
+                e.preventDefault();
+                canvas.setPointerCapture?.(e.pointerId);
+                isDrawing = true;
+                updateCursorPosition(e);
+                paint(e);
+            });
+
+            canvas.addEventListener('pointerup', endDrawing);
+            canvas.addEventListener('pointercancel', endDrawing);
+
+            function updateCursorPosition(e) {
                 const rect = canvasContainer.getBoundingClientRect();
                 brushCursor.style.left = (e.clientX - rect.left - brushSize/2) + 'px';
                 brushCursor.style.top = (e.clientY - rect.top - brushSize/2) + 'px';
-                
-                if (isDrawing) {
-                    paint(e);
-                }
-            });
-            
-            canvas.addEventListener('mousedown', (e) => {
-                isDrawing = true;
-                paint(e);
-            });
-            
-            document.addEventListener('mouseup', () => {
+            }
+
+            function endDrawing() {
                 if (isDrawing) {
                     isDrawing = false;
                     saveHistory();
                 }
-            });
-            
+            }
+
             function paint(e) {
+                if (!originalImageData) return;
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = canvas.width / rect.width;
                 const scaleY = canvas.height / rect.height;
                 const x = (e.clientX - rect.left) * scaleX;
                 const y = (e.clientY - rect.top) * scaleY;
-                
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
+
                 const radius = brushSize * Math.max(scaleX, scaleY) / 2;
-                
+                const minX = Math.max(0, Math.floor(x - radius));
+                const minY = Math.max(0, Math.floor(y - radius));
+                const maxX = Math.min(canvas.width, Math.ceil(x + radius));
+                const maxY = Math.min(canvas.height, Math.ceil(y + radius));
+                const width = maxX - minX;
+                const height = maxY - minY;
+                if (width <= 0 || height <= 0) return;
+
+                const imageData = ctx.getImageData(minX, minY, width, height);
+                const data = imageData.data;
+
                 const rgb = hexToRgb(currentColor);
-                
-                for (let py = Math.max(0, Math.floor(y - radius)); py < Math.min(canvas.height, Math.ceil(y + radius)); py++) {
-                    for (let px = Math.max(0, Math.floor(x - radius)); px < Math.min(canvas.width, Math.ceil(x + radius)); px++) {
-                        const dist = Math.sqrt((px - x) ** 2 + (py - y) ** 2);
+
+                for (let py = 0; py < height; py++) {
+                    for (let px = 0; px < width; px++) {
+                        const canvasX = minX + px;
+                        const canvasY = minY + py;
+                        const dist = Math.sqrt((canvasX - x) ** 2 + (canvasY - y) ** 2);
                         if (dist <= radius) {
-                            const idx = (py * canvas.width + px) * 4;
+                            const idx = (py * width + px) * 4;
                             if (data[idx + 3] === 0) {
                                 data[idx] = rgb.r;
                                 data[idx + 1] = rgb.g;
@@ -476,10 +568,10 @@
                         }
                     }
                 }
-                
-                ctx.putImageData(imageData, 0, 0);
+
+                ctx.putImageData(imageData, minX, minY);
             }
-            
+
             function hexToRgb(hex) {
                 const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
                 return result ? {
@@ -488,33 +580,78 @@
                     b: parseInt(result[3], 16)
                 } : {r: 255, g: 255, b: 255};
             }
-            
+
             function saveHistory() {
+                if (!originalImageData) return;
                 history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-                if (history.length > 20) history.shift();
+                if (history.length > HISTORY_LIMIT) history.shift();
+                undoBtn.disabled = history.length <= 1;
             }
-            
+
             undoBtn.addEventListener('click', () => {
                 if (history.length > 1) {
                     history.pop();
                     ctx.putImageData(history[history.length - 1], 0, 0);
+                    undoBtn.disabled = history.length <= 1;
                 }
             });
-            
+
             resetBtn.addEventListener('click', () => {
                 if (originalImageData) {
                     ctx.putImageData(originalImageData, 0, 0);
                     history = [];
                     saveHistory();
+                    setStatus('已重置为原图。');
                 }
             });
-            
+
             downloadBtn.addEventListener('click', () => {
+                if (!originalImageData) return;
+                if (!canvas.toBlob) {
+                    setStatus('当前浏览器不支持导出画布图片，请更新浏览器后重试。');
+                    return;
+                }
+
                 const link = document.createElement('a');
-                link.download = 'painted-image.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                link.download = `${sanitizeFileBase(originalFileName)}-painted.png`;
+                downloadBtn.disabled = true;
+                canvas.toBlob((blob) => {
+                    downloadBtn.disabled = false;
+                    if (!blob) {
+                        setStatus('导出失败，请降低图片尺寸后重试。');
+                        return;
+                    }
+                    const url = URL.createObjectURL(blob);
+                    link.href = url;
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 0);
+                }, 'image/png');
             });
+
+            window.addEventListener('pagehide', releaseSourceObjectUrl);
+
+            function isPngFile(file) {
+                return file.type === 'image/png' || /\.png$/i.test(file.name);
+            }
+
+            function canUseImageSize(width, height) {
+                return width > 0 && height > 0 && width <= MAX_CANVAS_SIDE && height <= MAX_CANVAS_SIDE && width * height <= MAX_IMAGE_PIXELS;
+            }
+
+            function setStatus(message) {
+                statusMessage.textContent = message;
+            }
+
+            function releaseSourceObjectUrl() {
+                if (sourceObjectUrl) {
+                    URL.revokeObjectURL(sourceObjectUrl);
+                    sourceObjectUrl = '';
+                }
+            }
+
+            function sanitizeFileBase(name) {
+                return String(name || 'painted-image').replace(/[\\/:*?"<>|]+/g, '-');
+            }
         });
     </script>
 </body>

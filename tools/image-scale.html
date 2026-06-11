@@ -2,8 +2,6 @@
 <html lang="zh-CN">
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片批量等比例缩放工具</title>
@@ -15,18 +13,18 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
             background: #f5f5f5;
             padding: 20px;
-            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background: white;
+            background: #fff;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 30px;
         }
 
@@ -39,32 +37,62 @@
         .upload-area {
             border: 2px dashed #ddd;
             border-radius: 8px;
-            padding: 40px;
+            padding: 36px;
             text-align: center;
             margin-bottom: 20px;
-            transition: all 0.3s;
-            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
         }
 
-        .upload-area:hover {
-            border-color: #4CAF50;
-            background: #f9f9f9;
-        }
-
-        .upload-area.dragover {
-            border-color: #4CAF50;
+        .upload-area.dragover,
+        .upload-area:focus-within {
+            border-color: #4caf50;
             background: #e8f5e9;
+        }
+
+        .select-btn {
+            margin-top: 16px;
         }
 
         input[type="file"] {
             display: none;
         }
 
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .hint {
+            font-size: 14px;
+            color: #666;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
         .input-group {
             margin: 20px 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .field-group {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        [hidden] {
+            display: none !important;
         }
 
         label {
@@ -72,70 +100,98 @@
             color: #555;
         }
 
-        input[type="number"] {
+        .checkbox-label {
+            font-weight: normal;
+        }
+
+        input[type="number"],
+        select {
             padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            width: 100px;
             font-size: 16px;
+            background: #fff;
+        }
+
+        input[type="number"] {
+            width: 110px;
         }
 
         button {
-            background: #4CAF50;
-            color: white;
+            background: #4caf50;
+            color: #fff;
             border: none;
             padding: 12px 30px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            transition: background 0.3s;
+            transition: background 0.2s;
         }
 
         button:hover {
             background: #45a049;
         }
 
+        button:focus-visible {
+            outline: 3px solid rgba(33, 150, 243, 0.35);
+            outline-offset: 2px;
+        }
+
         button:disabled {
-            background: #cccccc;
+            background: #ccc;
             cursor: not-allowed;
         }
 
         .preview-area {
             margin-top: 30px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
         }
 
         .image-item {
             border: 1px solid #eee;
             border-radius: 8px;
-            padding: 10px;
+            padding: 12px;
             text-align: center;
+            background: #fff;
+        }
+
+        .image-item.invalid {
+            border-color: #f5b7b1;
+            background: #fff8f7;
         }
 
         .image-item img {
-            max-width: 100%;
-            height: auto;
+            width: 100%;
+            max-height: 180px;
+            object-fit: contain;
             border-radius: 4px;
             margin-bottom: 10px;
+            background: #f7f7f7;
         }
 
         .image-item .info {
             font-size: 14px;
             color: #666;
             margin-bottom: 10px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .item-status {
+            color: #555;
         }
 
         .download-btn {
             width: 100%;
             padding: 8px;
             font-size: 14px;
-            background: #2196F3;
+            background: #2196f3;
         }
 
         .download-btn:hover {
-            background: #1976D2;
+            background: #1976d2;
         }
 
         .loading {
@@ -151,96 +207,167 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status,
+        .error {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .status {
+            color: #555;
         }
 
         .error {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 10px;
+            color: #c0392b;
+        }
+
+        .status:empty {
+            display: none;
         }
     </style>
+
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
+  <script src="scripts/common.js" defer></script>
 </head>
-<body>
+<body class="tool-page" data-tool-page="image-scale">
 <!-- COMMON_HEADER -->
-<!-- 固定页头 -->
-<header class="page-header">
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<header class="page-header" aria-label="站点页头">
     <div class="header-container">
         <div class="header-inner">
-            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link">我的工具站</a>
+                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
+                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
+                    <span>我的工具站</span>
+                </a>
             </div>
-
-            <!-- 导航菜单 -->
-            <nav class="nav-desktop">
+            <nav class="nav-desktop" aria-label="主要导航">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">首页</a>
+                    <a href="../index.html" class="nav-link">工具首页</a>
                 </div>
             </nav>
-
-            <!-- 移动端菜单按钮 -->
-            <div class="mobile-menu-btn">
-                <i data-lucide="menu"></i>
-            </div>
         </div>
     </div>
 </header>
 <!-- END_COMMON_HEADER -->
     <div class="container">
         <h1>图片批量等比例缩放工具</h1>
-        
-        <div class="upload-area" id="uploadArea">
-            <p>点击选择图片或拖拽图片到此处</p>
-            <p style="font-size: 14px; color: #666; margin-top: 10px;">支持 JPG、PNG、GIF、BMP、WebP 格式</p>
-            <input type="file" id="fileInput" multiple accept="image/*">
+
+        <div class="upload-area" id="uploadArea" aria-describedby="uploadHint">
+            <p>将图片拖拽到此处，或点击按钮选择本地图片</p>
+            <button type="button" id="uploadButton" class="select-btn">选择图片</button>
+            <p id="uploadHint" class="hint">
+                支持 JPG、PNG、GIF、BMP、WebP；最多 20 张，单张不超过 50 MB，输出不超过 2400 万像素。
+                GIF/BMP 会导出为浏览器可靠支持的 PNG 静态图。
+            </p>
+            <label class="visually-hidden" for="fileInput">选择图片文件</label>
+            <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/gif,image/bmp,image/webp,.jpg,.jpeg,.png,.gif,.bmp,.webp">
         </div>
 
         <div class="input-group">
-            <label for="modeSelect">缩放模式：</label>
-            <select id="modeSelect">
-                <option value="size">指定大小</option>
-                <option value="scale">等比例缩放</option>
-            </select>
-            <span id="scaleGroup" style="display:none;">
+            <div class="field-group">
+                <label for="modeSelect">缩放模式：</label>
+                <select id="modeSelect">
+                    <option value="scale" selected>等比例缩放</option>
+                    <option value="size">指定尺寸</option>
+                </select>
+            </div>
+
+            <div id="scaleGroup" class="field-group">
                 <label for="scaleInput">缩放比例：</label>
-                <input type="number" id="scaleInput" value="0.5" min="0.1" max="10" step="0.1">
+                <input type="number" id="scaleInput" value="0.5" min="0.1" max="10" step="0.1" inputmode="decimal" aria-describedby="scaleHelp">
                 <span>倍</span>
-            </span>
-            <span id="sizeGroup" style="display:inline-flex; align-items: center; gap: 5px;">
+                <span id="scaleHelp" class="hint">范围 0.1 到 10</span>
+            </div>
+
+            <div id="sizeGroup" class="field-group" hidden>
                 <label for="widthInput">宽度：</label>
-                <input type="number" id="widthInput" min="1" style="width:70px;">
+                <input type="number" id="widthInput" min="1" max="16384" step="1" inputmode="numeric">
                 <label for="heightInput">高度：</label>
-                <input type="number" id="heightInput" min="1" style="width:70px;">
-                <label><input type="checkbox" id="lockRatio"> 锁定比例</label>
-            </span>
-            <button id="processBtn" onclick="processImages()">开始处理</button>
+                <input type="number" id="heightInput" min="1" max="16384" step="1" inputmode="numeric">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="lockRatio" checked>
+                    锁定比例
+                </label>
+            </div>
+
+            <button type="button" id="processBtn">开始处理</button>
         </div>
 
-        <div id="error" class="error" style="display: none;"></div>
-
-        <div class="preview-area" id="previewArea"></div>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <div id="error" class="error" role="alert" aria-live="assertive" hidden></div>
+        <div class="preview-area" id="previewArea" aria-live="polite"></div>
     </div>
 
     <script>
-        let selectedFiles = [];
-        let processedImages = [];
-        let originalSizes = [];
+        const MAX_FILES = 20;
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+        const MAX_PIXELS = 24 * 1000 * 1000;
+        const MAX_CANVAS_DIMENSION = 16384;
+        const MIN_SCALE = 0.1;
+        const MAX_SCALE = 10;
+        const SUPPORTED_INPUT_TYPES = new Set([
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/bmp',
+            'image/webp'
+        ]);
+        const OUTPUT_EXTENSIONS = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/webp': 'webp'
+        };
+        const TYPE_BY_EXTENSION = {
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            gif: 'image/gif',
+            bmp: 'image/bmp',
+            webp: 'image/webp'
+        };
 
-        // 文件选择
+        let imageItems = [];
+        let selectionToken = 0;
+        let processToken = 0;
+        let lastSizeInput = 'width';
+        let isUpdatingSize = false;
+
         const fileInput = document.getElementById('fileInput');
         const uploadArea = document.getElementById('uploadArea');
-        
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
+        const uploadButton = document.getElementById('uploadButton');
+        const modeSelect = document.getElementById('modeSelect');
+        const scaleGroup = document.getElementById('scaleGroup');
+        const sizeGroup = document.getElementById('sizeGroup');
+        const scaleInput = document.getElementById('scaleInput');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const lockRatio = document.getElementById('lockRatio');
+        const processBtn = document.getElementById('processBtn');
+        const previewArea = document.getElementById('previewArea');
+        const statusDiv = document.getElementById('status');
+        const errorDiv = document.getElementById('error');
+
+        uploadButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (event) => {
+            handleFiles(event.target.files);
+            fileInput.value = '';
         });
 
-        // 拖拽上传
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
+        uploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
             uploadArea.classList.add('dragover');
         });
 
@@ -248,272 +375,725 @@
             uploadArea.classList.remove('dragover');
         });
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
+        uploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
             uploadArea.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
+            handleFiles(event.dataTransfer.files);
         });
+
+        modeSelect.addEventListener('change', () => {
+            updateModeControls();
+            clearError();
+        });
+
+        widthInput.addEventListener('input', () => {
+            lastSizeInput = 'width';
+            syncLockedSize('width');
+        });
+
+        heightInput.addEventListener('input', () => {
+            lastSizeInput = 'height';
+            syncLockedSize('height');
+        });
+
+        lockRatio.addEventListener('change', () => {
+            syncLockedSize(lastSizeInput);
+        });
+
+        processBtn.addEventListener('click', processImages);
+
+        window.addEventListener('beforeunload', revokePreviewUrls);
+
+        updateModeControls();
 
         function handleFiles(files) {
-            selectedFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-            originalSizes = [];
-            // 预读取图片尺寸
-            selectedFiles.forEach((file, idx) => {
-                const img = new Image();
-                img.onload = function() {
-                    originalSizes[idx] = { width: img.width, height: img.height };
-                    // 自动填充第一个图片的宽高
-                    if(idx === 0) {
-                        document.getElementById('widthInput').value = img.width;
-                        document.getElementById('heightInput').value = img.height;
+            const token = ++selectionToken;
+            processToken++;
+            setProcessing(false);
+            clearError();
+            setStatus('');
+            revokePreviewUrls();
+            imageItems = [];
+            previewArea.textContent = '';
+            widthInput.value = '';
+            heightInput.value = '';
+
+            const incomingFiles = Array.from(files || []);
+            if (incomingFiles.length === 0) {
+                showError('请先选择图片文件。');
+                return;
+            }
+
+            const skipped = {
+                count: 0,
+                size: 0,
+                type: 0
+            };
+
+            incomingFiles.forEach((file) => {
+                const type = detectImageType(file);
+                if (!SUPPORTED_INPUT_TYPES.has(type)) {
+                    skipped.type++;
+                    return;
+                }
+
+                if (file.size > MAX_FILE_SIZE) {
+                    skipped.size++;
+                    return;
+                }
+
+                if (imageItems.length >= MAX_FILES) {
+                    skipped.count++;
+                    return;
+                }
+
+                imageItems.push({
+                    file,
+                    type,
+                    previewUrl: URL.createObjectURL(file),
+                    width: 0,
+                    height: 0,
+                    invalid: false,
+                    error: '',
+                    outputBlob: null,
+                    outputFilename: '',
+                    elements: null
+                });
+            });
+
+            renderPreview();
+            showSkippedSummary(skipped);
+
+            if (imageItems.length === 0) {
+                if (!errorDiv.textContent) {
+                    showError('没有可处理的图片。');
+                }
+                return;
+            }
+
+            setStatus(`已选择 ${imageItems.length} 张图片，正在读取尺寸。`);
+            imageItems.forEach((item, index) => {
+                readAndStoreDimensions(item, index, token);
+            });
+        }
+
+        function renderPreview() {
+            previewArea.textContent = '';
+            imageItems.forEach((item) => {
+                previewArea.appendChild(createImageCard(item));
+            });
+        }
+
+        function createImageCard(item) {
+            const card = document.createElement('div');
+            card.className = 'image-item';
+
+            const img = document.createElement('img');
+            img.src = item.previewUrl;
+            img.alt = `${item.file.name} 预览`;
+            img.loading = 'lazy';
+
+            const info = document.createElement('div');
+            info.className = 'info';
+
+            const name = document.createElement('div');
+            name.textContent = item.file.name;
+
+            const fileSize = document.createElement('div');
+            fileSize.textContent = `原始大小：${formatBytes(item.file.size)}`;
+
+            const dimensions = document.createElement('div');
+            dimensions.textContent = '原始尺寸：读取中';
+
+            const itemStatus = document.createElement('div');
+            itemStatus.className = 'item-status';
+            itemStatus.textContent = getReadyStatus(item);
+
+            const downloadButton = document.createElement('button');
+            downloadButton.type = 'button';
+            downloadButton.className = 'download-btn';
+            downloadButton.textContent = '下载';
+            downloadButton.disabled = true;
+            downloadButton.addEventListener('click', () => downloadImage(item));
+
+            info.append(name, fileSize, dimensions, itemStatus);
+            card.append(img, info, downloadButton);
+
+            item.elements = {
+                card,
+                image: img,
+                dimensions,
+                status: itemStatus,
+                downloadButton
+            };
+
+            return card;
+        }
+
+        async function readAndStoreDimensions(item, index, token) {
+            try {
+                const dimensions = await readImageDimensions(item.file);
+                if (token !== selectionToken || !imageItems.includes(item)) {
+                    return;
+                }
+
+                item.width = dimensions.width;
+                item.height = dimensions.height;
+
+                if (!isWithinCanvasLimit(item.width, item.height)) {
+                    markItemInvalid(item, `图片尺寸 ${item.width}x${item.height} 超过处理上限`);
+                    revokeItemPreview(item);
+                } else {
+                    setItemStatus(item, getReadyStatus(item));
+                    if (index === 0) {
+                        fillSizeInputs(item.width, item.height);
                     }
-                };
-                img.src = URL.createObjectURL(file);
-            });
-            displayPreview();
+                }
+            } catch (error) {
+                if (token !== selectionToken || !imageItems.includes(item)) {
+                    return;
+                }
+
+                markItemInvalid(item, '无法读取图片尺寸，浏览器可能不支持该文件');
+                revokeItemPreview(item);
+            } finally {
+                if (token === selectionToken) {
+                    updateItemCard(item);
+                    updateSelectionStatus();
+                }
+            }
         }
-
-        function displayPreview() {
-            const previewArea = document.getElementById('previewArea');
-            previewArea.innerHTML = '';
-
-            selectedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const div = document.createElement('div');
-                    div.className = 'image-item';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="${file.name}">
-                        <div class="info">
-                            <div>${file.name}</div>
-                            <div>原始大小：${(file.size / 1024).toFixed(2)} KB</div>
-                        </div>
-                        <button class="download-btn" onclick="downloadImage(${index})" disabled>
-                            下载
-                        </button>
-                    `;
-                    previewArea.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-
-            document.getElementById('error').style.display = 'none';
-            processedImages = [];
-        }
-
-        // 模式切换逻辑
-        document.getElementById('modeSelect').addEventListener('change', function() {
-            if(this.value === 'scale') {
-                document.getElementById('scaleGroup').style.display = '';
-                document.getElementById('sizeGroup').style.display = 'none';
-            } else {
-                document.getElementById('scaleGroup').style.display = 'none';
-                document.getElementById('sizeGroup').style.display = 'inline-flex';
-            }
-        });
-        // 锁定比例联动逻辑
-        const widthInput = document.getElementById('widthInput');
-        const heightInput = document.getElementById('heightInput');
-        const lockRatio = document.getElementById('lockRatio');
-        let isUpdating = false;
-        widthInput && widthInput.addEventListener('input', function() {
-            if(lockRatio.checked && !isUpdating && originalSizes[0]) {
-                isUpdating = true;
-                heightInput.value = Math.round(this.value / originalSizes[0].width * originalSizes[0].height);
-                isUpdating = false;
-            }
-        });
-        heightInput && heightInput.addEventListener('input', function() {
-            if(lockRatio.checked && !isUpdating && originalSizes[0]) {
-                isUpdating = true;
-                widthInput.value = Math.round(this.value / originalSizes[0].height * originalSizes[0].width);
-                isUpdating = false;
-            }
-        });
-        lockRatio && lockRatio.addEventListener('change', function() {
-            if(this.checked && originalSizes[0]) {
-                // 联动一次
-                heightInput.value = Math.round(widthInput.value / originalSizes[0].width * originalSizes[0].height);
-            }
-        });
 
         async function processImages() {
-            const mode = document.getElementById('modeSelect').value;
-            let scale = parseFloat(document.getElementById('scaleInput').value);
-            let width = parseInt(document.getElementById('widthInput') && document.getElementById('widthInput').value);
-            let height = parseInt(document.getElementById('heightInput') && document.getElementById('heightInput').value);
-            if(mode === 'scale') {
-                if (isNaN(scale) || scale <= 0) {
-                    showError('请输入有效的缩放比例');
-                    return;
+            if (imageItems.length === 0) {
+                showError('请先选择图片。');
+                return;
+            }
+
+            if (imageItems.some((item) => !item.invalid && (!item.width || !item.height))) {
+                showError('图片尺寸仍在读取，请稍后再处理。');
+                return;
+            }
+
+            const validItems = imageItems.filter((item) => !item.invalid);
+            if (validItems.length === 0) {
+                showError('没有可处理的图片。');
+                return;
+            }
+
+            const config = getProcessingConfig();
+            if (!config) {
+                return;
+            }
+
+            const token = ++processToken;
+            clearError();
+            setProcessing(true);
+
+            imageItems.forEach((item) => {
+                item.outputBlob = null;
+                item.outputFilename = '';
+                if (item.elements) {
+                    item.elements.downloadButton.disabled = true;
+                }
+                if (!item.invalid) {
+                    setItemStatus(item, '等待处理');
+                }
+            });
+
+            let success = 0;
+            let failed = 0;
+            const skipped = imageItems.length - validItems.length;
+
+            try {
+                for (const item of imageItems) {
+                    if (token !== processToken) {
+                        return;
+                    }
+
+                    if (item.invalid) {
+                        continue;
+                    }
+
+                    setItemStatus(item, '处理中...');
+
+                    try {
+                        const result = await resizeImageItem(item, config);
+                        if (token !== processToken) {
+                            return;
+                        }
+
+                        item.outputBlob = result.blob;
+                        item.outputFilename = result.filename;
+                        success++;
+                        setItemStatus(item, `完成：${result.width}x${result.height}，${formatBytes(result.blob.size)}`);
+                        item.elements.downloadButton.disabled = false;
+                    } catch (error) {
+                        failed++;
+                        item.outputBlob = null;
+                        item.outputFilename = '';
+                        setItemStatus(item, getErrorMessage(error));
+                        item.elements.downloadButton.disabled = true;
+                    }
+
+                    setStatus(`已处理 ${success + failed} / ${validItems.length} 张。`);
+                }
+
+                if (token === processToken) {
+                    const skippedText = skipped > 0 ? `，跳过 ${skipped} 张` : '';
+                    setStatus(`处理完成：成功 ${success} 张，失败 ${failed} 张${skippedText}。`);
+                    if (failed > 0) {
+                        showError(`${failed} 张图片处理失败，请查看列表状态。`);
+                    }
+                }
+            } finally {
+                if (token === processToken) {
+                    setProcessing(false);
+                }
+            }
+        }
+
+        async function resizeImageItem(item, config) {
+            const loaded = await loadImage(item.file);
+
+            try {
+                const source = {
+                    width: loaded.image.naturalWidth || loaded.image.width,
+                    height: loaded.image.naturalHeight || loaded.image.height
+                };
+                const target = computeTargetDimensions(source, config);
+                validateTargetDimensions(target.width, target.height);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = target.width;
+                canvas.height = target.height;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    throw new Error('当前浏览器无法创建 Canvas。');
+                }
+
+                ctx.imageSmoothingEnabled = true;
+                if ('imageSmoothingQuality' in ctx) {
+                    ctx.imageSmoothingQuality = 'high';
+                }
+
+                const requestedType = getPreferredOutputType(item.type);
+                if (requestedType === 'image/jpeg') {
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, target.width, target.height);
+                }
+
+                ctx.drawImage(loaded.image, 0, 0, target.width, target.height);
+
+                const quality = requestedType === 'image/jpeg' || requestedType === 'image/webp' ? 0.92 : undefined;
+                const blob = await canvasToBlob(canvas, requestedType, quality);
+                const actualType = OUTPUT_EXTENSIONS[blob.type] ? blob.type : requestedType;
+                const extension = OUTPUT_EXTENSIONS[actualType] || 'png';
+
+                return {
+                    blob,
+                    width: target.width,
+                    height: target.height,
+                    filename: buildOutputFilename(item.file.name, target.width, target.height, extension)
+                };
+            } finally {
+                URL.revokeObjectURL(loaded.url);
+            }
+        }
+
+        function computeTargetDimensions(source, config) {
+            if (config.mode === 'scale') {
+                return {
+                    width: Math.max(1, Math.round(source.width * config.scale)),
+                    height: Math.max(1, Math.round(source.height * config.scale))
+                };
+            }
+
+            if (!config.lockRatio) {
+                return {
+                    width: config.width,
+                    height: config.height
+                };
+            }
+
+            if (config.sizeBasis === 'height') {
+                return {
+                    width: Math.max(1, Math.round(config.height * source.width / source.height)),
+                    height: config.height
+                };
+            }
+
+            return {
+                width: config.width,
+                height: Math.max(1, Math.round(config.width * source.height / source.width))
+            };
+        }
+
+        function getProcessingConfig() {
+            const mode = modeSelect.value;
+
+            if (mode === 'scale') {
+                const scale = Number(scaleInput.value);
+                if (!Number.isFinite(scale) || scale < MIN_SCALE || scale > MAX_SCALE) {
+                    showError(`请输入 ${MIN_SCALE} 到 ${MAX_SCALE} 之间的缩放比例。`);
+                    return null;
+                }
+
+                return {
+                    mode,
+                    scale
+                };
+            }
+
+            const width = parsePositiveInteger(widthInput);
+            const height = parsePositiveInteger(heightInput);
+
+            if (lockRatio.checked) {
+                if (!width && !height) {
+                    showError('锁定比例时请输入宽度或高度。');
+                    return null;
+                }
+
+                const sizeBasis = lastSizeInput === 'height' && height ? 'height' : 'width';
+                const basisValue = sizeBasis === 'height' ? height : width;
+
+                if (!basisValue || basisValue > MAX_CANVAS_DIMENSION) {
+                    showError(`宽度或高度必须是 1 到 ${MAX_CANVAS_DIMENSION} 之间的整数。`);
+                    return null;
+                }
+
+                return {
+                    mode,
+                    lockRatio: true,
+                    sizeBasis,
+                    width: width || 0,
+                    height: height || 0
+                };
+            }
+
+            if (!width || !height) {
+                showError('请输入有效的宽度和高度。');
+                return null;
+            }
+
+            try {
+                validateTargetDimensions(width, height);
+            } catch (error) {
+                showError(getErrorMessage(error));
+                return null;
+            }
+
+            return {
+                mode,
+                lockRatio: false,
+                width,
+                height
+            };
+        }
+
+        function validateTargetDimensions(width, height) {
+            if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
+                throw new Error('输出宽高必须是正整数。');
+            }
+
+            if (!isWithinCanvasLimit(width, height)) {
+                throw new Error(`输出尺寸不能超过 ${MAX_CANVAS_DIMENSION} 边长和 ${formatPixels(MAX_PIXELS)}。`);
+            }
+        }
+
+        function isWithinCanvasLimit(width, height) {
+            return width <= MAX_CANVAS_DIMENSION && height <= MAX_CANVAS_DIMENSION && width * height <= MAX_PIXELS;
+        }
+
+        function parsePositiveInteger(input) {
+            if (!input.value.trim()) {
+                return null;
+            }
+
+            const value = Number(input.value);
+            if (!Number.isInteger(value) || value < 1) {
+                return null;
+            }
+
+            return value;
+        }
+
+        function readImageDimensions(file) {
+            return loadImage(file).then((loaded) => {
+                try {
+                    return {
+                        width: loaded.image.naturalWidth || loaded.image.width,
+                        height: loaded.image.naturalHeight || loaded.image.height
+                    };
+                } finally {
+                    URL.revokeObjectURL(loaded.url);
+                }
+            });
+        }
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const image = new Image();
+
+                image.onload = () => {
+                    resolve({
+                        image,
+                        url
+                    });
+                };
+
+                image.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('无法加载图片。'));
+                };
+
+                image.src = url;
+            });
+        }
+
+        function canvasToBlob(canvas, type, quality) {
+            return new Promise((resolve, reject) => {
+                try {
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            reject(new Error('浏览器无法导出该图片，可能超过 Canvas 限制。'));
+                            return;
+                        }
+
+                        resolve(blob);
+                    }, type, quality);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        function downloadImage(item) {
+            if (!item.outputBlob || !item.outputFilename) {
+                return;
+            }
+
+            const url = URL.createObjectURL(item.outputBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = item.outputFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
+
+        function detectImageType(file) {
+            const explicitType = (file.type || '').toLowerCase();
+            if (SUPPORTED_INPUT_TYPES.has(explicitType)) {
+                return explicitType;
+            }
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            return TYPE_BY_EXTENSION[extension] || explicitType;
+        }
+
+        function getPreferredOutputType(inputType) {
+            if (inputType === 'image/jpeg' || inputType === 'image/png' || inputType === 'image/webp') {
+                return inputType;
+            }
+
+            return 'image/png';
+        }
+
+        function buildOutputFilename(filename, width, height, extension) {
+            const base = filename.replace(/\.[^.]*$/, '') || 'image';
+            const safeBase = base.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 120) || 'image';
+            return `${safeBase}_scaled_${width}x${height}.${extension}`;
+        }
+
+        function fillSizeInputs(width, height) {
+            widthInput.value = String(width);
+            heightInput.value = String(height);
+        }
+
+        function syncLockedSize(changedInput) {
+            if (!lockRatio.checked || isUpdatingSize) {
+                return;
+            }
+
+            const firstValid = imageItems.find((item) => !item.invalid && item.width && item.height);
+            if (!firstValid) {
+                return;
+            }
+
+            isUpdatingSize = true;
+
+            if (changedInput === 'height') {
+                const height = parsePositiveInteger(heightInput);
+                if (height) {
+                    widthInput.value = String(Math.max(1, Math.round(height * firstValid.width / firstValid.height)));
                 }
             } else {
-                if(isNaN(width) || width <= 0 || isNaN(height) || height <= 0) {
-                    showError('请输入有效的宽度和高度');
-                    return;
+                const width = parsePositiveInteger(widthInput);
+                if (width) {
+                    heightInput.value = String(Math.max(1, Math.round(width * firstValid.height / firstValid.width)));
                 }
             }
-            const processBtn = document.getElementById('processBtn');
-            processBtn.disabled = true;
-            processBtn.innerHTML = '处理中<span class="loading"></span>';
-            processedImages = [];
-            for (let i = 0; i < selectedFiles.length; i++) {
-                try {
-                    let processedBlob;
-                    if(mode === 'scale') {
-                        processedBlob = await resizeImage(selectedFiles[i], scale);
-                    } else {
-                        // 指定大小
-                        let ow = originalSizes[i]?.width, oh = originalSizes[i]?.height;
-                        let targetW = width, targetH = height;
-                        if(document.getElementById('lockRatio').checked && ow && oh) {
-                            // 只根据宽度算高
-                            targetH = Math.round(targetW / ow * oh);
-                        }
-                        processedBlob = await resizeImageToSize(selectedFiles[i], targetW, targetH);
-                    }
-                    processedImages.push({
-                        blob: processedBlob,
-                        filename: addSuffix(selectedFiles[i].name, mode === 'scale' ? `_scaled_${scale}x` : `_resized_${width}x${height}`)
-                    });
-                    // 启用对应的下载按钮
-                    const downloadBtn = document.querySelectorAll('.download-btn')[i];
-                    downloadBtn.disabled = false;
-                    downloadBtn.textContent = '下载';
-                } catch (error) {
-                    console.error('处理图片失败:', error);
-                }
+
+            isUpdatingSize = false;
+        }
+
+        function updateModeControls() {
+            const scaleMode = modeSelect.value === 'scale';
+            scaleGroup.hidden = !scaleMode;
+            sizeGroup.hidden = scaleMode;
+        }
+
+        function markItemInvalid(item, message) {
+            item.invalid = true;
+            item.error = message;
+            item.outputBlob = null;
+            item.outputFilename = '';
+            setItemStatus(item, `不可处理：${message}`);
+        }
+
+        function updateItemCard(item) {
+            if (!item.elements) {
+                return;
             }
-            processBtn.disabled = false;
-            processBtn.innerHTML = '开始处理';
+
+            item.elements.card.classList.toggle('invalid', item.invalid);
+            item.elements.dimensions.textContent = item.width && item.height
+                ? `原始尺寸：${item.width}x${item.height}`
+                : '原始尺寸：读取失败';
+            item.elements.downloadButton.disabled = !item.outputBlob || item.invalid;
         }
 
-        function resizeImage(file, scale) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    const newWidth = img.width * scale;
-                    const newHeight = img.height * scale;
-                    
-                    canvas.width = newWidth;
-                    canvas.height = newHeight;
-                    
-                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                    
-                    canvas.toBlob((blob) => {
-                        if (blob) {
-                            resolve(blob);
-                        } else {
-                            reject(new Error('无法创建Blob'));
-                        }
-                    }, file.type);
-                };
-                
-                img.onerror = () => reject(new Error('无法加载图片'));
-                img.src = URL.createObjectURL(file);
-            });
+        function setItemStatus(item, message) {
+            if (item.elements) {
+                item.elements.status.textContent = message;
+            }
         }
 
-        // 新增指定大小缩放
-        function resizeImageToSize(file, width, height) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    canvas.toBlob((blob) => {
-                        if (blob) {
-                            resolve(blob);
-                        } else {
-                            reject(new Error('无法创建Blob'));
-                        }
-                    }, file.type);
-                };
-                img.onerror = () => reject(new Error('无法加载图片'));
-                img.src = URL.createObjectURL(file);
-            });
+        function getReadyStatus(item) {
+            if (item.type === 'image/gif') {
+                return '待处理（GIF 将导出为 PNG 静态图）';
+            }
+
+            if (item.type === 'image/bmp') {
+                return '待处理（BMP 将导出为 PNG）';
+            }
+
+            return '待处理';
         }
 
-        function downloadImage(index) {
-            if (!processedImages[index]) return;
-            
-            const { blob, filename } = processedImages[index];
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        function updateSelectionStatus() {
+            const pending = imageItems.filter((item) => !item.invalid && (!item.width || !item.height)).length;
+            const invalid = imageItems.filter((item) => item.invalid).length;
+            const ready = imageItems.length - pending - invalid;
+
+            if (pending > 0) {
+                setStatus(`已选择 ${imageItems.length} 张图片，正在读取尺寸。`);
+                return;
+            }
+
+            const invalidText = invalid > 0 ? `，${invalid} 张因限制无法处理` : '';
+            setStatus(`可处理 ${ready} 张图片${invalidText}。`);
         }
 
-        function addSuffix(filename, suffix) {
-            const lastDotIndex = filename.lastIndexOf('.');
-            if (lastDotIndex === -1) return filename + suffix;
-            return filename.substring(0, lastDotIndex) + suffix + filename.substring(lastDotIndex);
+        function showSkippedSummary(skipped) {
+            const messages = [];
+            if (skipped.type > 0) {
+                messages.push(`${skipped.type} 个文件格式不支持`);
+            }
+
+            if (skipped.size > 0) {
+                messages.push(`${skipped.size} 个文件超过 ${formatBytes(MAX_FILE_SIZE)}`);
+            }
+
+            if (skipped.count > 0) {
+                messages.push(`${skipped.count} 个文件超过 ${MAX_FILES} 张上限`);
+            }
+
+            if (messages.length > 0) {
+                showError(`已忽略：${messages.join('，')}。`);
+            }
+        }
+
+        function revokePreviewUrls() {
+            imageItems.forEach(revokeItemPreview);
+        }
+
+        function revokeItemPreview(item) {
+            if (!item.previewUrl) {
+                return;
+            }
+
+            URL.revokeObjectURL(item.previewUrl);
+            item.previewUrl = '';
+
+            if (item.elements && item.elements.image) {
+                item.elements.image.removeAttribute('src');
+            }
+        }
+
+        function setProcessing(isProcessing) {
+            processBtn.disabled = isProcessing;
+            processBtn.textContent = isProcessing ? '处理中' : '开始处理';
+
+            if (isProcessing) {
+                const spinner = document.createElement('span');
+                spinner.className = 'loading';
+                spinner.setAttribute('aria-hidden', 'true');
+                processBtn.appendChild(spinner);
+            }
+        }
+
+        function setStatus(message) {
+            statusDiv.textContent = message;
         }
 
         function showError(message) {
-            const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 3000);
+            errorDiv.hidden = false;
+        }
+
+        function clearError() {
+            errorDiv.textContent = '';
+            errorDiv.hidden = true;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024 * 1024) {
+                return `${(bytes / 1024).toFixed(1)} KB`;
+            }
+
+            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        function formatPixels(pixels) {
+            return `${(pixels / 10000).toFixed(0)} 万像素`;
+        }
+
+        function getErrorMessage(error) {
+            return error && error.message ? error.message : '处理失败。';
         }
     </script>
 <!-- COMMON_FOOTER -->
-<!-- 固定页脚 -->
 <footer class="page-footer">
-  <div class="footer-container">
-      <div class="footer-brand">
-          <a href="../index.html" class="footer-logo">我的工具站</a>
-          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
-      </div>
-      
-      <div class="footer-links">
-          <div class="footer-column">
-              <h3>产品</h3>
-              <ul>
-                  <li><a href="#">所有工具</a></li>
-                  <li><a href="#">热门工具</a></li>
-                  <li><a href="#">新工具</a></li>
-                  <li><a href="#">API</a></li>
-              </ul>
-          </div>
-          
-          <div class="footer-column">
-              <h3>资源</h3>
-              <ul>
-                  <li><a href="#">帮助中心</a></li>
-                  <li><a href="#">使用教程</a></li>
-                  <li><a href="#">博客</a></li>
-                  <li><a href="#">更新日志</a></li>
-              </ul>
-          </div>
-          
-          <div class="footer-column">
-              <h3>公司</h3>
-              <ul>
-                  <li><a href="#">关于我们</a></li>
-                  <li><a href="#">联系我们</a></li>
-                  <li><a href="#">隐私政策</a></li>
-                  <li><a href="#">服务条款</a></li>
-              </ul>
-          </div>
-      </div>
-  </div>
-  
-  <div class="footer-bottom">
-      <p>© 2023 我的工具站 版权所有</p>
-  </div>
+    <div class="footer-container">
+        <div class="footer-brand">
+            <a href="../index.html" class="footer-logo">我的工具站</a>
+            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
+        </div>
+        <nav class="footer-links" aria-label="页脚导航">
+            <a href="../index.html">全部工具</a>
+        </nav>
+    </div>
+    <div class="footer-bottom">
+        <p>© <span data-current-year>2026</span> 我的工具站</p>
+    </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>

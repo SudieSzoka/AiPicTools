@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文字图片生成器 · 带主题色分析</title>
+    <title>带主题色分析的文字图片生成器</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f5f7fb; padding: 20px; }
@@ -15,105 +15,112 @@
         .left { width: 42%; border-right: 1px solid #eef2f7; }
         .right { width: 58%; }
         .section-title { font-size: 16px; color: #111827; margin-bottom: 12px; font-weight: 600; }
-        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px;height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; min-height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
         .upload-area:hover { border-color:#60a5fa; background:#f1f5f9; }
+        .upload-area:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
         .upload-area.dragover { border-color:#22c55e; background:#ecfdf5; }
-        .upload-area p { color:#475569; font-size:14px; }
-        input[type="file"] { display:none; }
+        .upload-area span { color:#475569; font-size:14px; }
+        .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
         .preview-wrap { margin-top: 14px; display:flex; gap:12px; align-items:flex-start; }
+        .preview-wrap[hidden], .status[hidden] { display:none !important; }
         .thumb { flex:0 0 auto; width: 140px; height: 140px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
         .thumb img { max-width: 100%; max-height: 100%; display:block; }
         .meta { flex:1; font-size:14px; color:#374151; display:flex; flex-direction:column; gap:8px; }
         .badge { display:inline-block; background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px; }
-        .colors { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
-        .color-chip { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer; user-select:none; }
-        .swatch { width:20px; height:20px; border-radius:4px; border:1px solid #e5e7eb; }
+        .colors { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; list-style:none; }
+        .color-chip { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer; user-select:none; background:#fff; color:#374151; font:inherit; }
+        .color-chip.compact { padding:4px 6px; }
+        .color-chip:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+        .swatch { width:20px; height:20px; border-radius:4px; border:1px solid #e5e7eb; flex:0 0 auto; }
         .chip-text { font-size:12px; color:#374151; }
         .form-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap: wrap; }
         .form-row label { font-size:13px; color:#374151; min-width:72px; }
         .form-row input[type="number"], .form-row input[type="text"], .form-row select { border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; font-size:14px; background:#fff; }
+        .form-row input[type="text"] { min-width: 220px; flex: 1 1 260px; }
         .form-row input[type="color"] { width: 44px; height: 34px; border:1px solid #e5e7eb; border-radius:6px; padding:0; }
         .inline-colors { display:flex; flex-wrap:wrap; gap:6px; margin-left:8px; }
-        .inline-colors .color-chip { padding:4px 6px; }
         .canvas-wrap { background: #1e3a8a; border:1px solid #e5e7eb; border-radius:10px; padding:16px; display:flex; align-items:center; justify-content:center; min-height:320px; }
         canvas { max-width:100%; height:auto; background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 50% / 20px 20px; }
-        .actions { margin-top: 14px; display:flex; gap:10px; }
+        .actions { margin-top: 14px; margin-bottom: 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
         .btn { background:#3b82f6; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
         .btn.secondary { background:#10b981; }
+        .btn:disabled { opacity:.55; cursor:not-allowed; }
         .hint { font-size:12px; color:#6b7280; }
-        .error { color:#dc2626; font-size:13px; margin-top:8px; }
+        .status { color:#dc2626; font-size:13px; }
+        .status.success { color:#047857; }
         @media (max-width: 900px) { .main{ flex-direction:column; } .left, .right{ width:100%; border-right:none; border-top:1px solid #eef2f7; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header"><h1>文字图片生成器 · 带主题色分析</h1></div>
-        <div class="main">
-            <div class="left">
-                <div class="section-title">1) 选择或拖拽图片（用于分析主题色）</div>
-                <div id="uploadArea" class="upload-area">
-                    <p>点击选择图片或拖拽图片到此处</p>
-                    <input id="fileInput" type="file" accept="image/*">
-                </div>
-                <div class="preview-wrap" id="leftPreview" style="display:none;">
-                    <div class="thumb"><img id="thumbImg" alt="预览"></div>
+        <header class="header" aria-label="文字图片生成工具标题"><h1>带主题色分析的文字图片生成器</h1></header>
+        <main class="main">
+            <section class="left" aria-labelledby="uploadTitle">
+                <h2 id="uploadTitle" class="section-title">1) 选择或拖拽图片（用于分析主题色）</h2>
+                <label id="uploadArea" class="upload-area" for="fileInput" tabindex="0" aria-describedby="uploadHelp">
+                    <strong>点击选择图片或拖拽图片到此处</strong>
+                    <span id="uploadHelp">支持 PNG、JPG、WebP、GIF、BMP；最大 50 MB、2400 万像素。</span>
+                </label>
+                <input id="fileInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" aria-label="选择用于分析主题色的图片" tabindex="-1">
+                <div class="preview-wrap" id="leftPreview" hidden>
+                    <div id="thumbBox" class="thumb"></div>
                     <div class="meta">
                         <div><span class="badge">图片信息</span></div>
-                        <div id="imgSize">-</div>
-                        <div><span class="badge">主题色域(>1%)</span></div>
-                        <div id="colorList" class="colors"></div>
+                        <div id="imgSize" aria-live="polite">-</div>
+                        <div><span class="badge">主题色域（抽样）</span></div>
+                        <ul id="colorList" class="colors"></ul>
                     </div>
                 </div>
-            </div>
-            <div class="right">
-                <div class="section-title">2) 生成文字图片（透明背景）</div>
+            </section>
+            <section class="right" aria-labelledby="generateTitle">
+                <h2 id="generateTitle" class="section-title">2) 生成文字图片（透明背景）</h2>
                 <div class="form-row">
-                    <label>画布宽度</label>
-                    <input id="cw" type="number" value="800" min="1">
-                    <label>画布高度</label>
-                    <input id="ch" type="number" value="300" min="1">
-                    <span class="hint">上传后会自动更新</span>
+                    <label for="cw">画布宽度</label>
+                    <input id="cw" type="number" value="800" min="1" max="8192" inputmode="numeric">
+                    <label for="ch">画布高度</label>
+                    <input id="ch" type="number" value="300" min="1" max="8192" inputmode="numeric">
+                    <span class="hint">上传后会自动更新，输出不超过 3200 万像素</span>
                 </div>
                 <div class="form-row">
-                    <label>文字内容</label>
-                    <input id="textInput" type="text" placeholder="输入文字..." value="Hello AiPicTools">
+                    <label for="textInput">文字内容</label>
+                    <input id="textInput" type="text" placeholder="输入文字..." value="Hello AiPicTools" maxlength="500">
                 </div>
                 <div class="form-row">
-                    <label>字体</label>
+                    <label for="fontFamily">字体</label>
                     <select id="fontFamily">
                         <option value="'Microsoft YaHei', Arial, sans-serif">微软雅黑 / 系统</option>
                         <option value="Helvetica, Arial, sans-serif">Helvetica</option>
                         <option value="Georgia, serif">Georgia</option>
-                        <option value="Courier New, monospace">Courier New</option>
+                        <option value="'Courier New', monospace">Courier New</option>
                         <optgroup id="customFontGroup" label="自定义字体"></optgroup>
                     </select>
-                    <input id="fontFile" type="file" accept=".ttf,.otf,.woff,.woff2">
+                    <input id="fontFile" class="visually-hidden" type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" aria-label="上传自定义字体文件" tabindex="-1">
                     <button id="uploadFontBtn" class="btn" type="button">上传字体</button>
-                    <label>字号(px)</label>
-                    <input id="fontSize" type="number" value="80" min="1">
-                    <label>颜色</label>
+                    <label for="fontSize">字号(px)</label>
+                    <input id="fontSize" type="number" value="80" min="1" max="512" inputmode="numeric">
+                    <label for="fontColor">颜色</label>
                     <input id="fontColor" type="color" value="#ffffff">
-                    <div id="inlineFontColors" class="inline-colors"></div>
+                    <div id="inlineFontColors" class="inline-colors" role="group" aria-label="字体颜色快捷色卡"></div>
                 </div>
                 <div class="form-row">
-                    <label>描边宽度</label>
-                    <input id="strokeWidth" type="number" value="0" min="0">
-                    <label>描边颜色</label>
+                    <label for="strokeWidth">描边宽度</label>
+                    <input id="strokeWidth" type="number" value="0" min="0" max="300" inputmode="numeric">
+                    <label for="strokeColor">描边颜色</label>
                     <input id="strokeColor" type="color" value="#000000">
-                    <div id="inlineStrokeColors" class="inline-colors"></div>
+                    <div id="inlineStrokeColors" class="inline-colors" role="group" aria-label="描边颜色快捷色卡"></div>
                 </div>
                 <div class="form-row">
-                    <label>背景</label>
+                    <label for="bgMode">背景</label>
                     <select id="bgMode">
                         <option value="transparent">透明</option>
                         <option value="solid">纯色</option>
                     </select>
-                    <label>背景颜色</label>
+                    <label for="bgColor">背景颜色</label>
                     <input id="bgColor" type="color" value="#000000">
-                    <div id="inlineBgColors" class="inline-colors"></div>
+                    <div id="inlineBgColors" class="inline-colors" role="group" aria-label="背景颜色快捷色卡"></div>
                 </div>
                 <div class="form-row">
-                    <label>阴影方向</label>
+                    <label for="shadowDir">阴影方向</label>
                     <select id="shadowDir">
                         <option value="none">无</option>
                         <option value="right-bottom">右下</option>
@@ -122,261 +129,632 @@
                         <option value="left-top">左上</option>
                         <option value="bottom">正下</option>
                     </select>
-                    <label>阴影宽度</label>
-                    <input id="shadowWidth" type="number" value="0" min="0">
-                    <label>阴影颜色</label>
+                    <label for="shadowWidth">阴影宽度</label>
+                    <input id="shadowWidth" type="number" value="0" min="0" max="300" inputmode="numeric">
+                    <label for="shadowColor">阴影颜色</label>
                     <input id="shadowColor" type="color" value="#000000">
-                    <div id="inlineShadowColors" class="inline-colors"></div>
+                    <div id="inlineShadowColors" class="inline-colors" role="group" aria-label="阴影颜色快捷色卡"></div>
                 </div>
                 <div class="actions">
-                    <button id="dlBtn" class="btn secondary">下载为 PNG</button>
-                    <div id="err" class="error" style="display:none;"></div>
+                    <button id="dlBtn" class="btn secondary" type="button">下载为 PNG</button>
+                    <div id="err" class="status" role="alert" aria-live="assertive" hidden></div>
                 </div>
                 <div class="canvas-wrap">
-                    <canvas id="outCanvas" width="800" height="300"></canvas>
+                    <canvas id="outCanvas" width="800" height="300" role="img" aria-label="文字图片输出预览">当前浏览器不支持 Canvas。</canvas>
                 </div>
-
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
     <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const leftPreview = document.getElementById('leftPreview');
-        const thumbImg = document.getElementById('thumbImg');
-        const imgSize = document.getElementById('imgSize');
-        const colorList = document.getElementById('colorList');
-        const cw = document.getElementById('cw');
-        const ch = document.getElementById('ch');
-        const textInput = document.getElementById('textInput');
-        const fontFamily = document.getElementById('fontFamily');
-        const customFontGroup = document.getElementById('customFontGroup');
-        const fontFileInput = document.getElementById('fontFile');
-        const uploadFontBtn = document.getElementById('uploadFontBtn');
-        const fontSize = document.getElementById('fontSize');
-        const fontColor = document.getElementById('fontColor');
-        const strokeWidth = document.getElementById('strokeWidth');
-        const strokeColor = document.getElementById('strokeColor');
-        const bgMode = document.getElementById('bgMode');
-        const bgColor = document.getElementById('bgColor');
-        const shadowDir = document.getElementById('shadowDir');
-        const shadowWidth = document.getElementById('shadowWidth');
-        const shadowColor = document.getElementById('shadowColor');
-        const inlineFontColors = document.getElementById('inlineFontColors');
-        const inlineStrokeColors = document.getElementById('inlineStrokeColors');
-        const inlineBgColors = document.getElementById('inlineBgColors');
-        const inlineShadowColors = document.getElementById('inlineShadowColors');
-        const outCanvas = document.getElementById('outCanvas');
-        const ctx = outCanvas.getContext('2d');
-        const dlBtn = document.getElementById('dlBtn');
-        const err = document.getElementById('err');
-        let uploadedFileName = '';
-        let currentColorTarget = 'font'; // 'font' | 'bg'
+        (() => {
+            'use strict';
 
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-        uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.classList.remove('dragover'); if (e.dataTransfer.files?.length) handleFile(e.dataTransfer.files[0]); });
-        fileInput.addEventListener('change', (e) => { if (e.target.files?.length) handleFile(e.target.files[0]); });
+            const MAX_IMAGE_FILE_SIZE = 50 * 1024 * 1024;
+            const MAX_FONT_FILE_SIZE = 20 * 1024 * 1024;
+            const MAX_IMAGE_PIXELS = 24000000;
+            const MAX_CANVAS_SIDE = 8192;
+            const MAX_CANVAS_PIXELS = 32000000;
+            const MAX_TEXT_LENGTH = 500;
+            const MAX_FONT_SIZE = 512;
+            const MAX_STROKE_WIDTH = 300;
+            const MAX_SHADOW_WIDTH = 300;
+            const MAX_SAMPLE_SIDE = 120;
+            const MAX_CUSTOM_FONTS = 10;
+            const ACCEPTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/bmp']);
+            const IMAGE_EXTENSION_RE = /\.(png|jpe?g|webp|gif|bmp)$/i;
+            const FONT_EXTENSION_RE = /\.(ttf|otf|woff2?)$/i;
 
-        function handleFile(file){
-            if(!file.type.startsWith('image/')){ showErr('请选择图片文件'); return; }
-            uploadedFileName = file.name || '';
-            const reader = new FileReader();
-            reader.onload = () => {
-                const img = new Image();
-                img.onload = () => {
-                    thumbImg.src = reader.result;
-                    leftPreview.style.display = 'flex';
-                    imgSize.textContent = `尺寸：${img.width} × ${img.height}`;
-                    // 同步右侧画布宽高
-                    cw.value = img.width;
-                    ch.value = img.height;
-                    resizeCanvas();
-                    // 主题色统计
-                    analyzeColors(img).then(renderColors).catch(()=>{});
-                    // 刷新一次输出
-                    drawOutput();
-                };
-                img.src = reader.result;
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const leftPreview = document.getElementById('leftPreview');
+            const thumbBox = document.getElementById('thumbBox');
+            const imgSize = document.getElementById('imgSize');
+            const colorList = document.getElementById('colorList');
+            const cw = document.getElementById('cw');
+            const ch = document.getElementById('ch');
+            const textInput = document.getElementById('textInput');
+            const fontFamily = document.getElementById('fontFamily');
+            const customFontGroup = document.getElementById('customFontGroup');
+            const fontFileInput = document.getElementById('fontFile');
+            const uploadFontBtn = document.getElementById('uploadFontBtn');
+            const fontSize = document.getElementById('fontSize');
+            const fontColor = document.getElementById('fontColor');
+            const strokeWidth = document.getElementById('strokeWidth');
+            const strokeColor = document.getElementById('strokeColor');
+            const bgMode = document.getElementById('bgMode');
+            const bgColor = document.getElementById('bgColor');
+            const shadowDir = document.getElementById('shadowDir');
+            const shadowWidth = document.getElementById('shadowWidth');
+            const shadowColor = document.getElementById('shadowColor');
+            const inlineFontColors = document.getElementById('inlineFontColors');
+            const inlineStrokeColors = document.getElementById('inlineStrokeColors');
+            const inlineBgColors = document.getElementById('inlineBgColors');
+            const inlineShadowColors = document.getElementById('inlineShadowColors');
+            const outCanvas = document.getElementById('outCanvas');
+            const ctx = outCanvas.getContext('2d');
+            const dlBtn = document.getElementById('dlBtn');
+            const statusBox = document.getElementById('err');
+            const colorTargetInputs = {
+                font: fontColor,
+                stroke: strokeColor,
+                bg: bgColor,
+                shadow: shadowColor
             };
-            reader.readAsDataURL(file);
-        }
+            const colorTargetLabels = {
+                font: '字体颜色',
+                stroke: '描边颜色',
+                bg: '背景颜色',
+                shadow: '阴影颜色'
+            };
 
-        function showErr(m){ err.textContent = m; err.style.display = 'block'; setTimeout(()=>err.style.display='none', 2500); }
+            let uploadedFileName = '';
+            let currentColorTarget = 'font';
+            let currentImageUrl = '';
+            let imageLoadToken = 0;
+            let statusTimer = 0;
+            let customFontCount = 0;
+            let thumbImg = null;
 
-        function resizeCanvas(){
-            const w = Math.max(1, parseInt(cw.value||'0'));
-            const h = Math.max(1, parseInt(ch.value||'0'));
-            outCanvas.width = w;
-            outCanvas.height = h;
-        }
+            uploadArea.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    fileInput.click();
+                }
+            });
+            uploadArea.addEventListener('dragenter', (event) => {
+                event.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                if (event.dataTransfer) {
+                    event.dataTransfer.dropEffect = 'copy';
+                }
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+            uploadArea.addEventListener('drop', (event) => {
+                event.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            });
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files && event.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+                event.target.value = '';
+            });
 
-        function drawOutput(){
-            const w = outCanvas.width, h = outCanvas.height;
-            ctx.clearRect(0,0,w,h);
-            // 背景
-            if (bgMode.value === 'solid') {
-                ctx.save();
-                ctx.shadowColor = 'transparent';
-                ctx.fillStyle = bgColor.value;
-                ctx.fillRect(0, 0, w, h);
-                ctx.restore();
-            }
-            const text = textInput.value || '';
-            const size = Math.max(1, parseInt(fontSize.value||'1'));
-            const family = fontFamily.value;
-            ctx.font = `${size}px ${family}`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = fontColor.value;
-            // 阴影
-            const sw = Math.max(0, parseInt(shadowWidth.value||'0'));
-            let sx = 0, sy = 0;
-            switch(shadowDir.value){
-                case 'right-bottom': sx = sw; sy = sw; break;
-                case 'right-top': sx = sw; sy = -sw; break;
-                case 'left-bottom': sx = -sw; sy = sw; break;
-                case 'left-top': sx = -sw; sy = -sw; break;
-                case 'bottom': sx = 0; sy = sw; break;
-                default: sx = 0; sy = 0;
-            }
-            ctx.shadowColor = sw > 0 ? shadowColor.value : 'transparent';
-            ctx.shadowBlur = sw;
-            ctx.shadowOffsetX = sx;
-            ctx.shadowOffsetY = sy;
-            // 描边
-            const lw = Math.max(0, parseInt(strokeWidth.value||'0'));
-            if(lw > 0){
-                ctx.lineWidth = lw;
-                ctx.strokeStyle = strokeColor.value;
-                ctx.strokeText(text, w/2, h/2);
-            }
-            // 填充
-            ctx.fillText(text, w/2, h/2);
-        }
+            function handleFile(file) {
+                const token = ++imageLoadToken;
+                if (!isAcceptedImage(file)) {
+                    showStatus('仅支持 PNG、JPG、WebP、GIF、BMP 图片。');
+                    return;
+                }
+                if (file.size > MAX_IMAGE_FILE_SIZE) {
+                    showStatus(`图片不能超过 ${formatBytes(MAX_IMAGE_FILE_SIZE)}。`);
+                    return;
+                }
 
-        // 自定义字体：上传并动态注册
-        uploadFontBtn.addEventListener('click', ()=> fontFileInput.click());
-        fontFileInput.addEventListener('change', async (e)=>{
-            try{
-                const file = e.target.files && e.target.files[0];
-                if(!file) return;
-                const ab = await file.arrayBuffer();
-                const baseName = (file.name || 'CustomFont').replace(/\.[^.]*$/, '');
-                const familyName = baseName.replace(/[^\w\u4e00-\u9fa5-]+/g, ' ').trim() || 'CustomFont';
-                const ff = new FontFace(familyName, ab);
-                await ff.load();
-                document.fonts.add(ff);
-                const opt = document.createElement('option');
-                opt.value = `'${familyName}'`;
-                opt.textContent = `${familyName}（自定义）`;
-                customFontGroup.appendChild(opt);
-                fontFamily.value = opt.value;
-                drawOutput();
-            }catch(ex){
-                showErr('字体加载失败，请尝试更换文件（支持 .ttf/.otf/.woff/.woff2）');
-            }finally{
-                e.target.value = '';
-            }
-        });
-
-        // 简易主题色分析：缩小取样 -> 统计像素 -> 过滤>5%
-        async function analyzeColors(img){
-            const sampleW = 80;
-            const ratio = img.width / sampleW;
-            const sampleH = Math.max(1, Math.round(img.height / ratio));
-            const c = document.createElement('canvas');
-            const cctx = c.getContext('2d');
-            c.width = sampleW; c.height = sampleH;
-            cctx.drawImage(img, 0, 0, sampleW, sampleH);
-            const { data } = cctx.getImageData(0,0,sampleW,sampleH);
-            const map = new Map();
-            for(let i=0;i<data.length;i+=4){
-                const a = data[i+3];
-                if(a < 10) continue; // 忽略几乎透明
-                const r = data[i], g = data[i+1], b = data[i+2];
-                const key = `${r},${g},${b}`;
-                map.set(key, (map.get(key)||0)+1);
-            }
-            const total = Array.from(map.values()).reduce((s,v)=>s+v,0) || 1;
-            const entries = Array.from(map.entries()).map(([k,v])=>({ rgb:k, count:v, ratio:v/total }));
-            const filtered = entries.filter(e=> e.ratio >= 0.01).sort((a,b)=> b.ratio - a.ratio).slice(0,12);
-            return filtered;
-        }
-
-        function renderColors(list){
-            colorList.innerHTML = '';
-            list.forEach(item=>{
-                const [r,g,b] = item.rgb.split(',').map(Number);
-                const hex = rgbToHex(r,g,b);
-                const div = document.createElement('div');
-                div.className = 'color-chip';
-                div.innerHTML = `<span class="swatch" style="background:${hex}"></span><span class="chip-text">RGB(${r},${g},${b}) · ${hex} · ${(item.ratio*100).toFixed(1)}%</span>`;
-                div.title = '点击应用到当前颜色（字体/背景）';
-                div.addEventListener('click', ()=>{
-                    if(currentColorTarget === 'bg'){
-                        bgColor.value = hex;
-                    }else{
-                        fontColor.value = hex;
+                const objectUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.decoding = 'async';
+                img.onload = () => {
+                    if (token !== imageLoadToken) {
+                        URL.revokeObjectURL(objectUrl);
+                        return;
                     }
-                    drawOutput();
+
+                    const width = img.naturalWidth;
+                    const height = img.naturalHeight;
+                    const pixels = width * height;
+                    if (!width || !height) {
+                        URL.revokeObjectURL(objectUrl);
+                        showStatus('图片尺寸读取失败，请更换图片。');
+                        return;
+                    }
+                    if (width > MAX_CANVAS_SIDE || height > MAX_CANVAS_SIDE || pixels > MAX_IMAGE_PIXELS) {
+                        URL.revokeObjectURL(objectUrl);
+                        showStatus(`图片尺寸过大，最长边不超过 ${MAX_CANVAS_SIDE}px，总像素不超过 ${formatNumber(MAX_IMAGE_PIXELS)}。`);
+                        return;
+                    }
+
+                    revokeCurrentImageUrl();
+                    currentImageUrl = objectUrl;
+                    uploadedFileName = file.name || '';
+                    setPreviewImage(currentImageUrl);
+                    leftPreview.hidden = false;
+                    imgSize.textContent = `尺寸：${width} × ${height}，文件：${formatBytes(file.size)}`;
+                    cw.value = String(width);
+                    ch.value = String(height);
+
+                    renderColorMessage('正在分析主题色...');
+                    if (resizeCanvas({ silent: true })) {
+                        drawOutput();
+                    }
+
+                    try {
+                        const colors = analyzeColors(img);
+                        if (token === imageLoadToken) {
+                            renderColors(colors);
+                            clearStatus();
+                        }
+                    } catch (error) {
+                        if (token === imageLoadToken) {
+                            renderColorMessage('主题色分析失败。');
+                            showStatus('主题色分析失败，请尝试换一张图片。');
+                        }
+                    }
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    if (token === imageLoadToken) {
+                        showStatus('图片解码失败，请确认文件没有损坏。');
+                    }
+                };
+                img.src = objectUrl;
+            }
+
+            function isAcceptedImage(file) {
+                if (!file) {
+                    return false;
+                }
+                return ACCEPTED_IMAGE_TYPES.has(file.type) || IMAGE_EXTENSION_RE.test(file.name || '');
+            }
+
+            function setPreviewImage(url) {
+                if (!thumbImg) {
+                    thumbImg = document.createElement('img');
+                    thumbImg.alt = '已上传图片预览';
+                    thumbBox.replaceChildren(thumbImg);
+                }
+                thumbImg.src = url;
+            }
+
+            function revokeCurrentImageUrl() {
+                if (currentImageUrl) {
+                    URL.revokeObjectURL(currentImageUrl);
+                    currentImageUrl = '';
+                }
+            }
+
+            function showStatus(message, type = 'error', autoHide = false) {
+                window.clearTimeout(statusTimer);
+                statusBox.textContent = message;
+                statusBox.classList.toggle('success', type === 'success');
+                statusBox.hidden = !message;
+                if (message && autoHide) {
+                    statusTimer = window.setTimeout(clearStatus, 3000);
+                }
+            }
+
+            function clearStatus() {
+                window.clearTimeout(statusTimer);
+                statusBox.textContent = '';
+                statusBox.classList.remove('success');
+                statusBox.hidden = true;
+            }
+
+            function resizeCanvas(options = {}) {
+                const dimensions = getCanvasDimensions();
+                if (!dimensions.ok) {
+                    dlBtn.disabled = true;
+                    if (!options.silent) {
+                        showStatus(dimensions.message);
+                    }
+                    return false;
+                }
+                if (outCanvas.width !== dimensions.width) {
+                    outCanvas.width = dimensions.width;
+                }
+                if (outCanvas.height !== dimensions.height) {
+                    outCanvas.height = dimensions.height;
+                }
+                dlBtn.disabled = false;
+                return true;
+            }
+
+            function getCanvasDimensions() {
+                const width = Number(cw.value);
+                const height = Number(ch.value);
+                if (!Number.isInteger(width) || !Number.isInteger(height)) {
+                    return { ok: false, message: '画布宽高必须是整数。' };
+                }
+                if (width < 1 || height < 1) {
+                    return { ok: false, message: '画布宽高必须大于 0。' };
+                }
+                if (width > MAX_CANVAS_SIDE || height > MAX_CANVAS_SIDE) {
+                    return { ok: false, message: `画布宽高不能超过 ${MAX_CANVAS_SIDE}px。` };
+                }
+                if (width * height > MAX_CANVAS_PIXELS) {
+                    return { ok: false, message: `画布总像素不能超过 ${formatNumber(MAX_CANVAS_PIXELS)}。` };
+                }
+                return { ok: true, width, height };
+            }
+
+            function drawOutput() {
+                const width = outCanvas.width;
+                const height = outCanvas.height;
+                ctx.clearRect(0, 0, width, height);
+
+                if (bgMode.value === 'solid') {
+                    ctx.save();
+                    ctx.shadowColor = 'transparent';
+                    ctx.fillStyle = bgColor.value;
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.restore();
+                }
+
+                const text = textInput.value.slice(0, MAX_TEXT_LENGTH);
+                const size = readLimitedNumber(fontSize, 1, MAX_FONT_SIZE, 80);
+                const family = fontFamily.value || "'Microsoft YaHei', Arial, sans-serif";
+                ctx.font = `${size}px ${family}`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = fontColor.value;
+
+                const shadow = readLimitedNumber(shadowWidth, 0, MAX_SHADOW_WIDTH, 0);
+                const offset = getShadowOffset(shadowDir.value, shadow);
+                ctx.shadowColor = shadow > 0 ? shadowColor.value : 'transparent';
+                ctx.shadowBlur = shadow;
+                ctx.shadowOffsetX = offset.x;
+                ctx.shadowOffsetY = offset.y;
+
+                const lineWidth = readLimitedNumber(strokeWidth, 0, MAX_STROKE_WIDTH, 0);
+                if (lineWidth > 0) {
+                    ctx.lineWidth = lineWidth;
+                    ctx.strokeStyle = strokeColor.value;
+                    ctx.strokeText(text, width / 2, height / 2);
+                }
+                ctx.fillText(text, width / 2, height / 2);
+            }
+
+            function getShadowOffset(direction, width) {
+                switch (direction) {
+                    case 'right-bottom':
+                        return { x: width, y: width };
+                    case 'right-top':
+                        return { x: width, y: -width };
+                    case 'left-bottom':
+                        return { x: -width, y: width };
+                    case 'left-top':
+                        return { x: -width, y: -width };
+                    case 'bottom':
+                        return { x: 0, y: width };
+                    default:
+                        return { x: 0, y: 0 };
+                }
+            }
+
+            uploadFontBtn.addEventListener('click', () => fontFileInput.click());
+            fontFileInput.addEventListener('change', async (event) => {
+                const file = event.target.files && event.target.files[0];
+                if (!file) {
+                    return;
+                }
+
+                uploadFontBtn.disabled = true;
+                try {
+                    if (!('FontFace' in window) || !document.fonts) {
+                        showStatus('当前浏览器不支持动态字体加载。');
+                        return;
+                    }
+                    if (!FONT_EXTENSION_RE.test(file.name || '')) {
+                        showStatus('字体仅支持 .ttf、.otf、.woff、.woff2。');
+                        return;
+                    }
+                    if (file.size > MAX_FONT_FILE_SIZE) {
+                        showStatus(`字体文件不能超过 ${formatBytes(MAX_FONT_FILE_SIZE)}。`);
+                        return;
+                    }
+                    if (customFontCount >= MAX_CUSTOM_FONTS) {
+                        showStatus(`最多加载 ${MAX_CUSTOM_FONTS} 个自定义字体。`);
+                        return;
+                    }
+
+                    const arrayBuffer = await file.arrayBuffer();
+                    const familyName = buildFontFamilyName(file.name);
+                    const fontFace = new FontFace(familyName, arrayBuffer);
+                    await fontFace.load();
+                    document.fonts.add(fontFace);
+
+                    const option = document.createElement('option');
+                    option.value = quoteFontFamily(familyName);
+                    option.textContent = `${familyName}（自定义）`;
+                    customFontGroup.appendChild(option);
+                    fontFamily.value = option.value;
+                    customFontCount += 1;
+                    if (resizeCanvas({ silent: true })) {
+                        drawOutput();
+                    }
+                    showStatus(`已加载字体：${familyName}`, 'success', true);
+                } catch (error) {
+                    showStatus('字体加载失败，请尝试更换文件。');
+                } finally {
+                    uploadFontBtn.disabled = false;
+                    event.target.value = '';
+                }
+            });
+
+            function analyzeColors(img) {
+                const scale = Math.min(MAX_SAMPLE_SIDE / img.naturalWidth, MAX_SAMPLE_SIDE / img.naturalHeight, 1);
+                const sampleWidth = Math.max(1, Math.round(img.naturalWidth * scale));
+                const sampleHeight = Math.max(1, Math.round(img.naturalHeight * scale));
+                const canvas = document.createElement('canvas');
+                const sampleCtx = canvas.getContext('2d', { willReadFrequently: true });
+                canvas.width = sampleWidth;
+                canvas.height = sampleHeight;
+                sampleCtx.drawImage(img, 0, 0, sampleWidth, sampleHeight);
+                const { data } = sampleCtx.getImageData(0, 0, sampleWidth, sampleHeight);
+                const buckets = new Map();
+                let total = 0;
+
+                for (let index = 0; index < data.length; index += 4) {
+                    const alpha = data[index + 3];
+                    if (alpha < 10) {
+                        continue;
+                    }
+                    const red = data[index];
+                    const green = data[index + 1];
+                    const blue = data[index + 2];
+                    const key = `${red >> 5},${green >> 5},${blue >> 5}`;
+                    const bucket = buckets.get(key) || { count: 0, red: 0, green: 0, blue: 0 };
+                    bucket.count += 1;
+                    bucket.red += red;
+                    bucket.green += green;
+                    bucket.blue += blue;
+                    buckets.set(key, bucket);
+                    total += 1;
+                }
+
+                if (!total) {
+                    return [];
+                }
+
+                return Array.from(buckets.values())
+                    .map((bucket) => {
+                        const red = Math.round(bucket.red / bucket.count);
+                        const green = Math.round(bucket.green / bucket.count);
+                        const blue = Math.round(bucket.blue / bucket.count);
+                        return {
+                            red,
+                            green,
+                            blue,
+                            hex: rgbToHex(red, green, blue),
+                            count: bucket.count,
+                            ratio: bucket.count / total
+                        };
+                    })
+                    .filter((item) => item.ratio >= 0.01)
+                    .sort((first, second) => second.count - first.count)
+                    .slice(0, 12);
+            }
+
+            function renderColors(list) {
+                colorList.replaceChildren();
+                clearInlineColorLists();
+
+                if (!list.length) {
+                    renderColorMessage('未找到占比超过 1% 的非透明主题色。');
+                    return;
+                }
+
+                list.forEach((item) => {
+                    const label = `RGB(${item.red},${item.green},${item.blue}) / ${item.hex} / ${(item.ratio * 100).toFixed(1)}%`;
+                    const listItem = document.createElement('li');
+                    const button = createColorButton(item.hex, label, `应用 ${item.hex} 到${colorTargetLabels[currentColorTarget]}`, () => {
+                        applyColorToTarget(item.hex, currentColorTarget);
+                    });
+                    button.title = '点击应用到最近聚焦的颜色输入';
+                    listItem.appendChild(button);
+                    colorList.appendChild(listItem);
                 });
-                colorList.appendChild(div);
+
+                renderInlineColorList(inlineFontColors, list, 'font');
+                renderInlineColorList(inlineStrokeColors, list, 'stroke');
+                renderInlineColorList(inlineBgColors, list, 'bg');
+                renderInlineColorList(inlineShadowColors, list, 'shadow');
+            }
+
+            function renderColorMessage(message) {
+                colorList.replaceChildren();
+                clearInlineColorLists();
+                const listItem = document.createElement('li');
+                listItem.className = 'hint';
+                listItem.textContent = message;
+                colorList.appendChild(listItem);
+            }
+
+            function clearInlineColorLists() {
+                [inlineFontColors, inlineStrokeColors, inlineBgColors, inlineShadowColors].forEach((container) => {
+                    container.replaceChildren();
+                });
+            }
+
+            function renderInlineColorList(container, list, target) {
+                container.replaceChildren();
+                list.forEach((item) => {
+                    const button = createColorButton(item.hex, '', `应用 ${item.hex} 到${colorTargetLabels[target]}`, () => {
+                        applyColorToTarget(item.hex, target);
+                    });
+                    button.classList.add('compact');
+                    button.title = `点击应用到${colorTargetLabels[target]}`;
+                    container.appendChild(button);
+                });
+            }
+
+            function createColorButton(hex, label, ariaLabel, onPick) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'color-chip';
+                button.setAttribute('aria-label', ariaLabel);
+
+                const swatch = document.createElement('span');
+                swatch.className = 'swatch';
+                swatch.style.backgroundColor = hex;
+                swatch.setAttribute('aria-hidden', 'true');
+                button.appendChild(swatch);
+
+                if (label) {
+                    const text = document.createElement('span');
+                    text.className = 'chip-text';
+                    text.textContent = label;
+                    button.appendChild(text);
+                }
+
+                button.addEventListener('click', onPick);
+                return button;
+            }
+
+            function applyColorToTarget(hex, target) {
+                const input = colorTargetInputs[target] || fontColor;
+                input.value = hex;
+                currentColorTarget = target;
+                if (resizeCanvas({ silent: true })) {
+                    drawOutput();
+                    clearStatus();
+                }
+            }
+
+            function rgbToHex(red, green, blue) {
+                return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+            }
+
+            function toHex(value) {
+                return Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0');
+            }
+
+            function readLimitedNumber(input, min, max, fallback) {
+                const parsed = Number(input.value);
+                if (!Number.isFinite(parsed)) {
+                    return fallback;
+                }
+                return Math.max(min, Math.min(max, Math.trunc(parsed)));
+            }
+
+            function clampNumberInput(input, min, max, fallback) {
+                const nextValue = readLimitedNumber(input, min, max, fallback);
+                input.value = String(nextValue);
+            }
+
+            function formatBytes(bytes) {
+                if (bytes >= 1024 * 1024) {
+                    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+                }
+                if (bytes >= 1024) {
+                    return `${(bytes / 1024).toFixed(1)} KB`;
+                }
+                return `${bytes} B`;
+            }
+
+            function formatNumber(value) {
+                return value.toLocaleString('zh-CN');
+            }
+
+            function buildFontFamilyName(fileName) {
+                const baseName = (fileName || 'CustomFont').replace(/\.[^.]*$/, '');
+                const cleanName = baseName.replace(/[^\w\u4e00-\u9fa5-]+/g, ' ').trim() || 'CustomFont';
+                return `${cleanName.slice(0, 40)} ${customFontCount + 1}`.trim();
+            }
+
+            function quoteFontFamily(familyName) {
+                return `'${familyName.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+            }
+
+            function updateOutput() {
+                if (resizeCanvas()) {
+                    drawOutput();
+                    clearStatus();
+                }
+            }
+
+            const controls = [cw, ch, textInput, fontFamily, fontSize, fontColor, strokeWidth, strokeColor, bgMode, bgColor, shadowDir, shadowWidth, shadowColor];
+            controls.forEach((control) => {
+                control.addEventListener('input', updateOutput);
+                control.addEventListener('change', () => {
+                    if (control === fontSize) {
+                        clampNumberInput(fontSize, 1, MAX_FONT_SIZE, 80);
+                    } else if (control === strokeWidth) {
+                        clampNumberInput(strokeWidth, 0, MAX_STROKE_WIDTH, 0);
+                    } else if (control === shadowWidth) {
+                        clampNumberInput(shadowWidth, 0, MAX_SHADOW_WIDTH, 0);
+                    }
+                    updateOutput();
+                });
             });
 
-            // 同步渲染右侧每个颜色输入旁的快速色卡
-            renderInlineColorList(inlineFontColors, list, (hex)=>{ fontColor.value = hex; drawOutput(); });
-            renderInlineColorList(inlineStrokeColors, list, (hex)=>{ strokeColor.value = hex; drawOutput(); });
-            renderInlineColorList(inlineBgColors, list, (hex)=>{ bgColor.value = hex; drawOutput(); });
-            renderInlineColorList(inlineShadowColors, list, (hex)=>{ shadowColor.value = hex; drawOutput(); });
-        }
-
-        function renderInlineColorList(container, list, onPick){
-            if(!container) return;
-            container.innerHTML = '';
-            list.forEach(item=>{
-                const [r,g,b] = item.rgb.split(',').map(Number);
-                const hex = rgbToHex(r,g,b);
-                const div = document.createElement('div');
-                div.className = 'color-chip';
-                div.innerHTML = `<span class=\"swatch\" style=\"background:${hex}\"></span>`;
-                div.title = '点击应用此颜色';
-                div.addEventListener('click', ()=> onPick(hex));
-                container.appendChild(div);
+            [
+                [fontColor, 'font'],
+                [strokeColor, 'stroke'],
+                [bgColor, 'bg'],
+                [shadowColor, 'shadow']
+            ].forEach(([input, target]) => {
+                input.addEventListener('focus', () => {
+                    currentColorTarget = target;
+                });
             });
-        }
 
-        function rgbToHex(r,g,b){
-            const toHex = (n)=> ('0' + n.toString(16)).slice(-2);
-            return '#' + toHex(r) + toHex(g) + toHex(b);
-        }
+            dlBtn.addEventListener('click', () => {
+                if (!resizeCanvas()) {
+                    return;
+                }
+                drawOutput();
+                dlBtn.disabled = true;
+                outCanvas.toBlob((blob) => {
+                    dlBtn.disabled = false;
+                    if (!blob) {
+                        showStatus('导出失败，请降低画布尺寸后重试。');
+                        return;
+                    }
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = buildDownloadName();
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }, 'image/png');
+            });
 
-        // 实时联动
-        ;[cw, ch, textInput, fontFamily, fontSize, fontColor, strokeWidth, strokeColor, bgMode, bgColor, shadowDir, shadowWidth, shadowColor].forEach(el=>{
-            el.addEventListener('input', ()=>{ if(el===cw||el===ch) resizeCanvas(); drawOutput(); });
-            el.addEventListener('change', ()=>{ if(el===cw||el===ch) resizeCanvas(); drawOutput(); });
-        });
+            function buildDownloadName() {
+                if (!uploadedFileName) {
+                    return 'text-image.png';
+                }
+                const baseName = uploadedFileName.replace(/\.[^.]*$/, '').replace(/[\\/:*?"<>|]+/g, '-').trim();
+                return `${baseName || 'text-image'}-text.png`;
+            }
 
-        // 记录当前颜色目标：聚焦哪个颜色输入，就应用到哪个
-        fontColor.addEventListener('focus', ()=> currentColorTarget = 'font');
-        bgColor.addEventListener('focus', ()=> currentColorTarget = 'bg');
+            window.addEventListener('pagehide', revokeCurrentImageUrl);
 
-        // 初始渲染
-        resizeCanvas();
-        drawOutput();
-
-        // 下载
-        dlBtn.addEventListener('click', ()=>{
-            const url = outCanvas.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.href = url;
-            const name = uploadedFileName ? (uploadedFileName.replace(/\.[^.]*$/, '') + '.png') : 'text-image.png';
-            a.download = name;
-            a.click();
-        });
+            resizeCanvas({ silent: true });
+            drawOutput();
+        })();
     </script>
 </body>
 </html>
-

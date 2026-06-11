@@ -14,6 +14,8 @@
       --node-border: #e0e0e0;
       --line-color: #999999;
       --accent-color: #3b82f6;
+      --danger-color: #dc2626;
+      --success-color: #047857;
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       --radius: 8px;
       --font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -23,10 +25,11 @@
       margin: 0;
       padding: 0;
       font-family: var(--font-family);
-      height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      background-color: var(--bg-color);
     }
 
     /* Theme background colors */
@@ -79,6 +82,18 @@
       flex-wrap: wrap;
     }
 
+    .tool-title {
+      font-weight: 700;
+      margin-right: auto;
+      color: #111827;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     .btn {
       padding: 0.5rem 1rem;
       border: 1px solid #ddd;
@@ -97,6 +112,17 @@
       border-color: #ccc;
     }
 
+    .btn:focus-visible,
+    select:focus-visible {
+      outline: 2px solid rgba(59, 130, 246, 0.6);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
     .btn-primary {
       background-color: var(--accent-color);
       color: white;
@@ -111,6 +137,31 @@
       padding: 0.5rem;
       border-radius: 6px;
       border: 1px solid #ddd;
+      max-width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      flex-basis: 100%;
+      min-height: 1.25rem;
+      color: var(--success-color);
+      font-size: 0.9rem;
+    }
+
+    .status[data-tone="error"] {
+      color: var(--danger-color);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     /* Canvas Area */
@@ -123,6 +174,7 @@
       align-items: flex-start;
       padding: 50px;
       cursor: grab;
+      touch-action: pan-x pan-y;
     }
 
     .canvas-container:active {
@@ -136,6 +188,7 @@
       padding: 40px;
       background-color: var(--bg-color);
       min-width: min-content;
+      box-sizing: border-box;
     }
 
     /* Node Styles */
@@ -151,6 +204,8 @@
       font-size: 14px;
       line-height: 1.4;
       box-sizing: border-box;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
     }
 
     .node.level-3 {
@@ -257,7 +312,7 @@
       border-radius: 12px;
       border: 1px solid #64748b;
       background: #1e293b;
-      color: #000000;
+      color: #f8fafc;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.5);
     }
     body.theme-dark .node.level-3 {
@@ -265,7 +320,7 @@
       border-radius: 8px;
       border: 1px solid #94a3b8;
       background: #334155;
-      color: #000000;
+      color: #f8fafc;
     }
     body.theme-dark #diagram {
       background-color: #1e293b;
@@ -525,18 +580,19 @@
 
     .node-wrapper:hover>.node-controls,
     .node:focus+.node-controls,
+    .node-wrapper:focus-within>.node-controls,
     .node-controls:hover {
       opacity: 1;
       pointer-events: auto;
     }
 
     .control-btn {
-      width: 20px;
-      height: 20px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       border: none;
       color: white;
-      font-size: 12px;
+      font-size: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -643,34 +699,69 @@
     .hidden {
       display: none;
     }
+
+    @media (max-width: 720px) {
+      .toolbar {
+        padding: 0.75rem;
+        gap: 0.75rem;
+      }
+
+      .tool-title {
+        flex-basis: 100%;
+        margin-right: 0;
+      }
+
+      .field,
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .canvas-container {
+        padding: 20px;
+      }
+
+      #diagram {
+        padding: 24px;
+      }
+
+      .level-2-container {
+        gap: 24px;
+      }
+    }
   </style>
 </head>
 
 <body class="theme-minimal">
 
   <div class="toolbar">
-    <div style="font-weight: bold; margin-right: auto;">TreeGraph Gen</div>
+    <div class="tool-title">结构图生成器</div>
 
-    <select id="theme-select">
-      <option value="theme-minimal" selected>极简风格 (Minimal)</option>
-      <option value="theme-card">卡片风格 (Card)</option>
-      <option value="theme-soft">柔和风格 (Soft)</option>
-      <option value="theme-dark">深色模式 (Dark)</option>
-      <option value="theme-warm">温暖风格 (Warm)</option>
-      <option value="theme-cool">清爽风格 (Cool)</option>
-      <option value="theme-modern">现代风格 (Modern)</option>
-      <option value="theme-classic">经典风格 (Classic)</option>
-      <option value="theme-vibrant">活力风格 (Vibrant)</option>
-      <option value="theme-elegant">优雅风格 (Elegant)</option>
-      <option value="theme-ocean">海洋风格 (Ocean)</option>
-      <option value="theme-sunset">夕阳风格 (Sunset)</option>
-    </select>
+    <div class="field">
+      <label for="theme-select">主题</label>
+      <select id="theme-select">
+        <option value="theme-minimal" selected>极简风格 (Minimal)</option>
+        <option value="theme-card">卡片风格 (Card)</option>
+        <option value="theme-soft">柔和风格 (Soft)</option>
+        <option value="theme-dark">深色模式 (Dark)</option>
+        <option value="theme-warm">温暖风格 (Warm)</option>
+        <option value="theme-cool">清爽风格 (Cool)</option>
+        <option value="theme-modern">现代风格 (Modern)</option>
+        <option value="theme-classic">经典风格 (Classic)</option>
+        <option value="theme-vibrant">活力风格 (Vibrant)</option>
+        <option value="theme-elegant">优雅风格 (Elegant)</option>
+        <option value="theme-ocean">海洋风格 (Ocean)</option>
+        <option value="theme-sunset">夕阳风格 (Sunset)</option>
+      </select>
+    </div>
 
-    <button class="btn" onclick="resetZoom()">重置视图</button>
-    <button class="btn" onclick="exportJSON()">导出 JSON</button>
-    <button class="btn" onclick="document.getElementById('file-input').click()">导入 JSON</button>
-    <input type="file" id="file-input" class="hidden" accept=".json" onchange="importJSON(this)">
-    <button class="btn btn-primary" onclick="exportPNG()">下载 PNG</button>
+    <button class="btn" id="reset-view-btn" type="button">重置视图</button>
+    <button class="btn" id="export-json-btn" type="button">导出 JSON</button>
+    <button class="btn" id="import-json-btn" type="button">导入 JSON</button>
+    <label class="sr-only" for="file-input">选择 JSON 文件</label>
+    <input type="file" id="file-input" class="hidden" accept="application/json,.json">
+    <button class="btn btn-primary" id="export-png-btn" type="button">下载 PNG</button>
+    <div class="status" id="status-message" role="status" aria-live="polite"></div>
   </div>
 
   <div class="canvas-container" id="canvas-container">
@@ -681,21 +772,161 @@
   </div>
 
   <script>
+    const MAX_DEPTH = 3;
+    const MAX_TEXT_LENGTH = 120;
+    const MAX_CHILDREN_PER_NODE = 20;
+    const MAX_NODES = 220;
+    const MAX_IMPORT_BYTES = 256 * 1024;
+    const STATUS_CLEAR_DELAY = 6000;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
     // Data Structure
     let treeData = {
       id: 'root',
       text: '核心主题',
       children: []
     };
+    let lineTimeout = null;
+    let statusTimeout = null;
+    let importRequestId = 0;
+    let activeReader = null;
+    let isExportingPng = false;
+    let scale = 1;
 
     // DOM Elements
     const treeRoot = document.getElementById('tree-root');
     const svgLayer = document.getElementById('svg-layer');
     const diagram = document.getElementById('diagram');
+    const canvasContainer = document.getElementById('canvas-container');
+    const themeSelect = document.getElementById('theme-select');
+    const resetViewBtn = document.getElementById('reset-view-btn');
+    const exportJsonBtn = document.getElementById('export-json-btn');
+    const importJsonBtn = document.getElementById('import-json-btn');
+    const fileInput = document.getElementById('file-input');
+    const exportPngBtn = document.getElementById('export-png-btn');
+    const statusMessage = document.getElementById('status-message');
+
+    function setStatus(message, tone = 'info', persist = false) {
+      clearTimeout(statusTimeout);
+      statusMessage.textContent = message;
+
+      if (tone === 'error') {
+        statusMessage.dataset.tone = 'error';
+      } else {
+        statusMessage.removeAttribute('data-tone');
+      }
+
+      if (message && !persist) {
+        statusTimeout = setTimeout(() => {
+          if (statusMessage.textContent === message) {
+            statusMessage.textContent = '';
+            statusMessage.removeAttribute('data-tone');
+          }
+        }, STATUS_CLEAR_DELAY);
+      }
+    }
+
+    function getErrorMessage(error) {
+      return error instanceof Error ? error.message : String(error || '未知错误');
+    }
+
+    function cleanNodeText(value, fallback = '') {
+      const source = typeof value === 'string' ? value : fallback;
+      return source
+        .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+        .replace(/\s+/g, ' ')
+        .slice(0, MAX_TEXT_LENGTH);
+    }
+
+    function getNodeLabel(data, level) {
+      const levelNames = {
+        1: '核心主题',
+        2: '二级节点',
+        3: '三级节点'
+      };
+      return `${levelNames[level]}：${data.text || '空节点'}`;
+    }
+
+    function placeCaretAtEnd(element) {
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function scheduleLineRedraw() {
+      clearTimeout(lineTimeout);
+      lineTimeout = setTimeout(() => {
+        adjustLevel3Offsets();
+        drawLines();
+      }, 50);
+    }
+
+    function countNodes(node) {
+      return 1 + (Array.isArray(node.children) ? node.children.reduce((sum, child) => sum + countNodes(child), 0) : 0);
+    }
+
+    function findNodeWithLevel(nodeId, node = treeData, level = 1) {
+      if (node.id === nodeId) {
+        return { node, level };
+      }
+
+      if (!Array.isArray(node.children)) {
+        return null;
+      }
+
+      for (const child of node.children) {
+        const result = findNodeWithLevel(nodeId, child, level + 1);
+        if (result) {
+          return result;
+        }
+      }
+
+      return null;
+    }
+
+    function insertPlainTextAtCursor(element, text) {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) {
+        element.textContent += text;
+        placeCaretAtEnd(element);
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      if (!element.contains(range.commonAncestorContainer)) {
+        element.textContent += text;
+        placeCaretAtEnd(element);
+        return;
+      }
+
+      range.deleteContents();
+      range.insertNode(document.createTextNode(text));
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function syncNodeText(node, data, level, announceLimit = false) {
+      const cleaned = cleanNodeText(node.textContent || '');
+      if (cleaned !== node.textContent) {
+        node.textContent = cleaned;
+        placeCaretAtEnd(node);
+        if (announceLimit) {
+          setStatus(`节点文字最多 ${MAX_TEXT_LENGTH} 个字符，已自动截断。`, 'error');
+        }
+      }
+
+      data.text = cleaned;
+      node.setAttribute('aria-label', getNodeLabel(data, level));
+      scheduleLineRedraw();
+    }
 
     // Render Function
     function render() {
-      treeRoot.innerHTML = '';
+      treeRoot.replaceChildren();
 
       // Level 1 Wrapper
       const l1Wrapper = document.createElement('div');
@@ -770,20 +1001,17 @@
 
       const node = document.createElement('div');
       node.className = `node level-${level}`;
-      node.contentEditable = true;
-      node.innerText = data.text;
+      node.setAttribute('contenteditable', 'plaintext-only');
+      node.setAttribute('role', 'textbox');
+      node.setAttribute('aria-label', getNodeLabel(data, level));
+      node.spellcheck = false;
+      node.textContent = data.text;
       node.id = `node-${data.id}`;
       node.dataset.id = data.id;
 
       // Text Edit Listener
-      node.addEventListener('input', (e) => {
-        data.text = e.target.innerText;
-        // Debounce line redraw
-        if (window.lineTimeout) clearTimeout(window.lineTimeout);
-        window.lineTimeout = setTimeout(() => {
-          adjustLevel3Offsets(); // Re-adjust if L2 width changes
-          drawLines();
-        }, 50);
+      node.addEventListener('input', () => {
+        syncNodeText(node, data, level, true);
       });
 
       // Prevent enter key creating divs
@@ -792,6 +1020,13 @@
           e.preventDefault();
           node.blur();
         }
+      });
+
+      node.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pastedText = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+        insertPlainTextAtCursor(node, pastedText);
+        syncNodeText(node, data, level, true);
       });
 
       wrapper.appendChild(node);
@@ -804,9 +1039,11 @@
       if (level < 3) {
         const addBtn = document.createElement('button');
         addBtn.className = 'control-btn btn-add';
-        addBtn.innerHTML = '+';
+        addBtn.type = 'button';
+        addBtn.textContent = '+';
         addBtn.title = '添加子节点';
-        addBtn.onclick = () => addChild(data.id);
+        addBtn.setAttribute('aria-label', `为${data.text || '当前节点'}添加子节点`);
+        addBtn.addEventListener('click', () => addChild(data.id));
         controls.appendChild(addBtn);
       }
 
@@ -814,9 +1051,11 @@
       if (level > 1) {
         const delBtn = document.createElement('button');
         delBtn.className = 'control-btn btn-del';
-        delBtn.innerHTML = '×';
+        delBtn.type = 'button';
+        delBtn.textContent = '×';
         delBtn.title = '删除节点';
-        delBtn.onclick = () => deleteNode(parentId || treeData.id, data.id);
+        delBtn.setAttribute('aria-label', `删除${data.text || '当前节点'}`);
+        delBtn.addEventListener('click', () => deleteNode(parentId || treeData.id, data.id));
         controls.appendChild(delBtn);
       }
 
@@ -826,44 +1065,57 @@
 
     // Data Manipulation
     function generateId() {
-      return 'n' + Date.now() + Math.random().toString(36).substr(2, 5);
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return `n${window.crypto.randomUUID()}`;
+      }
+      return 'n' + Date.now() + Math.random().toString(36).slice(2, 7);
     }
 
     function addChild(parentId) {
-      const newNode = { id: generateId(), text: '新节点', children: [] };
-
-      if (treeData.id === parentId) {
-        treeData.children.push(newNode);
-      } else {
-        // Find L2 parent
-        const l2 = treeData.children.find(c => c.id === parentId);
-        if (l2) {
-          l2.children = l2.children || [];
-          l2.children.push(newNode);
-        }
+      const parentResult = findNodeWithLevel(parentId);
+      if (!parentResult || parentResult.level >= MAX_DEPTH) {
+        setStatus('最多支持 3 级结构。', 'error');
+        return;
       }
+
+      if (countNodes(treeData) >= MAX_NODES) {
+        setStatus(`最多支持 ${MAX_NODES} 个节点。`, 'error');
+        return;
+      }
+
+      const parent = parentResult.node;
+      parent.children = Array.isArray(parent.children) ? parent.children : [];
+      if (parent.children.length >= MAX_CHILDREN_PER_NODE) {
+        setStatus(`每个节点最多添加 ${MAX_CHILDREN_PER_NODE} 个子节点。`, 'error');
+        return;
+      }
+
+      const newNode = { id: generateId(), text: '新节点', children: [] };
+      parent.children.push(newNode);
       render();
+      setStatus('已添加子节点。');
     }
 
     function deleteNode(parentId, nodeId) {
-      if (parentId === treeData.id) {
-        treeData.children = treeData.children.filter(c => c.id !== nodeId);
-      } else {
-        const parent = treeData.children.find(c => c.id === parentId);
-        if (parent) {
-          parent.children = parent.children.filter(c => c.id !== nodeId);
-        }
+      const parentResult = findNodeWithLevel(parentId);
+      if (!parentResult || !Array.isArray(parentResult.node.children)) {
+        setStatus('未找到要删除的节点。', 'error');
+        return;
       }
+
+      const before = parentResult.node.children.length;
+      parentResult.node.children = parentResult.node.children.filter(c => c.id !== nodeId);
       render();
+      setStatus(before === parentResult.node.children.length ? '未找到要删除的节点。' : '已删除节点。', before === parentResult.node.children.length ? 'error' : 'info');
     }
 
     // Drawing Lines
     function drawLines() {
-      const svg = document.getElementById('svg-layer');
-      svg.innerHTML = '';
+      const svg = svgLayer;
+      svg.replaceChildren();
 
       // Get Diagram Offset
-      const diagramRect = document.getElementById('diagram').getBoundingClientRect();
+      const diagramRect = diagram.getBoundingClientRect();
       const offsetX = diagramRect.left;
       const offsetY = diagramRect.top;
 
@@ -885,7 +1137,7 @@
       };
 
       const createPath = (d) => {
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const path = document.createElementNS(SVG_NS, 'path');
         path.setAttribute('d', d);
         svg.appendChild(path);
       };
@@ -958,84 +1210,259 @@
       svg.setAttribute('height', diagram.scrollHeight);
     }
 
-    // Initial Render
-    render();
-    window.addEventListener('resize', () => {
-      adjustLevel3Offsets();
-      drawLines();
-    });
-
     // Zoom & Pan
-    let scale = 1;
     function resetZoom() {
       scale = 1;
       diagram.style.transform = `scale(${scale})`;
+      scheduleLineRedraw();
+      setStatus('视图已重置。');
     }
 
-    // Theme
-    document.getElementById('theme-select').addEventListener('change', (e) => {
-      document.body.className = e.target.value;
-      // Wait for CSS transitions to complete, then recalculate layout
-      setTimeout(() => {
-        adjustLevel3Offsets();
-        drawLines();
-      }, 350); // Slightly longer than transition duration (0.3s)
-    });
-
-    // Export/Import
     function getSafeFileName(base) {
-      const sanitized = (base || 'structure').replace(/[\\\/:*?"<>|]/g, '_').trim();
+      const sanitized = cleanNodeText(base, 'structure')
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .trim()
+        .slice(0, 80);
       return sanitized || 'structure';
+    }
+
+    function triggerDownload(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     function exportJSON() {
       const fileName = getSafeFileName(treeData.text);
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(treeData, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `${fileName}.json`);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
+      const blob = new Blob([JSON.stringify(treeData, null, 2)], { type: 'application/json;charset=utf-8' });
+      triggerDownload(blob, `${fileName}.json`);
+      setStatus('JSON 已导出。');
+    }
+
+    function normalizeImportedTree(source) {
+      const context = {
+        count: 0,
+        truncated: false
+      };
+      const tree = normalizeImportedNode(source, 1, context, true);
+      if (!tree) {
+        throw new Error('JSON 根节点必须是对象。');
+      }
+      tree.id = 'root';
+      return { tree, truncated: context.truncated, count: context.count };
+    }
+
+    function normalizeImportedNode(source, level, context, isRoot = false) {
+      if (!source || typeof source !== 'object' || Array.isArray(source)) {
+        if (isRoot) {
+          return null;
+        }
+        context.truncated = true;
+        return null;
+      }
+
+      if (context.count >= MAX_NODES) {
+        context.truncated = true;
+        return null;
+      }
+
+      context.count += 1;
+      const node = {
+        id: isRoot ? 'root' : generateId(),
+        text: cleanNodeText(source.text, isRoot ? '核心主题' : '新节点'),
+        children: []
+      };
+
+      if (level >= MAX_DEPTH) {
+        if (Array.isArray(source.children) && source.children.length > 0) {
+          context.truncated = true;
+        }
+        return node;
+      }
+
+      if (Array.isArray(source.children)) {
+        for (const child of source.children) {
+          if (node.children.length >= MAX_CHILDREN_PER_NODE || context.count >= MAX_NODES) {
+            context.truncated = true;
+            break;
+          }
+          const normalizedChild = normalizeImportedNode(child, level + 1, context);
+          if (normalizedChild) {
+            node.children.push(normalizedChild);
+          }
+        }
+      } else if (source.children !== undefined) {
+        context.truncated = true;
+      }
+
+      return node;
     }
 
     function importJSON(input) {
-      const file = input.files[0];
-      if (!file) return;
+      const file = input.files && input.files[0];
+      if (!file) {
+        return;
+      }
+
+      if (file.size > MAX_IMPORT_BYTES) {
+        input.value = '';
+        setStatus(`JSON 文件不能超过 ${Math.round(MAX_IMPORT_BYTES / 1024)}KB。`, 'error', true);
+        return;
+      }
+
+      if (activeReader && activeReader.readyState === activeReader.LOADING) {
+        importRequestId += 1;
+        activeReader.abort();
+      }
+
+      const requestId = ++importRequestId;
       const reader = new FileReader();
-      reader.onload = (e) => {
+      activeReader = reader;
+      setStatus('正在读取 JSON...', 'info', true);
+
+      reader.onload = (event) => {
+        if (requestId !== importRequestId) {
+          return;
+        }
+
         try {
-          treeData = JSON.parse(e.target.result);
+          const parsed = JSON.parse(event.target.result);
+          const result = normalizeImportedTree(parsed);
+          treeData = result.tree;
           render();
-        } catch (err) {
-          alert('Invalid JSON file');
+          setStatus(result.truncated ? `已导入 ${result.count} 个节点，超出限制的内容已忽略。` : `已导入 ${result.count} 个节点。`);
+        } catch (error) {
+          setStatus(`JSON 导入失败：${getErrorMessage(error)}`, 'error', true);
         }
       };
+
+      reader.onerror = () => {
+        if (requestId === importRequestId) {
+          setStatus('JSON 文件读取失败。', 'error', true);
+        }
+      };
+
+      reader.onloadend = () => {
+        if (requestId === importRequestId) {
+          activeReader = null;
+          input.value = '';
+        }
+      };
+
       reader.readAsText(file);
     }
 
-    function exportPNG() {
-      const fileName = getSafeFileName(treeData.text);
-      // Reset zoom for capture
-      const currentTransform = diagram.style.transform;
-      diagram.style.transform = 'scale(1)';
-
-      // Get background color from computed style
-      const bg = getComputedStyle(diagram).backgroundColor;
-
-      html2canvas(diagram, {
-        backgroundColor: bg || '#f8fafc',
-        scale: 2 // Higher quality
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `${fileName}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-
-        // Restore zoom
-        diagram.style.transform = currentTransform;
+    function waitForFrame() {
+      return new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
     }
+
+    function dataUrlToBlob(dataUrl) {
+      const parts = dataUrl.split(',');
+      const byteString = atob(parts[1]);
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+      const bytes = new Uint8Array(byteString.length);
+
+      for (let i = 0; i < byteString.length; i += 1) {
+        bytes[i] = byteString.charCodeAt(i);
+      }
+
+      return new Blob([bytes], { type: mimeType });
+    }
+
+    function canvasToPngBlob(canvas) {
+      return new Promise((resolve, reject) => {
+        if (typeof canvas.toBlob === 'function') {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('浏览器未能生成 PNG 数据。'));
+            }
+          }, 'image/png');
+          return;
+        }
+
+        try {
+          resolve(dataUrlToBlob(canvas.toDataURL('image/png')));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+
+    async function exportPNG() {
+      if (isExportingPng) {
+        setStatus('正在生成 PNG，请稍候。');
+        return;
+      }
+
+      if (typeof html2canvas !== 'function') {
+        setStatus('PNG 导出组件加载失败，请检查网络后刷新页面。', 'error', true);
+        return;
+      }
+
+      const fileName = getSafeFileName(treeData.text);
+      const currentTransform = diagram.style.transform;
+      const currentTransition = diagram.style.transition;
+      isExportingPng = true;
+      exportPngBtn.disabled = true;
+      setStatus('正在生成 PNG...', 'info', true);
+
+      try {
+        diagram.style.transition = 'none';
+        diagram.style.transform = 'scale(1)';
+        adjustLevel3Offsets();
+        drawLines();
+        await waitForFrame();
+
+        const bg = getComputedStyle(diagram).backgroundColor;
+        const canvas = await html2canvas(diagram, {
+          backgroundColor: bg || '#f8fafc',
+          scale: Math.min(Math.max(window.devicePixelRatio || 2, 1), 2),
+          useCORS: true
+        });
+        const blob = await canvasToPngBlob(canvas);
+        triggerDownload(blob, `${fileName}.png`);
+        setStatus('PNG 已生成。');
+      } catch (error) {
+        setStatus(`PNG 导出失败：${getErrorMessage(error)}`, 'error', true);
+      } finally {
+        diagram.style.transform = currentTransform;
+        diagram.style.transition = currentTransition;
+        adjustLevel3Offsets();
+        drawLines();
+        isExportingPng = false;
+        exportPngBtn.disabled = false;
+      }
+    }
+
+    function bindEvents() {
+      resetViewBtn.addEventListener('click', resetZoom);
+      exportJsonBtn.addEventListener('click', exportJSON);
+      importJsonBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => importJSON(fileInput));
+      exportPngBtn.addEventListener('click', exportPNG);
+
+      window.addEventListener('resize', scheduleLineRedraw);
+
+      themeSelect.addEventListener('change', (e) => {
+        document.body.className = e.target.value;
+        setTimeout(scheduleLineRedraw, 350);
+      });
+
+      canvasContainer.addEventListener('scroll', scheduleLineRedraw, { passive: true });
+    }
+
+    bindEvents();
+    render();
   </script>
 </body>
 
