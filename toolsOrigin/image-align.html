@@ -182,8 +182,9 @@
             overflow: hidden;
             background-color: #fff;
             background-image: var(--gradient-layer, linear-gradient(transparent, transparent)), linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb), linear-gradient(45deg, #e5e7eb 25%, transparent 25%, transparent 75%, #e5e7eb 75%, #e5e7eb);
-            background-size: 16px 16px;
+            background-size: 100% 100%, 16px 16px, 16px 16px;
             background-position: 0 0, 0 0, 8px 8px;
+            background-repeat: no-repeat, repeat, repeat;
         }
 
         .controls-grid {
@@ -318,17 +319,22 @@
 
         /* 拖拽区域样式 */
         .drag-drop-area {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             width: 100%;
+            min-height: 150px;
             border: 2px dashed #6e8efb;
             border-radius: 12px;
-            padding: 40px 20px;
+            padding: 28px 20px;
             text-align: center;
             background: #f8faff;
             transition: all 0.3s;
             cursor: pointer;
             margin-bottom: 15px;
             font: inherit;
+            line-height: 1.45;
         }
 
         .drag-drop-area.dragover {
@@ -343,12 +349,15 @@
         }
 
         .drag-drop-icon {
+            display: block;
+            flex: 0 0 auto;
             width: 44px;
             height: 44px;
-            margin: 0 auto 15px;
+            margin: 0 0 12px;
             border: 2px solid #6e8efb;
             border-radius: 12px;
             position: relative;
+            background: #fff;
         }
 
         .drag-drop-icon::before,
@@ -368,14 +377,70 @@
         }
 
         .drag-drop-text {
+            display: block;
             color: #666;
             font-size: 16px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            max-width: 100%;
+            overflow-wrap: anywhere;
         }
 
         .drag-drop-hint {
+            display: block;
             color: #999;
             font-size: 14px;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        body.tool-page[data-tool-page="image-align"] .drag-drop-area {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0 !important;
+            min-height: 150px;
+            padding: 28px 20px;
+        }
+
+        body.tool-page[data-tool-page="image-align"] .drag-drop-icon {
+            display: block !important;
+            position: relative !important;
+            flex: 0 0 auto !important;
+            width: 44px !important;
+            height: 44px !important;
+            margin: 0 0 12px !important;
+            color: transparent !important;
+            background: #fff !important;
+            border: 2px solid var(--accent, #6e8efb) !important;
+            border-radius: 12px !important;
+            font-size: 0 !important;
+        }
+
+        body.tool-page[data-tool-page="image-align"] .drag-drop-icon::before,
+        body.tool-page[data-tool-page="image-align"] .drag-drop-icon::after {
+            content: "" !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            display: block !important;
+            width: 20px !important;
+            height: 2px !important;
+            background: var(--accent, #6e8efb) !important;
+            transform: translate(-50%, -50%) !important;
+        }
+
+        body.tool-page[data-tool-page="image-align"] .drag-drop-icon::after {
+            transform: translate(-50%, -50%) rotate(90deg) !important;
+        }
+
+        body.tool-page[data-tool-page="image-align"] .drag-drop-text,
+        body.tool-page[data-tool-page="image-align"] .drag-drop-hint {
+            display: block !important;
+            max-width: 100%;
+            text-align: center;
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
 
         /* 图片预览容器样式 */
@@ -805,14 +870,14 @@
                 aria-labelledby="backgroundPreviewLabel"></div>
         </div>
 
-        <button type="button" id="generateBtn" disabled>生成并下载</button>
+        <button type="button" id="generateBtn" disabled>下载</button>
         <div class="status-message" id="statusMessage" role="status" aria-live="polite"></div>
 
         <div class="result" id="result" hidden>
             <img id="resultImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
                 alt="生成的网格图片">
             <div class="image-counter" id="resultInfo"></div>
-            <a href="#" id="downloadBtn" download="image-grid.png">再次下载 PNG</a>
+            <a href="#" id="downloadBtn" download="image-grid.png">下载</a>
         </div>
     </main>
 
@@ -1301,14 +1366,14 @@
         function showLoading() {
             generateBtn.disabled = true;
             generateBtn.classList.add('loading');
-            generateBtn.textContent = '生成中...';
+            generateBtn.textContent = '准备下载...';
             generateBtn.setAttribute('aria-busy', 'true');
         }
 
         // 隐藏加载状态
         function hideLoading() {
             generateBtn.classList.remove('loading');
-            generateBtn.textContent = '生成并下载';
+            generateBtn.textContent = '下载';
             generateBtn.removeAttribute('aria-busy');
             updateGenerateState();
         }
