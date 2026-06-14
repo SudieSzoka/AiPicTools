@@ -3,337 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="一组在浏览器中运行的图片处理工具，覆盖裁剪、缩放、格式转换、拼图和视频转帧等常用任务。">
-    <meta name="theme-color" content="#0f766e">
-    <title>我的工具站 | 在线图片处理工具</title>
-    <link rel="icon" type="image/png" href="icon/aipictools.png">
-    <link rel="stylesheet" href="common.css">
-</head>
-<body class="home-page">
-    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <title>我的工具集合站</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/icon/aipictools.png">
+    <style>
+        .dropdown {
+        position: relative;
+        display: inline-block;
+        }
 
-    <header class="page-header">
-        <div class="header-container">
-            <div class="header-inner">
-                <a href="index.html" class="brand-link" aria-label="我的工具站首页">
-                    <img class="brand-mark" src="icon/aipictools.png" alt="">
-                    <span>我的工具站</span>
-                </a>
-                <div class="home-header-actions">
-                    <button class="button button-secondary" id="openEditButton" type="button" aria-haspopup="dialog">
-                        编辑
+        .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        min-width: 160px;
+        }
+
+        /* 关键部分：悬停时显示菜单 */
+        .dropdown:hover .dropdown-menu {
+        display: block;
+        }
+
+        /* 确保菜单和按钮之间有连接区域 */
+        .dropdown > button:after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        right: 0;
+        height: 10px;
+        }
+        .tool-card {
+            transition: all 0.3s ease;
+        }
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶栏 -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 mr-4"><!-- 添加 mr-4 来创建右边距 -->
+                        <h1 class="text-2xl font-bold text-gray-900">我的工具站</h1>
+                    </div>
+                            <!-- 搜索栏 -->
+                    <div class="flex-shrink-0">
+                        <div class="relative">
+                            <input type="text" id="searchInput" placeholder="搜索工具..." 
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"><!-- 将 py-3 改为 py-2 -->
+                                <img src="icon/search.png" alt="搜索" width="24" height="12" class="absolute left-3 top-3 inline-block align-middle" />
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 导航菜单 -->
+                <nav class="hidden md:block">
+                    <div class="flex items-center space-x-4">     
+                        <!-- 默认工具显示 -->
+                        <div class="flex items-center space-x-2" id="defaultTools">
+                            <!-- 默认工具会通过JavaScript动态生成 -->
+                        </div>
+                        
+                        <!-- 编辑默认工具按钮 -->
+                        <button onclick="openEditDefaultTools()" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            编辑
+                        </button>
+                        
+                        <!-- 编辑默认工具模态框 -->
+                        <div id="editDefaultToolsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+                            <div class="flex items-center justify-center min-h-screen p-4">
+                                <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                                    <div class="flex items-center justify-between p-6 border-b">
+                                        <h3 class="text-lg font-semibold text-gray-900">编辑默认工具</h3>
+                                        <button onclick="closeEditDefaultTools()" class="text-gray-400 hover:text-gray-600">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="p-6">
+                                        <p class="text-sm text-gray-600 mb-4">选择最多3个工具作为默认显示：</p>
+                                        <div id="toolSelectionList" class="space-y-2 max-h-60 overflow-y-auto">
+                                            <!-- 工具选择列表会通过JavaScript动态生成 -->
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end space-x-3 p-6 border-t">
+                                        <button onclick="closeEditDefaultTools()" class="px-4 py-2 text-gray-600 hover:text-gray-800">取消</button>
+                                        <button onclick="saveDefaultTools()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">保存</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- 移动端菜单按钮 -->
+                <div class="md:hidden">
+                    <button class="text-gray-700 hover:text-blue-600 p-2">
+                        <i data-lucide="menu" class="h-6 w-6"></i>
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="home-main" id="main-content">
-        <section class="catalog-section" aria-labelledby="catalog-title">
-            <div class="catalog-toolbar">
-                <div class="catalog-heading">
-                    <h1 id="catalog-title">图片工具</h1>
-                    <p><span id="toolCount">正在读取工具列表</span></p>
-                </div>
-                <div class="search-shell">
-                    <img src="icon/search.png" alt="">
-                    <label for="searchInput" class="visually-hidden">搜索工具</label>
-                    <input
-                        class="search-input"
-                        type="search"
-                        id="searchInput"
-                        placeholder="搜索名称或用途"
-                        autocomplete="off"
-                    >
-                </div>
-            </div>
+    <!-- 主内容区域 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero区域 -->
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">个人常用的一些图片工具需求</h2>
+            <!-- <p class="text-xl text-gray-600 max-w-2xl mx-auto">提供各种实用的在线工具，提高工作效率</p> -->
+        </div>
 
-            <div class="favorites-bar">
-                <div class="favorites-copy">
-                    <h2>常用工具</h2>
-                    <p>最多固定 3 个工具，方便下次直接打开。</p>
-                </div>
-                <div class="favorites-actions">
-                    <div class="default-tools" id="defaultTools" aria-live="polite"></div>
-                    <button class="button button-secondary favorites-edit-button" id="openEditInlineButton" type="button">
-                        编辑常用工具
-                    </button>
-                </div>
+        <!-- 工具分类 -->
+        <!-- <div class="mb-8">
+            <div class="flex flex-wrap justify-center gap-4">
+                <button onclick="filterTools('all')" class="filter-btn bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors">
+                    全部
+                </button>
+                <button onclick="filterTools('image')" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">
+                    图片工具
+                </button>
+                <button onclick="filterTools('text')" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">
+                    文本工具
+                </button>
+                <button onclick="filterTools('mulit')" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">
+                    批量工具
+                </button>
             </div>
+        </div> -->
 
-            <div class="tools-grid" id="toolsGrid" aria-live="polite" aria-busy="true">
-                <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
-            </div>
-        </section>
+        <!-- 工具网格 -->
+        <div id="toolsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- 工具卡片会通过JavaScript动态生成 -->
+        </div>
+
     </main>
 
-    <footer class="page-footer">
-        <div class="footer-container">
-            <div class="footer-brand">
-                <a href="index.html" class="footer-logo">我的工具站</a>
-                <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
-            </div>
-            <nav class="footer-links" aria-label="页脚导航">
-                <a href="#catalog-title">全部工具</a>
-            </nav>
-        </div>
-        <div class="footer-bottom">
-            <p>© <span data-current-year>2026</span> 我的工具站</p>
-        </div>
-    </footer>
-
-    <div class="modal" id="editDefaultToolsModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
-        <div class="modal-panel">
-            <div class="modal-header">
-                <h2 id="modalTitle">编辑常用工具</h2>
-                <button class="icon-button" id="closeEditButton" type="button" aria-label="关闭">×</button>
-            </div>
-            <div class="modal-body">
-                <p>选择最多 3 个工具。</p>
-                <div class="tool-selection-list" id="toolSelectionList"></div>
-                <p class="form-message" id="selectionMessage" role="alert"></p>
-            </div>
-            <div class="modal-footer">
-                <button class="button button-secondary" id="cancelEditButton" type="button">取消</button>
-                <button class="button" id="saveEditButton" type="button">保存</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const DEFAULT_TOOLS_KEY = "defaultToolPaths";
-        const LEGACY_DEFAULT_TOOLS_KEY = "defaultTools";
-
+        // 工具数据存储
         let tools = [];
-        let defaultTools = [];
-        let lastFocusedElement = null;
-
-        const grid = document.getElementById("toolsGrid");
-        const searchInput = document.getElementById("searchInput");
-        const toolCount = document.getElementById("toolCount");
-        const defaultToolsContainer = document.getElementById("defaultTools");
-        const modal = document.getElementById("editDefaultToolsModal");
-        const selectionList = document.getElementById("toolSelectionList");
-        const selectionMessage = document.getElementById("selectionMessage");
-        const openEditButton = document.getElementById("openEditButton");
-        const openEditInlineButton = document.getElementById("openEditInlineButton");
-        const closeEditButton = document.getElementById("closeEditButton");
-        const cancelEditButton = document.getElementById("cancelEditButton");
-        const saveEditButton = document.getElementById("saveEditButton");
-
-        function escapeHtml(value) {
-            return String(value)
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        function renderState(title, description) {
-            grid.innerHTML = `
-                <div class="catalog-state">
-                    <strong>${escapeHtml(title)}</strong>
-                    <span>${escapeHtml(description)}</span>
-                </div>
-            `;
-        }
-
-        function renderTools(toolsToRender = tools) {
-            grid.setAttribute("aria-busy", "false");
-
-            if (!toolsToRender.length) {
-                renderState("没有匹配的工具", "换一个关键词继续搜索。");
-                toolCount.textContent = "当前没有匹配结果";
-                return;
-            }
-
-            grid.innerHTML = "";
-            toolsToRender.forEach((tool, index) => {
-                const link = document.createElement("a");
-                link.className = "home-tool-card";
-                link.href = tool.path;
-                link.target = "_blank";
-                link.rel = "noopener";
-                link.style.setProperty("--card-index", index);
-                link.innerHTML = `
-                    <span class="tool-card-icon">
-                        <img src="icon/${escapeHtml(tool.icon)}.png" alt="">
-                    </span>
-                    <h3>${escapeHtml(tool.name)}</h3>
-                    <p>${escapeHtml(tool.description)}</p>
-                    <span class="tool-card-action">打开工具</span>
-                `;
-                grid.appendChild(link);
-            });
-
-            toolCount.textContent = `共 ${toolsToRender.length} 个工具`;
-        }
-
-        function migrateLegacyDefaults() {
-            const legacyValue = localStorage.getItem(LEGACY_DEFAULT_TOOLS_KEY);
-            if (!legacyValue) return [];
-
-            try {
-                const legacyIds = JSON.parse(legacyValue);
-                return legacyIds
-                    .map((id) => tools.find((tool) => tool.id === id)?.path)
-                    .filter(Boolean)
-                    .filter((path, index, values) => values.indexOf(path) === index)
-                    .slice(0, 3);
-            } catch {
-                return [];
-            }
-        }
-
-        function loadDefaultTools() {
-            try {
-                const savedPaths = JSON.parse(localStorage.getItem(DEFAULT_TOOLS_KEY) || "[]");
-                defaultTools = Array.isArray(savedPaths)
-                    ? savedPaths.filter((path) => tools.some((tool) => tool.path === path)).slice(0, 3)
-                    : [];
-            } catch {
-                defaultTools = [];
-            }
-
-            if (!defaultTools.length) {
-                defaultTools = migrateLegacyDefaults();
-            }
-
-            if (!defaultTools.length) {
-                defaultTools = tools.slice(0, 3).map((tool) => tool.path);
-            }
-
-            localStorage.setItem(DEFAULT_TOOLS_KEY, JSON.stringify(defaultTools));
-            renderDefaultTools();
-        }
-
-        function renderDefaultTools() {
-            defaultToolsContainer.innerHTML = "";
-
-            defaultTools.forEach((toolPath) => {
-                const tool = tools.find((item) => item.path === toolPath);
-                if (!tool) return;
-
-                const link = document.createElement("a");
-                link.className = "default-tool-link";
-                link.href = tool.path;
-                link.target = "_blank";
-                link.rel = "noopener";
-                link.textContent = tool.name;
-                defaultToolsContainer.appendChild(link);
-            });
-        }
-
-        function renderToolSelection() {
-            selectionList.innerHTML = "";
-            selectionMessage.textContent = "";
-
-            tools.forEach((tool, index) => {
-                const item = document.createElement("div");
-                item.className = "tool-choice";
-                const inputId = `toolChoice${index}`;
-                item.innerHTML = `
-                    <input
-                        type="checkbox"
-                        id="${inputId}"
-                        value="${escapeHtml(tool.path)}"
-                        ${defaultTools.includes(tool.path) ? "checked" : ""}
-                    >
-                    <label for="${inputId}">${escapeHtml(tool.name)}</label>
-                `;
-                selectionList.appendChild(item);
-            });
-
-            selectionList.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-                checkbox.addEventListener("change", () => {
-                    const checked = selectionList.querySelectorAll('input[type="checkbox"]:checked');
-                    if (checked.length > 3) {
-                        checkbox.checked = false;
-                        selectionMessage.textContent = "最多选择 3 个工具。";
-                    } else {
-                        selectionMessage.textContent = "";
-                    }
-                });
-            });
-        }
-
-        function openModal() {
-            lastFocusedElement = document.activeElement;
-            renderToolSelection();
-            modal.hidden = false;
-            document.body.style.overflow = "hidden";
-            closeEditButton.focus();
-        }
-
-        function closeModal() {
-            modal.hidden = true;
-            document.body.style.overflow = "";
-            selectionMessage.textContent = "";
-            lastFocusedElement?.focus();
-        }
-
-        function saveDefaultTools() {
-            defaultTools = Array.from(
-                selectionList.querySelectorAll('input[type="checkbox"]:checked')
-            ).map((checkbox) => checkbox.value);
-
-            localStorage.setItem(DEFAULT_TOOLS_KEY, JSON.stringify(defaultTools));
-            renderDefaultTools();
-            closeModal();
-        }
-
+        // 异步加载工具数据
         async function loadTools() {
             try {
-                const response = await fetch("tools.json");
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
+                const response = await fetch('tools.json');
                 const data = await response.json();
-                tools = data.filter((tool) => tool.show);
+                // 只保留show为true的工具
+                tools = data.filter(tool => tool.show);
                 renderTools();
-                loadDefaultTools();
+                loadDefaultTools(); // 在工具数据加载完成后加载默认工具
             } catch (error) {
-                console.error("加载工具数据失败:", error);
-                grid.setAttribute("aria-busy", "false");
-                renderState("工具列表加载失败", "请刷新页面后重试。");
-                toolCount.textContent = "工具列表暂时不可用";
-                openEditButton.disabled = true;
+                console.error('加载工具数据失败:', error);
             }
         }
+        loadTools(); // 只调用异步加载
+        // 当前过滤器
+        let currentFilter = 'all';
 
-        searchInput.addEventListener("input", (event) => {
-            const searchTerm = event.target.value.trim().toLocaleLowerCase("zh-CN");
-            const filteredTools = tools.filter((tool) => {
-                return tool.name.toLocaleLowerCase("zh-CN").includes(searchTerm)
-                    || tool.description.toLocaleLowerCase("zh-CN").includes(searchTerm);
+        // 渲染工具网格
+        function renderTools(toolsToRender = tools) {
+            const grid = document.getElementById('toolsGrid');
+            grid.innerHTML = '';
+
+            toolsToRender.forEach(tool => {
+                const toolCard = document.createElement('div');
+                toolCard.className = 'tool-card bg-white rounded-lg shadow-md p-6 cursor-pointer border border-gray-200';
+                toolCard.onclick = () => openTool(tool.path);
+                
+                toolCard.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <img src="icon/${tool.icon}.png" alt="${tool.name}图标" width="24" height="24" class="inline-block align-middle" />
+                        </div>
+                        <div class="relative">
+                            <div id="toolMenu${tool.id}" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 hidden">
+                                <div class="py-1">
+                                    <button onclick="event.stopPropagation(); editTool(${tool.id})" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-50 w-full text-left">编辑</button>
+                                    <button onclick="event.stopPropagation(); deleteTool(${tool.id})" class="text-red-600 block px-4 py-2 text-sm hover:bg-gray-50 w-full text-left">删除</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">${tool.name}</h3>
+                    <p class="text-gray-600 text-sm">${tool.description}</p>
+                `;
+                
+                grid.appendChild(toolCard);
             });
+        }
+
+        // 打开工具
+        function openTool(path) {
+            window.open(path, '_blank');
+        }
+
+        // 过滤工具
+        function filterTools(category) {
+            currentFilter = category;
+            
+            // 更新按钮样式
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors';
+            });
+            event.target.className = 'filter-btn bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors';
+            
+            // 过滤工具
+            const filteredTools = category === 'all' ? tools : tools.filter(tool => tool.category === category);
+            renderTools(filteredTools);
+        }
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            let filteredTools = tools;
+            
+            if (currentFilter !== 'all') {
+                filteredTools = tools.filter(tool => tool.category === currentFilter);
+            }
+            
+            if (searchTerm) {
+                filteredTools = filteredTools.filter(tool => 
+                    tool.name.toLowerCase().includes(searchTerm) || 
+                    tool.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
             renderTools(filteredTools);
         });
 
-        openEditButton.addEventListener("click", openModal);
-        openEditInlineButton.addEventListener("click", openModal);
-        closeEditButton.addEventListener("click", closeModal);
-        cancelEditButton.addEventListener("click", closeModal);
-        saveEditButton.addEventListener("click", saveDefaultTools);
 
-        modal.addEventListener("click", (event) => {
-            if (event.target === modal) closeModal();
+        // 切换工具菜单
+        function toggleToolMenu(toolId) {
+            const menu = document.getElementById(`toolMenu${toolId}`);
+            menu.classList.toggle('hidden');
+        }
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('[id^="toolMenu"]').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
         });
 
-        document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && !modal.hidden) closeModal();
+        // 默认工具相关功能
+        let defaultTools = [];
+        
+        // 从本地存储加载默认工具
+        function loadDefaultTools() {
+            const saved = localStorage.getItem('defaultTools');
+            if (saved) {
+                defaultTools = JSON.parse(saved);
+            } else {
+                // 如果没有保存的默认工具，使用前3个工具作为默认
+                defaultTools = tools.slice(0, 3).map(tool => tool.id);
+            }
+            renderDefaultTools();
+        }
+        
+        // 渲染默认工具
+        function renderDefaultTools() {
+            const defaultToolsContainer = document.getElementById('defaultTools');
+            defaultToolsContainer.innerHTML = '';
+            
+            defaultTools.forEach(toolId => {
+                const tool = tools.find(t => t.id === toolId);
+                if (tool) {
+                    const toolLink = document.createElement('a');
+                    toolLink.href = tool.path;
+                    toolLink.target = '_blank';
+                    toolLink.className = 'text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200 transition-colors';
+                    toolLink.textContent = tool.name;
+                    defaultToolsContainer.appendChild(toolLink);
+                }
+            });
+        }
+        
+        // 打开编辑默认工具模态框
+        function openEditDefaultTools() {
+            const modal = document.getElementById('editDefaultToolsModal');
+            const toolSelectionList = document.getElementById('toolSelectionList');
+            
+            // 生成工具选择列表
+            toolSelectionList.innerHTML = '';
+            tools.forEach(tool => {
+                const isSelected = defaultTools.includes(tool.id);
+                const toolItem = document.createElement('div');
+                toolItem.className = 'flex items-center space-x-3 p-2 hover:bg-gray-50 rounded';
+                toolItem.innerHTML = `
+                    <input type="checkbox" id="tool_${tool.id}" value="${tool.id}" 
+                           ${isSelected ? 'checked' : ''} 
+                           onchange="updateToolSelection()"
+                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="tool_${tool.id}" class="text-sm text-gray-700 cursor-pointer flex-1">
+                        ${tool.name}
+                    </label>
+                `;
+                toolSelectionList.appendChild(toolItem);
+            });
+            
+            modal.classList.remove('hidden');
+        }
+        
+        // 关闭编辑默认工具模态框
+        function closeEditDefaultTools() {
+            const modal = document.getElementById('editDefaultToolsModal');
+            modal.classList.add('hidden');
+        }
+        
+        // 更新工具选择状态
+        function updateToolSelection() {
+            const checkboxes = document.querySelectorAll('#toolSelectionList input[type="checkbox"]:checked');
+            if (checkboxes.length > 3) {
+                // 如果选择超过3个，取消最后一个选择
+                checkboxes[checkboxes.length - 1].checked = false;
+                alert('最多只能选择3个默认工具');
+            }
+        }
+        
+        // 保存默认工具
+        function saveDefaultTools() {
+            const selectedTools = Array.from(document.querySelectorAll('#toolSelectionList input[type="checkbox"]:checked'))
+                .map(checkbox => parseInt(checkbox.value));
+            
+            defaultTools = selectedTools;
+            localStorage.setItem('defaultTools', JSON.stringify(defaultTools));
+            renderDefaultTools();
+            closeEditDefaultTools();
+        }
+        
+        // 点击模态框外部关闭
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('editDefaultToolsModal');
+            if (e.target === modal) {
+                closeEditDefaultTools();
+            }
         });
-
-        document.querySelectorAll("[data-current-year]").forEach((node) => {
-            node.textContent = String(new Date().getFullYear());
-        });
-
-        loadTools();
+        
+        // 初始化
+        renderTools();
     </script>
 </body>
 </html>

@@ -8,7 +8,6 @@ OUTPUT_DIR = "tools"          # 输出目录
 HEADER_PATH = "header.html"   # 头部模板文件
 FOOTER_PATH = "footer.html"   # 脚部模板文件
 COMMON_CSS_PATH = "common.css" # 公共样式文件
-COMMON_JS_PATH = "common.js"   # 公共交互文件
 THEMES_DIR = "themes"         # 主题目录
 
 def inject_templates(theme="default", add_css=True, add_favicon=True, add_password_protection=False):
@@ -53,34 +52,6 @@ def inject_templates(theme="default", add_css=True, add_favicon=True, add_passwo
         content = re.sub(r'<!--\s*COMMON_FOOTER\s*-->.*?<!--\s*END_COMMON_FOOTER\s*-->', 
                         '', content, flags=re.DOTALL)
         
-        # 为工具页添加稳定的页面标识，供公共设计系统按页适配。
-        page_name = os.path.splitext(filename)[0]
-        body_tag_match = re.search(r'<body([^>]*)>', content, re.IGNORECASE)
-        if body_tag_match:
-            body_attributes = body_tag_match.group(1)
-            class_match = re.search(r'class=(["\'])(.*?)\1', body_attributes, re.IGNORECASE)
-            if class_match:
-                classes = class_match.group(2).split()
-                if "tool-page" not in classes:
-                    classes.append("tool-page")
-                updated_class = f'class={class_match.group(1)}{" ".join(classes)}{class_match.group(1)}'
-                body_attributes = (
-                    body_attributes[:class_match.start()]
-                    + updated_class
-                    + body_attributes[class_match.end():]
-                )
-            else:
-                body_attributes += ' class="tool-page"'
-
-            if "data-tool-page=" not in body_attributes:
-                body_attributes += f' data-tool-page="{page_name}"'
-
-            content = (
-                content[:body_tag_match.start()]
-                + f"<body{body_attributes}>"
-                + content[body_tag_match.end():]
-            )
-
         # 注入新模板
         header_injection = f"<!-- COMMON_HEADER -->\n{header_content}\n<!-- END_COMMON_HEADER -->"
         footer_injection = f"<!-- COMMON_FOOTER -->\n{footer_content}\n<!-- END_COMMON_FOOTER -->"
@@ -107,17 +78,15 @@ def inject_templates(theme="default", add_css=True, add_favicon=True, add_passwo
             # 如果没有</body>标签，在结尾注入
             content = content + '\n' + footer_injection
         
-        # 将公共资源放在内嵌样式之后，确保统一设计令牌可以稳定覆盖旧样式。
+        # 添加公共CSS链接
         if add_css:
-            head_close_match = re.search(r'(</head>)', content, re.IGNORECASE)
-            if head_close_match:
-                css_links = '\n  <link rel="stylesheet" href="styles/common.css">'
-                css_links += f'\n  <link rel="stylesheet" href="themes/{theme}.css">'
-                css_links += '\n  <script src="scripts/common.js" defer></script>\n'
+            head_match = re.search(r'(<head[^>]*>)', content, re.IGNORECASE)
+            if head_match:
+                css_link = f'\n  <link rel="stylesheet" href="styles/common.css">'
+                css_link += f'\n  <link rel="stylesheet" href="themes/{theme}.css">'
                 content = content.replace(
-                    head_close_match.group(0),
-                    css_links + head_close_match.group(0),
-                    1
+                    head_match.group(0), 
+                    head_match.group(0) + css_link
                 )
         
         # 添加favicon链接
@@ -169,16 +138,11 @@ def copy_common_resources():
     # 创建必要的目录结构
     os.makedirs(os.path.join(OUTPUT_DIR, "styles"), exist_ok=True)
     os.makedirs(os.path.join(OUTPUT_DIR, "themes"), exist_ok=True)
-    os.makedirs(os.path.join(OUTPUT_DIR, "scripts"), exist_ok=True)
     
     # 复制公共CSS
     if os.path.exists(COMMON_CSS_PATH):
         shutil.copy2(COMMON_CSS_PATH, os.path.join(OUTPUT_DIR, "styles", "common.css"))
         print("已复制: 公共样式文件")
-
-    if os.path.exists(COMMON_JS_PATH):
-        shutil.copy2(COMMON_JS_PATH, os.path.join(OUTPUT_DIR, "scripts", "common.js"))
-        print("已复制: 公共交互文件")
     
     # 复制主题文件
     if os.path.exists(THEMES_DIR):

@@ -2,6 +2,8 @@
 <html lang="zh-CN">
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片格式转换工具</title>
@@ -11,7 +13,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: #f5f5f5;
             padding: 20px;
-            min-height: 100dvh;
+            min-height: 100vh;
         }
         .container {
             max-width: 900px;
@@ -23,8 +25,6 @@
         }
         h1 { text-align: center; color: #333; margin-bottom: 30px; }
         .upload-area {
-            display: block;
-            width: 100%;
             border: 2px dashed #ddd;
             border-radius: 8px;
             padding: 40px;
@@ -32,13 +32,9 @@
             margin-bottom: 20px;
             transition: all 0.3s;
             cursor: pointer;
-            color: inherit;
-            font: inherit;
-            background: #fff;
         }
         .upload-area:hover { border-color: #4CAF50; background: #f9f9f9; }
         .upload-area.dragover { border-color: #4CAF50; background: #e8f5e9; }
-        .upload-area span { display: block; }
         input[type="file"] { display: none; }
         .control-bar {
             display: flex;
@@ -72,12 +68,6 @@
             transition: background 0.3s;
         }
         button:hover { background: #45a049; }
-        .upload-area:focus-visible,
-        button:focus-visible,
-        select:focus-visible {
-            outline: 3px solid rgba(33, 150, 243, 0.35);
-            outline-offset: 2px;
-        }
         button:disabled { background: #ccc; cursor: not-allowed; }
         .btn-blue { background: #2196F3; }
         .btn-blue:hover { background: #1976D2; }
@@ -86,7 +76,6 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 15px;
-            list-style: none;
         }
         .image-item {
             border: 1px solid #eee;
@@ -113,14 +102,6 @@
             padding: 8px;
             font-size: 13px;
         }
-        .item-status,
-        .status-message {
-            color: #666;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-        .item-status { margin-bottom: 8px; }
-        .status-message { min-height: 1.5em; margin-bottom: 12px; }
         .loading {
             display: inline-block;
             width: 16px;
@@ -135,49 +116,52 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .tip { font-size: 13px; color: #888; margin-top: 5px; }
     </style>
-
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
-  <script src="scripts/common.js" defer></script>
 </head>
-<body class="tool-page" data-tool-page="image-format-convert">
+<body>
 <!-- COMMON_HEADER -->
-<a class="skip-link" href="#main-content">跳到主要内容</a>
-<header class="page-header" aria-label="站点页头">
+<!-- 固定页头 -->
+<header class="page-header">
     <div class="header-container">
         <div class="header-inner">
+            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
-                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
-                    <span>我的工具站</span>
-                </a>
+                <a href="../index.html" class="logo-link">我的工具站</a>
             </div>
-            <nav class="nav-desktop" aria-label="主要导航">
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">工具首页</a>
+                    <a href="../index.html" class="nav-link">首页</a>
                 </div>
             </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
         </div>
     </div>
 </header>
 <!-- END_COMMON_HEADER -->
     <div class="container">
         <h1>图片格式转换工具</h1>
-        <button class="upload-area" id="uploadArea" type="button" aria-describedby="uploadTip">
-            <span>点击选择图片或拖拽图片到此处</span>
-            <span class="tip" id="uploadTip">支持 JPG、PNG、GIF、BMP、WebP、ICO 等输入，可多选；输出支持 PNG、JPG、WebP、ICO。</span>
-        </button>
-        <input type="file" id="fileInput" multiple accept="image/*,.ico">
+        <div class="upload-area" id="uploadArea">
+            <p>点击选择图片或拖拽图片到此处</p>
+            <p class="tip">支持 JPG、PNG、GIF、BMP、WebP、ICO 等格式，可多选</p>
+            <input type="file" id="fileInput" multiple accept="image/*,.ico">
+        </div>
         <div class="control-bar">
-            <label for="formatSelect">转换为：</label>
+            <label>转换为：</label>
             <select id="formatSelect">
                 <option value="png">PNG</option>
                 <option value="jpeg">JPG</option>
                 <option value="webp">WebP</option>
+                <option value="gif">GIF</option>
+                <option value="bmp">BMP</option>
                 <option value="ico">ICO</option>
             </select>
             <div class="ico-options" id="icoOptions">
-                <label for="icoSize">尺寸：</label>
+                <label>尺寸：</label>
                 <select id="icoSize">
                     <option value="16">16x16</option>
                     <option value="32" selected>32x32</option>
@@ -187,23 +171,14 @@
                     <option value="256">256x256</option>
                 </select>
             </div>
-            <button id="convertBtn" type="button" disabled>开始转换</button>
-            <button id="downloadAllBtn" class="btn-blue" type="button" hidden>全部下载</button>
+            <button id="convertBtn" onclick="convertAll()">开始转换</button>
+            <button id="downloadAllBtn" class="btn-blue" onclick="downloadAll()" style="display:none;">全部下载</button>
         </div>
-        <p class="status-message" id="statusMessage" aria-live="polite"></p>
-        <ul class="preview-area" id="previewArea"></ul>
+        <div class="preview-area" id="previewArea"></div>
     </div>
 <script>
 let files = [];
 let converted = [];
-let previewUrls = [];
-let conversionToken = 0;
-
-const MAX_FILES = 20;
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const MAX_IMAGE_PIXELS = 24_000_000;
-const MAX_CANVAS_SIDE = 16_384;
-const EMPTY_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
@@ -212,191 +187,82 @@ const icoOptions = document.getElementById('icoOptions');
 const previewArea = document.getElementById('previewArea');
 const convertBtn = document.getElementById('convertBtn');
 const downloadAllBtn = document.getElementById('downloadAllBtn');
-const statusMessage = document.getElementById('statusMessage');
 
-uploadArea.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', (event) => handleFiles(event.target.files));
-uploadArea.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    uploadArea.classList.add('dragover');
-});
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-uploadArea.addEventListener('drop', (event) => {
-    event.preventDefault();
-    uploadArea.classList.remove('dragover');
-    handleFiles(event.dataTransfer.files);
-});
-formatSelect.addEventListener('change', () => {
-    conversionToken++;
+uploadArea.onclick = () => fileInput.click();
+fileInput.onchange = e => handleFiles(e.target.files);
+uploadArea.ondragover = e => { e.preventDefault(); uploadArea.classList.add('dragover'); };
+uploadArea.ondragleave = () => uploadArea.classList.remove('dragover');
+uploadArea.ondrop = e => { e.preventDefault(); uploadArea.classList.remove('dragover'); handleFiles(e.dataTransfer.files); };
+
+formatSelect.onchange = () => {
     icoOptions.classList.toggle('show', formatSelect.value === 'ico');
-    clearConvertedResults();
-    convertBtn.disabled = !files.length;
-    convertBtn.textContent = '开始转换';
-});
-convertBtn.addEventListener('click', convertAll);
-downloadAllBtn.addEventListener('click', downloadAll);
-window.addEventListener('pagehide', clearPreviewUrls);
+};
 
 function handleFiles(fileList) {
-    conversionToken++;
-    const candidates = Array.from(fileList);
-    const valid = [];
-    const rejected = [];
-
-    candidates.forEach((file) => {
-        if (!isSupportedInput(file)) {
-            rejected.push(`${file.name}：不是支持的图片格式`);
-            return;
-        }
-        if (file.size > MAX_FILE_BYTES) {
-            rejected.push(`${file.name}：超过 50MB`);
-            return;
-        }
-        if (valid.length < MAX_FILES) {
-            valid.push(file);
-        }
-    });
-
-    if (candidates.length > MAX_FILES) {
-        rejected.push(`最多一次处理 ${MAX_FILES} 个文件，已忽略多余文件`);
-    }
-
-    files = valid;
+    files = Array.from(fileList).filter(f => f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.ico'));
     converted = [];
-    downloadAllBtn.hidden = true;
-    convertBtn.disabled = !files.length;
-    convertBtn.textContent = '开始转换';
-    fileInput.value = '';
-    setStatus(rejected.length ? rejected.join('；') : `${files.length} 个文件已加入，选择格式后点击开始转换。`);
+    downloadAllBtn.style.display = 'none';
     renderPreview();
 }
 
 function renderPreview() {
-    clearPreviewUrls();
-    previewArea.replaceChildren();
+    previewArea.innerHTML = '';
     files.forEach((file, i) => {
-        const item = document.createElement('li');
-        item.className = 'image-item';
-
-        const img = document.createElement('img');
-        img.id = `img${i}`;
-        img.src = EMPTY_IMAGE_SRC;
-        img.alt = `${file.name} 预览`;
-        img.decoding = 'async';
-        const url = URL.createObjectURL(file);
-        previewUrls.push(url);
-        img.src = url;
-
-        const name = document.createElement('div');
-        name.className = 'name';
-        name.textContent = file.name;
-
-        const itemStatus = document.createElement('div');
-        itemStatus.className = 'item-status';
-        itemStatus.id = `status${i}`;
-        itemStatus.textContent = formatBytes(file.size);
-
-        const button = document.createElement('button');
-        button.className = 'download-btn btn-blue';
-        button.id = `dlBtn${i}`;
-        button.type = 'button';
-        button.disabled = true;
-        button.textContent = '下载';
-
-        item.append(img, name, itemStatus, button);
-        previewArea.appendChild(item);
+        const div = document.createElement('div');
+        div.className = 'image-item';
+        div.innerHTML = `<img id="img${i}"><div class="name">${file.name}</div><button class="download-btn btn-blue" id="dlBtn${i}" disabled>下载</button>`;
+        previewArea.appendChild(div);
+        const img = document.getElementById('img' + i);
+        const reader = new FileReader();
+        reader.onload = e => img.src = e.target.result;
+        reader.readAsDataURL(file);
     });
 }
 
 async function convertAll() {
-    if (!files.length) {
-        setStatus('请先选择图片文件。');
-        return;
-    }
-
+    if (!files.length) return;
     const format = formatSelect.value;
     const icoSize = parseInt(document.getElementById('icoSize').value);
-    const token = ++conversionToken;
     convertBtn.disabled = true;
-    convertBtn.textContent = '转换中...';
-    downloadAllBtn.hidden = true;
+    convertBtn.innerHTML = '转换中<span class="loading"></span>';
     converted = [];
-
     for (let i = 0; i < files.length; i++) {
-        if (token !== conversionToken) return;
-        setItemStatus(i, '转换中...');
         try {
             const blob = await convertImage(files[i], format, icoSize);
-            if (token !== conversionToken) return;
             const ext = format === 'jpeg' ? 'jpg' : format;
-            const newName = `${safeBaseName(files[i].name)}.${ext}`;
+            const newName = files[i].name.replace(/\.[^.]+$/, '') + '.' + ext;
             converted[i] = { blob, name: newName };
             const btn = document.getElementById('dlBtn' + i);
             btn.disabled = false;
             btn.onclick = () => download(i);
-            setItemStatus(i, `完成：${formatBytes(blob.size)}`);
         } catch (e) {
-            if (token !== conversionToken) return;
             console.error(e);
-            setItemStatus(i, String(e || '转换失败'));
         }
     }
-
     convertBtn.disabled = false;
     convertBtn.textContent = '开始转换';
-    const successCount = converted.filter(Boolean).length;
-    downloadAllBtn.hidden = successCount <= 1;
-    setStatus(successCount ? `已完成 ${successCount}/${files.length} 个文件。` : '没有文件转换成功，请检查文件格式或降低图片尺寸。');
+    if (converted.filter(Boolean).length > 1) downloadAllBtn.style.display = '';
 }
 
 function convertImage(file, format, icoSize) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
         img.onload = () => {
-            URL.revokeObjectURL(objectUrl);
-            let w = img.naturalWidth || img.width;
-            let h = img.naturalHeight || img.height;
-            if (!w || !h || w > MAX_CANVAS_SIDE || h > MAX_CANVAS_SIDE || w * h > MAX_IMAGE_PIXELS) {
-                reject('图片尺寸过大或无法识别');
-                return;
-            }
-
+            let w = img.width, h = img.height;
             if (format === 'ico') { w = h = icoSize; }
             const canvas = document.createElement('canvas');
             canvas.width = w; canvas.height = h;
             const ctx = canvas.getContext('2d');
-            if (format === 'jpeg') {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, w, h);
-            }
             ctx.drawImage(img, 0, 0, w, h);
             if (format === 'ico') {
                 resolve(canvasToIco(canvas));
             } else {
-                const mime = getOutputMime(format);
-                if (!mime || !canvas.toBlob) {
-                    reject('当前浏览器不支持该导出格式');
-                    return;
-                }
-                canvas.toBlob((blob) => {
-                    if (!blob) {
-                        reject('转换失败');
-                        return;
-                    }
-                    if (format === 'webp' && blob.type && blob.type !== mime) {
-                        reject('当前浏览器不支持 WebP 导出');
-                        return;
-                    }
-                    resolve(blob);
-                }, mime, 0.92);
+                const mime = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : format === 'gif' ? 'image/gif' : 'image/bmp';
+                canvas.toBlob(blob => blob ? resolve(blob) : reject('转换失败'), mime, 0.92);
             }
         };
-        img.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject('加载失败或格式不受浏览器支持');
-        };
-        img.src = objectUrl;
+        img.onerror = () => reject('加载失败');
+        img.src = URL.createObjectURL(file);
     });
 }
 
@@ -408,8 +274,7 @@ function canvasToIco(canvas) {
     // BMP header for ICO
     const bmpInfoHeaderSize = 40;
     const pixelDataSize = size * size * 4;
-    const maskRowSize = Math.ceil(size / 32) * 4;
-    const maskSize = maskRowSize * size;
+    const maskSize = Math.ceil(size / 8) * size;
     const bmpSize = bmpInfoHeaderSize + pixelDataSize + maskSize;
     const icoHeaderSize = 6;
     const icoDirEntrySize = 16;
@@ -460,78 +325,61 @@ function canvasToIco(canvas) {
 function download(i) {
     if (!converted[i]) return;
     const a = document.createElement('a');
-    const url = URL.createObjectURL(converted[i].blob);
-    a.href = url;
+    a.href = URL.createObjectURL(converted[i].blob);
     a.download = converted[i].name;
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    URL.revokeObjectURL(a.href);
 }
 
 function downloadAll() {
     converted.forEach((c, i) => c && download(i));
 }
-
-function clearConvertedResults() {
-    converted = [];
-    downloadAllBtn.hidden = true;
-    files.forEach((_, i) => {
-        const btn = document.getElementById('dlBtn' + i);
-        if (btn) btn.disabled = true;
-        setItemStatus(i, formatBytes(files[i].size));
-    });
-}
-
-function clearPreviewUrls() {
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    previewUrls = [];
-}
-
-function isSupportedInput(file) {
-    return file.type.startsWith('image/') || /\.(ico|jpg|jpeg|png|gif|bmp|webp)$/i.test(file.name);
-}
-
-function getOutputMime(format) {
-    if (format === 'png') return 'image/png';
-    if (format === 'jpeg') return 'image/jpeg';
-    if (format === 'webp') return 'image/webp';
-    return null;
-}
-
-function setStatus(message) {
-    statusMessage.textContent = message;
-}
-
-function setItemStatus(index, message) {
-    const node = document.getElementById('status' + index);
-    if (node) node.textContent = message;
-}
-
-function safeBaseName(name) {
-    const base = name.replace(/\.[^.]+$/, '').trim();
-    return (base || 'converted-image').replace(/[\\/:*?"<>|]+/g, '-');
-}
-
-function formatBytes(bytes) {
-    if (!Number.isFinite(bytes)) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
 </script>
 <!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
 <footer class="page-footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <a href="../index.html" class="footer-logo">我的工具站</a>
-            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
-        </div>
-        <nav class="footer-links" aria-label="页脚导航">
-            <a href="../index.html">全部工具</a>
-        </nav>
-    </div>
-    <div class="footer-bottom">
-        <p>© <span data-current-year>2026</span> 我的工具站</p>
-    </div>
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>

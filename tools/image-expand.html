@@ -2,6 +2,8 @@
 <html lang="zh-CN">
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片扩展工具</title>
@@ -27,7 +29,7 @@
         }
 
         body {
-            min-height: 100dvh;
+            min-height: 100vh;
             padding: 24px;
             font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
             color: var(--text);
@@ -104,15 +106,11 @@
         }
 
         .upload-zone {
-            display: block;
-            width: 100%;
             border: 2px dashed #d8c3a8;
             border-radius: 20px;
             padding: 28px 18px;
             text-align: center;
             cursor: pointer;
-            color: inherit;
-            font: inherit;
             transition: 0.22s ease;
             background: linear-gradient(135deg, rgba(255, 244, 228, 0.85), rgba(247, 250, 252, 0.9));
         }
@@ -143,11 +141,7 @@
             margin-bottom: 6px;
         }
 
-        .upload-zone .card-desc {
-            display: block;
-        }
-
-        #fileInput {
+        .upload-zone input[type="file"] {
             display: none;
         }
 
@@ -222,7 +216,6 @@
         .number-input:focus,
         .hex-input:focus,
         .side-value-input:focus,
-        .upload-zone:focus-visible,
         .side-tab:focus-visible,
         .action-btn:focus-visible,
         .palette-btn:focus-visible,
@@ -459,28 +452,29 @@
             }
         }
     </style>
-
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
-  <script src="scripts/common.js" defer></script>
 </head>
-<body class="tool-page" data-tool-page="image-expand">
+<body>
 <!-- COMMON_HEADER -->
-<a class="skip-link" href="#main-content">跳到主要内容</a>
-<header class="page-header" aria-label="站点页头">
+<!-- 固定页头 -->
+<header class="page-header">
     <div class="header-container">
         <div class="header-inner">
+            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
-                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
-                    <span>我的工具站</span>
-                </a>
+                <a href="../index.html" class="logo-link">我的工具站</a>
             </div>
-            <nav class="nav-desktop" aria-label="主要导航">
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">工具首页</a>
+                    <a href="../index.html" class="nav-link">首页</a>
                 </div>
             </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
         </div>
     </div>
 </header>
@@ -495,12 +489,12 @@
             <aside class="sidebar">
                 <div class="card">
                     <div class="card-title">上传图片</div>
-                    <button class="upload-zone" id="uploadZone" type="button" aria-describedby="uploadHelp">
-                        <span class="upload-mark" aria-hidden="true">＋</span>
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-mark">＋</div>
                         <strong>点击或拖拽上传图片</strong>
-                        <span class="card-desc" id="uploadHelp">支持 JPG、PNG、WebP、GIF、BMP。一次处理 1 张图。</span>
-                    </button>
-                    <input type="file" id="fileInput" accept="image/*">
+                        <p class="card-desc">支持 JPG、PNG、WebP、GIF、BMP。一次处理 1 张图。</p>
+                        <input type="file" id="fileInput" accept="image/*">
+                    </div>
 
                     <div class="meta-grid">
                         <div class="meta-item">
@@ -529,7 +523,7 @@
                             <span>四周统一增加像素</span>
                             <small>会加在原图四周</small>
                         </label>
-                        <input class="number-input" id="uniformBorder" type="number" min="0" max="5000" step="1" value="0">
+                        <input class="number-input" id="uniformBorder" type="number" min="0" step="1" value="0">
                     </div>
 
                     <div class="control-group">
@@ -561,7 +555,7 @@
                             <span id="activeSideLabel">右边增加像素</span>
                             <small id="activeSideHint">基准：原图宽度</small>
                         </label>
-                        <input class="side-value-input" id="activeSideValue" type="number" min="0" max="5000" step="1" value="0">
+                        <input class="side-value-input" id="activeSideValue" type="number" min="0" step="1" value="0">
                     </div>
 
                     <div class="quick-actions">
@@ -604,7 +598,7 @@
                                     <p class="empty-tip">上传后会显示原图尺寸和主色快捷按钮。</p>
                                 </div>
                             </div>
-                            <img id="originalPreview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="原图预览" decoding="async" hidden>
+                            <img id="originalPreview" alt="原图预览" style="display:none;">
                         </div>
                     </div>
 
@@ -627,7 +621,7 @@
                                     <p class="empty-tip">上传图片并调整像素后，这里会实时显示扩展后的结果。</p>
                                 </div>
                             </div>
-                            <canvas id="resultCanvas" hidden></canvas>
+                            <canvas id="resultCanvas" style="display:none;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -649,13 +643,6 @@
         };
 
         const sideTextMap = { top: '上边', right: '右边', bottom: '下边', left: '左边' };
-        const MAX_FILE_BYTES = 50 * 1024 * 1024;
-        const MAX_IMAGE_PIXELS = 24_000_000;
-        const MAX_CANVAS_PIXELS = 64_000_000;
-        const MAX_CANVAS_SIDE = 16_384;
-        const MAX_EXTENSION_PIXELS = 5000;
-        let sourceObjectUrl = '';
-        let loadToken = 0;
 
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
@@ -707,11 +694,7 @@
             event.preventDefault();
             uploadZone.classList.remove('drag-over');
             const file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith('image/'));
-            if (file) {
-                loadImageFile(file);
-            } else {
-                alert('请拖入图片文件。');
-            }
+            if (file) loadImageFile(file);
         });
 
         uniformBorderInput.addEventListener('input', () => {
@@ -763,36 +746,18 @@
         });
 
         downloadBtn.addEventListener('click', () => {
-            if (!state.originalImage || downloadBtn.disabled) return;
-            if (!resultCanvas.toBlob) {
-                alert('当前浏览器不支持导出画布图片，请更新浏览器后重试。');
-                return;
-            }
-
+            if (!state.originalImage) return;
             const link = document.createElement('a');
             const baseName = state.fileName.replace(/\.[^.]+$/, '') || 'expanded-image';
             link.download = `${baseName}-expanded.png`;
-            downloadBtn.disabled = true;
-
-            resultCanvas.toBlob((blob) => {
-                downloadBtn.disabled = false;
-                if (!blob) {
-                    alert('导出失败，请降低扩展尺寸后重试。');
-                    return;
-                }
-
-                const url = URL.createObjectURL(blob);
-                link.href = url;
-                link.click();
-                setTimeout(() => URL.revokeObjectURL(url), 0);
-            }, 'image/png');
+            link.href = resultCanvas.toDataURL('image/png');
+            link.click();
         });
 
         setActiveSide(state.activeSide);
         renderPalettes();
         renderSideSummary();
         renderComposite();
-        window.addEventListener('pagehide', releaseSourceObjectUrl);
 
         function loadImageFile(file) {
             if (!file.type.startsWith('image/')) {
@@ -800,71 +765,41 @@
                 return;
             }
 
-            if (file.size > MAX_FILE_BYTES) {
-                alert('图片文件过大，请选择 50MB 以内的图片。');
-                fileInput.value = '';
-                return;
-            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.fileName = file.name;
+                    state.originalImage = img;
+                    state.originalWidth = img.width;
+                    state.originalHeight = img.height;
+                    state.uniformBorder = 0;
+                    state.uniformColor = '#ffffff';
+                    state.sideColor = '#ffffff';
+                    state.sideValues = { top: 0, right: 0, bottom: 0, left: 0 };
+                    state.dominantColors = extractDominantColors(img);
 
-            const objectUrl = URL.createObjectURL(file);
-            const token = ++loadToken;
-            const img = new Image();
+                    uniformBorderInput.value = '0';
+                    uniformColorInput.value = '#ffffff';
+                    uniformColorHex.value = '#FFFFFF';
+                    sideColorInput.value = '#ffffff';
+                    sideColorHex.value = '#FFFFFF';
 
-            img.onload = () => {
-                if (token !== loadToken) {
-                    URL.revokeObjectURL(objectUrl);
-                    return;
-                }
-
-                const width = img.naturalWidth || img.width;
-                const height = img.naturalHeight || img.height;
-                if (!width || !height || width * height > MAX_IMAGE_PIXELS) {
-                    URL.revokeObjectURL(objectUrl);
-                    alert('图片尺寸过大或无法识别，请选择不超过 2400 万像素的图片。');
+                    originalPreview.src = event.target.result;
+                    originalPreview.style.display = 'block';
+                    originalEmpty.style.display = 'none';
+                    originalSizeText.textContent = `${img.width} × ${img.height}px`;
+                    fileNameText.textContent = file.name;
                     fileInput.value = '';
-                    return;
-                }
 
-                releaseSourceObjectUrl();
-                sourceObjectUrl = objectUrl;
-                state.fileName = file.name;
-                state.originalImage = img;
-                state.originalWidth = width;
-                state.originalHeight = height;
-                state.uniformBorder = 0;
-                state.uniformColor = '#ffffff';
-                state.sideColor = '#ffffff';
-                state.sideValues = { top: 0, right: 0, bottom: 0, left: 0 };
-                state.dominantColors = extractDominantColors(img);
-
-                uniformBorderInput.value = '0';
-                uniformColorInput.value = '#ffffff';
-                uniformColorHex.value = '#FFFFFF';
-                sideColorInput.value = '#ffffff';
-                sideColorHex.value = '#FFFFFF';
-
-                originalPreview.src = sourceObjectUrl;
-                originalPreview.hidden = false;
-                originalEmpty.hidden = true;
-                originalSizeText.textContent = `${width} × ${height}px`;
-                fileNameText.textContent = file.name;
-                fileInput.value = '';
-
-                renderPalettes();
-                syncActiveSideInput();
-                renderSideSummary();
-                renderComposite();
+                    renderPalettes();
+                    syncActiveSideInput();
+                    renderSideSummary();
+                    renderComposite();
+                };
+                img.src = event.target.result;
             };
-
-            img.onerror = () => {
-                URL.revokeObjectURL(objectUrl);
-                if (token === loadToken) {
-                    fileInput.value = '';
-                    alert('图片无法加载，可能是文件损坏或格式不受浏览器支持。');
-                }
-            };
-
-            img.src = objectUrl;
+            reader.readAsDataURL(file);
         }
 
         function bindColorPair(colorInput, textInput, onChange) {
@@ -912,23 +847,12 @@
             const totalBottom = state.uniformBorder + state.sideValues.bottom;
             const totalLeft = state.uniformBorder + state.sideValues.left;
 
-            sideSummary.replaceChildren(
-                createSummaryItem('上边', `单边 ${state.sideValues.top}px / 总留白 ${totalTop}px`),
-                createSummaryItem('右边', `单边 ${state.sideValues.right}px / 总留白 ${totalRight}px`),
-                createSummaryItem('下边', `单边 ${state.sideValues.bottom}px / 总留白 ${totalBottom}px`),
-                createSummaryItem('左边', `单边 ${state.sideValues.left}px / 总留白 ${totalLeft}px`)
-            );
-        }
-
-        function createSummaryItem(title, description) {
-            const item = document.createElement('div');
-            item.className = 'summary-item';
-            const label = document.createElement('strong');
-            label.textContent = title;
-            const value = document.createElement('span');
-            value.textContent = description;
-            item.append(label, value);
-            return item;
+            sideSummary.innerHTML = `
+                <div class="summary-item"><strong>上边</strong><span>单边 ${state.sideValues.top}px / 总留白 ${totalTop}px</span></div>
+                <div class="summary-item"><strong>右边</strong><span>单边 ${state.sideValues.right}px / 总留白 ${totalRight}px</span></div>
+                <div class="summary-item"><strong>下边</strong><span>单边 ${state.sideValues.bottom}px / 总留白 ${totalBottom}px</span></div>
+                <div class="summary-item"><strong>左边</strong><span>单边 ${state.sideValues.left}px / 总留白 ${totalLeft}px</span></div>
+            `;
         }
 
         function renderPalettes() {
@@ -956,12 +880,7 @@
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'palette-btn';
-            const chip = document.createElement('span');
-            chip.className = 'palette-chip';
-            chip.style.backgroundColor = color;
-            const label = document.createElement('span');
-            label.textContent = color.toUpperCase();
-            button.append(chip, label);
+            button.innerHTML = `<span class="palette-chip" style="background:${color};"></span><span>${color.toUpperCase()}</span>`;
             button.addEventListener('click', onClick);
             return button;
         }
@@ -975,11 +894,10 @@
         function renderComposite() {
             const hasImage = Boolean(state.originalImage);
             downloadBtn.disabled = !hasImage;
-            resultCanvas.hidden = !hasImage;
-            resultEmpty.hidden = hasImage;
+            resultCanvas.style.display = hasImage ? 'block' : 'none';
+            resultEmpty.style.display = hasImage ? 'none' : 'grid';
 
             if (!hasImage) {
-                setResultEmptyText('等待生成预览', '上传图片并调整像素后，这里会实时显示扩展后的结果。');
                 resultSizeText.textContent = '-';
                 borderSummary.textContent = '统一边：0 px';
                 singleSummary.textContent = '单边：上0 / 右0 / 下0 / 左0';
@@ -996,22 +914,6 @@
             const outputHeight = state.originalHeight + uniform * 2 + topExtra + bottomExtra;
             const drawX = leftExtra + uniform;
             const drawY = topExtra + uniform;
-
-            if (outputWidth > MAX_CANVAS_SIDE || outputHeight > MAX_CANVAS_SIDE || outputWidth * outputHeight > MAX_CANVAS_PIXELS) {
-                downloadBtn.disabled = true;
-                resultCanvas.hidden = true;
-                resultEmpty.hidden = false;
-                setResultEmptyText('输出尺寸过大', '请降低扩展像素，避免浏览器无法生成或下载图片。');
-                resultSizeText.textContent = `${outputWidth} × ${outputHeight}px（过大）`;
-                borderSummary.textContent = `统一边：${uniform}px，颜色 ${state.uniformColor.toUpperCase()}`;
-                singleSummary.textContent = `单边：上${topExtra} / 右${rightExtra} / 下${bottomExtra} / 左${leftExtra}`;
-                offsetSummary.textContent = `偏移：X ${drawX} / Y ${drawY}`;
-                return;
-            }
-
-            downloadBtn.disabled = false;
-            resultCanvas.hidden = false;
-            resultEmpty.hidden = true;
 
             resultCanvas.width = outputWidth;
             resultCanvas.height = outputHeight;
@@ -1095,22 +997,7 @@
 
         function sanitizePixels(value) {
             const next = Number.parseInt(value, 10);
-            if (Number.isNaN(next) || next < 0) return 0;
-            return Math.min(next, MAX_EXTENSION_PIXELS);
-        }
-
-        function setResultEmptyText(title, description) {
-            const titleNode = resultEmpty.querySelector('strong');
-            const descNode = resultEmpty.querySelector('.empty-tip');
-            if (titleNode) titleNode.textContent = title;
-            if (descNode) descNode.textContent = description;
-        }
-
-        function releaseSourceObjectUrl() {
-            if (sourceObjectUrl) {
-                URL.revokeObjectURL(sourceObjectUrl);
-                sourceObjectUrl = '';
-            }
+            return Number.isNaN(next) || next < 0 ? 0 : next;
         }
 
         function normalizeHex(value) {
@@ -1139,19 +1026,50 @@
         }
     </script>
 <!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
 <footer class="page-footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <a href="../index.html" class="footer-logo">我的工具站</a>
-            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
-        </div>
-        <nav class="footer-links" aria-label="页脚导航">
-            <a href="../index.html">全部工具</a>
-        </nav>
-    </div>
-    <div class="footer-bottom">
-        <p>© <span data-current-year>2026</span> 我的工具站</p>
-    </div>
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>

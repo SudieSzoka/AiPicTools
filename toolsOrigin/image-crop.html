@@ -344,21 +344,21 @@
     <div class="container">
         <div class="header">
             <h1>图片裁剪工具</h1>
-            <div class="subtitle">上传图片，精确裁剪并下载结果。</div>
+            <div class="subtitle">上传图片 · 精确裁剪 · 下载结果</div>
         </div>
-
+        
         <div class="main-content">
             <div class="upload-section" id="upload-section">
-                <div class="upload-icon" aria-hidden="true"></div>
+                <div class="upload-icon">📁</div>
                 <div class="upload-text">拖放图片到此处或点击下方按钮上传</div>
                 <input type="file" id="file-input" accept="image/*" hidden>
-                <button class="btn" id="upload-btn" type="button">选择图片</button>
+                <button class="btn" id="upload-btn">选择图片</button>
             </div>
-
+            
             <div class="preview-section" id="preview-section">
                 <h2 class="preview-title">裁剪图片</h2>
                 <div class="image-container" id="image-container">
-                    <img id="preview-image" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="预览">
+                    <img id="preview-image" src="" alt="预览">
                     <div class="crop-area" id="crop-area">
                         <div class="crop-size" id="crop-size">200×200</div>
                         <div class="crop-handle handle-tl"></div>
@@ -367,38 +367,38 @@
                         <div class="crop-handle handle-br"></div>
                     </div>
                 </div>
-
+                
                 <!-- 尺寸控制面板 -->
                 <div class="size-controls">
                     <div class="dimension-input">
                         <label for="width-input">宽度 (px)</label>
                         <input type="number" id="width-input" min="50" value="200">
                     </div>
-
+                    
                     <div class="dimension-input">
                         <label for="height-input">高度 (px)</label>
                         <input type="number" id="height-input" min="50" value="200">
                     </div>
-
+                    
                     <div class="lock-aspect">
                         <input type="checkbox" id="lock-aspect" checked>
                         <label for="lock-aspect">锁定宽高比</label>
                     </div>
                 </div>
-
+                
                 <div class="controls">
-                    <button class="btn" id="crop-btn" type="button">确认裁剪</button>
-                    <button class="btn" id="reset-btn" type="button">重新选择</button>
+                    <button class="btn" id="crop-btn">确认裁剪</button>
+                    <button class="btn" id="reset-btn">重新选择</button>
                 </div>
             </div>
-
+            
             <div class="download-section" id="download-section">
                 <h2 class="preview-title">裁剪结果</h2>
-                <img id="cropped-preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="裁剪结果">
-                <button class="btn btn-download" id="download-btn" type="button">下载图片</button>
-                <button class="btn" id="new-crop-btn" type="button">裁剪新图片</button>
+                <img id="cropped-preview" src="" alt="裁剪结果">
+                <button class="btn btn-download" id="download-btn">下载图片</button>
+                <button class="btn" id="new-crop-btn">裁剪新图片</button>
             </div>
-
+            
             <div class="instructions">
                 <h3>使用说明：</h3>
                 <ol>
@@ -411,14 +411,9 @@
             </div>
         </div>
     </div>
-
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const EMPTY_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-            const MAX_FILE_BYTES = 50 * 1024 * 1024;
-            const MAX_PIXELS = 24_000_000;
-            const MAX_DIMENSION = 16_384;
-
             // 获取DOM元素
             const fileInput = document.getElementById('file-input');
             const uploadBtn = document.getElementById('upload-btn');
@@ -440,11 +435,6 @@
             
             // 初始化变量
             let originalImage = null;
-            let sourceObjectUrl = '';
-            let croppedObjectUrl = '';
-            let originalFileName = 'image';
-            let dragEventsInitialized = false;
-            let sizeInputEventsInitialized = false;
             let cropData = {
                 x: 0,
                 y: 0,
@@ -490,58 +480,25 @@
             
             // 处理图片上传
             function handleImageUpload(file) {
-                const validationMessage = validateFile(file);
-                if (validationMessage) {
-                    alert(validationMessage);
+                if (!file.type.match('image.*')) {
+                    alert('请选择图片文件！');
                     return;
                 }
-
-                releaseObjectUrls();
-                originalFileName = file.name || 'image';
-                sourceObjectUrl = URL.createObjectURL(file);
-                originalImage = new Image();
-                originalImage.decoding = 'async';
-                originalImage.onload = function() {
-                    const dimensionMessage = validateDimensions(originalImage.naturalWidth, originalImage.naturalHeight);
-                    if (dimensionMessage) {
-                        alert(dimensionMessage);
-                        resetToUpload();
-                        return;
-                    }
-
-                    previewImage.src = sourceObjectUrl;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    originalImage = new Image();
+                    originalImage.src = e.target.result;
+                    
+                    // 显示预览区域
                     uploadSection.classList.add('hidden');
                     previewSection.style.display = 'flex';
+                    
+                    // 初始化裁剪区域
                     initCropArea();
                 };
-                originalImage.onerror = function() {
-                    alert('图片解码失败，请更换文件后重试。');
-                    resetToUpload();
-                };
-                originalImage.src = sourceObjectUrl;
-            }
-
-            function validateFile(file) {
-                if (!file || file.size === 0) {
-                    return '请选择非空图片文件！';
-                }
-                if (file.size > MAX_FILE_BYTES) {
-                    return '图片超过 50 MB，请先压缩后重试。';
-                }
-                if (file.type && !file.type.startsWith('image/')) {
-                    return '请选择图片文件！';
-                }
-                return '';
-            }
-
-            function validateDimensions(width, height) {
-                if (!width || !height) {
-                    return '图片尺寸无效或文件已损坏。';
-                }
-                if (width > MAX_DIMENSION || height > MAX_DIMENSION || width * height > MAX_PIXELS) {
-                    return '图片尺寸过大，请使用最长边不超过 16384 px、总像素不超过 2400 万的图片。';
-                }
-                return '';
+                reader.readAsDataURL(file);
             }
             
             // 初始化裁剪区域
@@ -568,22 +525,17 @@
                 // 添加尺寸输入框事件监听
                 setupSizeInputEvents();
                 
-                if (!lockAspect.dataset.listenerBound) {
-                    lockAspect.dataset.listenerBound = 'true';
-                    lockAspect.addEventListener('change', function() {
-                        isLockedAspect = this.checked;
-                        if (isLockedAspect) {
-                            aspectRatio = cropData.width / cropData.height;
-                        }
-                    });
-                }
+                // 添加锁定宽高比事件监听
+                lockAspect.addEventListener('change', function() {
+                    isLockedAspect = this.checked;
+                    if (isLockedAspect) {
+                        aspectRatio = cropData.width / cropData.height;
+                    }
+                });
             }
             
             // 设置尺寸输入框事件
             function setupSizeInputEvents() {
-                if (sizeInputEventsInitialized) return;
-                sizeInputEventsInitialized = true;
-
                 widthInput.addEventListener('input', function() {
                     if (!originalImage) return;
                     
@@ -676,9 +628,6 @@
             
             // 设置拖拽事件
             function setupDragEvents() {
-                if (dragEventsInitialized) return;
-                dragEventsInitialized = true;
-
                 let isDragging = false;
                 let currentHandle = null;
                 let startX, startY;
@@ -834,20 +783,12 @@
             }
             
             // 裁剪按钮点击事件
-            cropBtn.addEventListener('click', async () => {
+            cropBtn.addEventListener('click', () => {
                 if (!originalImage) return;
-                if (croppedObjectUrl) {
-                    URL.revokeObjectURL(croppedObjectUrl);
-                    croppedObjectUrl = '';
-                }
-
+                
                 // 创建canvas进行裁剪
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    alert('当前浏览器无法创建 Canvas。');
-                    return;
-                }
                 
                 // 设置canvas尺寸为裁剪区域大小
                 canvas.width = cropData.width;
@@ -858,11 +799,11 @@
                 const imgRect = previewImage.getBoundingClientRect();
                 
                 // 计算裁剪区域相对于图片的位置
-                const scale = (originalImage.naturalWidth || originalImage.width) / imgRect.width;
-                const cropX = Math.max(0, (cropData.x - (imgRect.left - containerRect.left)) * scale);
-                const cropY = Math.max(0, (cropData.y - (imgRect.top - containerRect.top)) * scale);
-                const cropWidth = Math.max(1, Math.min(cropData.width * scale, (originalImage.naturalWidth || originalImage.width) - cropX));
-                const cropHeight = Math.max(1, Math.min(cropData.height * scale, (originalImage.naturalHeight || originalImage.height) - cropY));
+                const scale = originalImage.width / imgRect.width;
+                const cropX = (cropData.x - (imgRect.left - containerRect.left)) * scale;
+                const cropY = (cropData.y - (imgRect.top - containerRect.top)) * scale;
+                const cropWidth = cropData.width * scale;
+                const cropHeight = cropData.height * scale;
                 
                 // 执行裁剪
                 ctx.drawImage(
@@ -871,79 +812,33 @@
                     0, 0, cropData.width, cropData.height
                 );
                 
-                try {
-                    const blob = await canvasToBlob(canvas);
-                    croppedObjectUrl = URL.createObjectURL(blob);
-                    croppedPreview.src = croppedObjectUrl;
-                    previewSection.style.display = 'none';
-                    downloadSection.style.display = 'flex';
-                } catch (error) {
-                    alert('裁剪结果导出失败，请减小裁剪区域或刷新后重试。');
-                } finally {
-                    canvas.width = 1;
-                    canvas.height = 1;
-                }
+                // 显示裁剪结果
+                croppedPreview.src = canvas.toDataURL('image/png');
+                previewSection.style.display = 'none';
+                downloadSection.style.display = 'flex';
             });
             
             // 重置按钮点击事件
             resetBtn.addEventListener('click', () => {
-                resetToUpload();
+                previewSection.style.display = 'none';
+                uploadSection.classList.remove('hidden');
+                fileInput.value = '';
             });
             
             // 下载按钮点击事件
             downloadBtn.addEventListener('click', () => {
-                if (!croppedObjectUrl) return;
                 const link = document.createElement('a');
-                link.download = `${getSafeBaseName(originalFileName)}-cropped.png`;
-                link.href = croppedObjectUrl;
+                link.download = 'cropped-image.png';
+                link.href = croppedPreview.src;
                 link.click();
             });
             
             // 新裁剪按钮点击事件
             newCropBtn.addEventListener('click', () => {
-                resetToUpload();
-            });
-
-            window.addEventListener('beforeunload', releaseObjectUrls);
-
-            function resetToUpload() {
-                previewSection.style.display = 'none';
                 downloadSection.style.display = 'none';
                 uploadSection.classList.remove('hidden');
                 fileInput.value = '';
-                previewImage.src = EMPTY_IMAGE_SRC;
-                croppedPreview.src = EMPTY_IMAGE_SRC;
-                originalImage = null;
-                releaseObjectUrls();
-            }
-
-            function releaseObjectUrls() {
-                if (sourceObjectUrl) {
-                    URL.revokeObjectURL(sourceObjectUrl);
-                    sourceObjectUrl = '';
-                }
-                if (croppedObjectUrl) {
-                    URL.revokeObjectURL(croppedObjectUrl);
-                    croppedObjectUrl = '';
-                }
-            }
-
-            function canvasToBlob(canvas) {
-                return new Promise((resolve, reject) => {
-                    canvas.toBlob((blob) => {
-                        if (blob) resolve(blob);
-                        else reject(new Error('PNG 编码失败'));
-                    }, 'image/png');
-                });
-            }
-
-            function getSafeBaseName(name) {
-                return String(name || 'image')
-                    .replace(/\.[^.]+$/, '')
-                    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
-                    .trim()
-                    .slice(0, 80) || 'image';
-            }
+            });
         });
     </script>
 </body>

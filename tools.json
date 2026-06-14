@@ -5,20 +5,20 @@
     "description": "选择多张图片，每行设定等数量排列",
     "path": "tools/image-align.html",
     "category": "image",
-    "icon": "image-align",
+    "icon": "image-align ",
     "show": true
   },
   {
     "id": 2,
     "name": "图片文字生成",
-    "description": "上传参考图提取主题色，生成文字 PNG",
+    "description": "选择图片，生成文字",
     "path": "tools/image-text-generator.html",
     "category": "image",
     "icon": "image-text-generator",
     "show": true
   },
   {
-    "id": 19,
+    "id": 2,
     "name": "图片自动分割",
     "description": "将图片自动分割为小图片",
     "path": "tools/image-auto-split-small.html",
@@ -29,23 +29,23 @@
   {
     "id": 3,
     "name": "图片圆角矩形",
-    "description": "生成透明背景圆角矩形叠加层",
+    "description": "选择图片，将图片转换为圆角矩形",
     "path": "tools/image-rounded-rect.html",
     "category": "image",
     "icon": "image-round-rect",
     "show": true
   },
   {
-    "id": 20,
+    "id": 3,
     "name": "图片颜色分析",
-    "description": "分析图片主色并支持轻量换色导出",
+    "description": "选择图片，分析图片颜色",
     "path": "tools/image-color-analyzer.html",
     "category": "image",
     "icon": "image-color-analyzer",
     "show": true
   },
   {
-    "id": 21,
+    "id": 3,
     "name": "图片叠加",
     "description": "将多张图片叠加为一张图片",
     "path": "tools/image-overlay.html",
@@ -54,7 +54,7 @@
     "show": true
   },
   {
-    "id": 22,
+    "id": 3,
     "name": "批量图片渐变背景",
     "description": "为多张图片添加渐变背景，支持批量处理和下载",
     "path": "tools/image-batch-gradient.html",
@@ -119,7 +119,7 @@
   {
     "id": 10,
     "name": "视频转帧",
-    "description": "按时间区间和隔帧将视频导出为 PNG 帧 ZIP",
+    "description": "选择视频，转帧",
     "path": "tools/video-to-frames.html",
     "category": "video",
     "icon": "video-to-frames",
@@ -128,7 +128,7 @@
   {
     "id": 11,
     "name": "图片透明度调整",
-    "description": "按比例调整图片非透明像素透明度并导出 PNG",
+    "description": "选择图片，调整透明度",
     "path": "tools/image-transparency-adjust.html",
     "category": "image",
     "icon": "transparency",
@@ -146,7 +146,7 @@
   {
     "id": 13,
     "name": "拼图",
-    "description": "上传1张或多张图片，切割为拼图块并打包 ZIP",
+    "description": "上传1张或多张图片，生成拼图",
     "path": "tools/image_pintu_tool.html",
     "category": "image",
     "icon": "pintu",
@@ -155,7 +155,7 @@
   {
     "id": 14,
     "name": "字体PNG",
-    "description": "生成透明背景美术字体 PNG",
+    "description": "生产美术字体",
     "path": "tools/image-art-font.html",
     "category": "image",
     "icon": "font",
@@ -182,7 +182,7 @@
   {
     "id": 17,
     "name": "图片格式转换",
-    "description": "批量转换图片格式，输出 PNG、JPG、WebP 或 ICO",
+    "description": "批量转换图片格式，支持PNG、JPG、WebP、GIF、BMP、ICO等格式互转",
     "path": "tools/image-format-convert.html",
     "category": "image",
     "icon": "switch",

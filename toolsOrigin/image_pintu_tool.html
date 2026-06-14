@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>拼图切割工具</title>
+    <title>Premium Jigsaw Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -23,7 +23,7 @@
             color: var(--text-color) !important;
             margin: 0;
             padding: 0;
-            min-height: 100dvh;
+            height: 100vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -91,10 +91,6 @@
             border-radius: 4px;
         }
 
-        input[type="file"] {
-            display: none;
-        }
-
         button {
             background-color: var(--primary-color);
             color: #000;
@@ -122,27 +118,10 @@
             border-radius: 8px;
             cursor: pointer;
             transition: border-color 0.2s;
-            background: transparent;
-            color: var(--text-color);
-            font: inherit;
         }
 
         .file-upload:hover {
             border-color: var(--primary-color);
-        }
-
-        .file-list {
-            font-size: 0.8rem;
-            color: #aaa;
-        }
-
-        .grid-inputs {
-            display: flex;
-            gap: 10px;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         #preview-container {
@@ -199,50 +178,51 @@
 
     <div class="tool-container">
         <div class="sidebar">
-            <h1>拼图切割工具</h1>
+            <h1>Jigsaw Tool</h1>
 
             <div class="control-group">
-                <label>上传图片</label>
-                <button class="file-upload" id="uploadButton" type="button">
-                    点击上传
-                </button>
-                <input type="file" id="fileInput" multiple accept="image/*">
-                <div id="file-list" class="file-list"></div>
+                <label>Upload Images</label>
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    Click to Upload
+                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none"
+                        onchange="handleFiles(this.files)">
+                </div>
+                <div id="file-list" style="font-size: 0.8rem; color: #aaa;"></div>
             </div>
 
             <div class="control-group">
-                <label>切片数量（横 × 纵）</label>
-                <div class="grid-inputs">
-                    <input type="number" id="xn" value="5" min="1" max="20">
-                    <input type="number" id="yn" value="5" min="1" max="20">
+                <label>Tiles (X * Y)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="xn" value="5" min="1" onchange="updatePreview()">
+                    <input type="number" id="yn" value="5" min="1" onchange="updatePreview()">
                 </div>
             </div>
 
             <div class="control-group">
-                <label>随机种子：<span id="seed-val">0</span></label>
-                <input type="range" id="seed" min="0" max="9999" value="0">
+                <label>Seed: <span id="seed-val">0</span></label>
+                <input type="range" id="seed" min="0" max="9999" value="0" oninput="updatePreview()">
             </div>
 
             <div class="control-group">
-                <label>拼图凸起：<span id="tabsize-val">20%</span></label>
-                <input type="range" id="tabsize" min="10" max="30" step="0.1" value="20">
+                <label>Tab Size: <span id="tabsize-val">20%</span></label>
+                <input type="range" id="tabsize" min="10" max="30" step="0.1" value="20" oninput="updatePreview()">
             </div>
 
             <div class="control-group">
-                <label>边缘扰动：<span id="jitter-val">4%</span></label>
-                <input type="range" id="jitter" min="0" max="13" step="0.1" value="4">
+                <label>Jitter: <span id="jitter-val">4%</span></label>
+                <input type="range" id="jitter" min="0" max="13" step="0.1" value="4" oninput="updatePreview()">
             </div>
 
             <div class="control-group">
-                <button id="downloadAllBtn" type="button">下载全部（ZIP）</button>
+                <button onclick="downloadAll()">Download All (Zip)</button>
             </div>
 
-            <div class="status-bar" id="status">就绪</div>
+            <div class="status-bar" id="status">Ready</div>
         </div>
 
         <div class="main-content">
             <div id="preview-container">
-                <img id="preview-image" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="上传图片后显示预览" class="hidden" decoding="async">
+                <img id="preview-image" src="" alt="Upload an image to start" style="display: none;">
                 <svg id="puzzle-overlay"></svg>
             </div>
         </div>
@@ -387,86 +367,40 @@
         // --- App Logic ---
         let uploadedFiles = [];
         let currentImage = null;
-        let previewObjectUrl = '';
-        const MAX_FILES = 10;
-        const MAX_FILE_BYTES = 50 * 1024 * 1024;
-        const MAX_IMAGE_PIXELS = 24_000_000;
-        const MAX_CANVAS_SIDE = 16_384;
-        const MAX_GRID = 20;
 
         function $(id) { return document.getElementById(id); }
 
-        $('uploadButton').addEventListener('click', () => $('fileInput').click());
-        $('fileInput').addEventListener('change', (event) => handleFiles(event.target.files));
-        $('downloadAllBtn').addEventListener('click', downloadAll);
-        ['xn', 'yn', 'seed', 'tabsize', 'jitter'].forEach((id) => {
-            $(id).addEventListener('input', updatePreview);
-            $(id).addEventListener('change', updatePreview);
-        });
-        window.addEventListener('pagehide', releasePreviewObjectUrl);
-
         function handleFiles(files) {
             if (files.length === 0) return;
-            const rejected = [];
-            uploadedFiles = Array.from(files).filter((file) => {
-                if (!file.type.startsWith('image/')) {
-                    rejected.push(`${file.name} 不是图片文件`);
-                    return false;
-                }
-                if (file.size > MAX_FILE_BYTES) {
-                    rejected.push(`${file.name} 超过 50MB`);
-                    return false;
-                }
-                return true;
-            }).slice(0, MAX_FILES);
-
-            if (files.length > MAX_FILES) rejected.push(`最多一次处理 ${MAX_FILES} 张图片，已忽略多余文件`);
+            uploadedFiles = Array.from(files);
 
             // Update file list UI
             const list = $('file-list');
-            list.replaceChildren();
-            uploadedFiles.forEach((file) => {
-                const item = document.createElement('div');
-                item.textContent = file.name;
-                list.appendChild(item);
-            });
+            list.innerHTML = uploadedFiles.map(f => `<div>${f.name}</div>`).join('');
 
             // Load first image
-            releasePreviewObjectUrl();
-            currentImage = null;
-            $('puzzle-overlay').replaceChildren();
-
-            if (uploadedFiles.length) {
-                previewObjectUrl = URL.createObjectURL(uploadedFiles[0]);
+            const reader = new FileReader();
+            reader.onload = function (e) {
                 const img = $('preview-image');
                 img.onload = function () {
                     currentImage = img;
-                    if (!canUseImageSize(img.naturalWidth, img.naturalHeight)) {
-                        $('status').innerText = '预览图片尺寸过大，请选择不超过 2400 万像素的图片。';
-                        img.classList.add('hidden');
-                        currentImage = null;
-                        return;
-                    }
                     updatePreview();
-                    img.classList.remove('hidden');
+                    img.style.display = 'block';
                 };
-                img.onerror = function () {
-                    $('status').innerText = '预览图片无法加载，可能是文件损坏或格式不受支持。';
-                    img.classList.add('hidden');
-                };
-                img.src = previewObjectUrl;
-            }
-
-            $('fileInput').value = '';
-            $('status').innerText = rejected.length
-                ? `已载入 ${uploadedFiles.length} 个文件；${rejected.join('；')}`
-                : `已载入 ${uploadedFiles.length} 个文件`;
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(uploadedFiles[0]);
+            $('status').innerText = `${uploadedFiles.length} file(s) loaded.`;
         }
 
         function updatePreview() {
             if (!currentImage) return;
 
-            const { xn, yn, seed, tabSize, jitter } = getSettings();
+            const xn = parseInt($('xn').value);
+            const yn = parseInt($('yn').value);
+            const seed = parseInt($('seed').value);
+            const tabSize = parseFloat($('tabsize').value);
+            const jitter = parseFloat($('jitter').value);
 
             $('seed-val').innerText = seed;
             $('tabsize-val').innerText = tabSize + '%';
@@ -502,190 +436,117 @@
 
             const svg = $('puzzle-overlay');
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-            svg.replaceChildren(
-                createSvgPath(pathD, 'rgba(255,255,255,0.8)', Math.max(width, height) / 500),
-                createSvgPath(pathD, 'rgba(0,0,0,0.5)', Math.max(width, height) / 500, '5,5')
-            );
+            svg.innerHTML = `<path d="${pathD}" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="${Math.max(width, height) / 500}" vector-effect="non-scaling-stroke"></path>
+                         <path d="${pathD}" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="${Math.max(width, height) / 500}" stroke-dasharray="5,5"></path>`;
         }
 
         async function downloadAll() {
             if (uploadedFiles.length === 0) {
-                $('status').innerText = "请先上传图片。";
-                return;
-            }
-            if (typeof JSZip === 'undefined' || typeof saveAs === 'undefined') {
-                $('status').innerText = "ZIP 依赖加载失败，请检查网络后刷新页面。";
+                alert("Please upload images first.");
                 return;
             }
 
-            const { xn, yn, seed, tabSize, jitter } = getSettings();
+            const xn = parseInt($('xn').value);
+            const yn = parseInt($('yn').value);
+            const seed = parseInt($('seed').value);
+            const tabSize = parseFloat($('tabsize').value);
+            const jitter = parseFloat($('jitter').value);
 
             const zip = new JSZip();
-            const downloadBtn = $('downloadAllBtn');
-            downloadBtn.disabled = true;
-            $('status').innerText = "正在处理";
+            $('status').innerText = "Processing...";
 
-            try {
-                for (let i = 0; i < uploadedFiles.length; i++) {
-                    const file = uploadedFiles[i];
-                    $('status').innerText = `正在处理 ${i + 1}/${uploadedFiles.length}：${file.name}`;
-                    const img = await loadImage(file);
-                    const width = img.naturalWidth;
-                    const height = img.naturalHeight;
-                    if (!canUseImageSize(width, height)) throw new Error(`${file.name} 尺寸过大`);
-                    const edges = Jigsaw.generateEdges(width, height, xn, yn, seed, tabSize, jitter);
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const file = uploadedFiles[i];
+                const img = await loadImage(file);
+                const width = img.naturalWidth;
+                const height = img.naturalHeight;
+                const edges = Jigsaw.generateEdges(width, height, xn, yn, seed, tabSize, jitter);
 
-                    const folderName = safeBaseName(file.name);
-                    const folder = zip.folder(folderName);
+                const folderName = file.name.replace(/\.[^/.]+$/, "");
+                const folder = zip.folder(folderName);
 
-                    // Add original image
-                    folder.file(file.name, file);
+                // Add original image
+                folder.file(file.name, file);
 
-                    for (let yi = 0; yi < yn; yi++) {
-                        for (let xi = 0; xi < xn; xi++) {
-                            // Generate path for this piece
-                            let d = "";
+                for (let yi = 0; yi < yn; yi++) {
+                    for (let xi = 0; xi < xn; xi++) {
+                        // Generate path for this piece
+                        const path = new Path2D();
+                        let d = "";
 
-                            // Top
-                            if (yi === 0) {
-                                d += `M ${xi * width / xn} 0 L ${(xi + 1) * width / xn} 0 `;
-                            } else {
-                                d += `M ${xi * width / xn} ${yi * height / yn} `;
-                                d += edges.hEdges[yi][xi] + " ";
-                            }
-
-                            // Right
-                            if (xi === xn - 1) {
-                                d += `L ${width} ${(yi + 1) * height / yn} `;
-                            } else {
-                                d += edges.vEdges[xi + 1][yi] + " ";
-                            }
-
-                            // Bottom (Reversed)
-                            if (yi === yn - 1) {
-                                d += `L ${xi * width / xn} ${height} `;
-                            } else {
-                                d += reverseBezier(edges.hEdges[yi + 1][xi], (xi) * width / xn, (yi + 1) * height / yn, (xi + 1) * width / xn, (yi + 1) * height / yn) + " ";
-                            }
-
-                            // Left (Reversed)
-                            if (xi === 0) {
-                                d += `L 0 ${yi * height / yn} `;
-                            } else {
-                                d += reverseBezier(edges.vEdges[xi][yi], xi * width / xn, yi * height / yn, xi * width / xn, (yi + 1) * height / yn) + " ";
-                            }
-
-                            d += "Z";
-
-                            // Create canvas and draw
-                            const canvas = document.createElement('canvas');
-                            const pieceW = width / xn;
-                            const pieceH = height / yn;
-                            const margin = Math.max(pieceW, pieceH) * 0.5;
-
-                            const x = Math.max(0, xi * pieceW - margin);
-                            const y = Math.max(0, yi * pieceH - margin);
-                            const w = Math.min(width, (xi + 1) * pieceW + margin) - x;
-                            const h = Math.min(height, (yi + 1) * pieceH + margin) - y;
-
-                            canvas.width = w;
-                            canvas.height = h;
-                            const ctx = canvas.getContext('2d');
-
-                            ctx.translate(-x, -y);
-                            const p2d = new Path2D(d);
-                            ctx.clip(p2d);
-                            ctx.drawImage(img, 0, 0);
-
-                            // Trim transparent pixels
-                            const trimmed = trimCanvas(canvas);
-
-                            const blob = await new Promise((resolve) => trimmed.toBlob(resolve, 'image/png'));
-                            if (!blob) throw new Error('切片导出失败');
-                            folder.file(`piece_${yi}_${xi}.png`, blob);
+                        // Top
+                        if (yi === 0) {
+                            d += `M ${xi * width / xn} 0 L ${(xi + 1) * width / xn} 0 `;
+                        } else {
+                            d += `M ${xi * width / xn} ${yi * height / yn} `;
+                            d += edges.hEdges[yi][xi] + " ";
                         }
+
+                        // Right
+                        if (xi === xn - 1) {
+                            d += `L ${width} ${(yi + 1) * height / yn} `;
+                        } else {
+                            d += edges.vEdges[xi + 1][yi] + " ";
+                        }
+
+                        // Bottom (Reversed)
+                        if (yi === yn - 1) {
+                            d += `L ${xi * width / xn} ${height} `;
+                        } else {
+                            d += reverseBezier(edges.hEdges[yi + 1][xi], (xi) * width / xn, (yi + 1) * height / yn, (xi + 1) * width / xn, (yi + 1) * height / yn) + " ";
+                        }
+
+                        // Left (Reversed)
+                        if (xi === 0) {
+                            d += `L 0 ${yi * height / yn} `;
+                        } else {
+                            d += reverseBezier(edges.vEdges[xi][yi], xi * width / xn, yi * height / yn, xi * width / xn, (yi + 1) * height / yn) + " ";
+                        }
+
+                        d += "Z";
+
+                        // Create canvas and draw
+                        const canvas = document.createElement('canvas');
+                        const pieceW = width / xn;
+                        const pieceH = height / yn;
+                        const margin = Math.max(pieceW, pieceH) * 0.5;
+
+                        const x = Math.max(0, xi * pieceW - margin);
+                        const y = Math.max(0, yi * pieceH - margin);
+                        const w = Math.min(width, (xi + 1) * pieceW + margin) - x;
+                        const h = Math.min(height, (yi + 1) * pieceH + margin) - y;
+
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+
+                        ctx.translate(-x, -y);
+                        const p2d = new Path2D(d);
+                        ctx.clip(p2d);
+                        ctx.drawImage(img, 0, 0);
+
+                        // Trim transparent pixels
+                        const trimmed = trimCanvas(canvas);
+
+                        const blob = await new Promise(r => trimmed.toBlob(r));
+                        folder.file(`piece_${yi}_${xi}.png`, blob);
                     }
                 }
-
-                const content = await zip.generateAsync({ type: "blob" }, (metadata) => {
-                    $('status').innerText = `正在打包 ZIP：${metadata.percent.toFixed(0)}%`;
-                });
-                saveAs(content, "puzzle_pieces.zip");
-                $('status').innerText = "下载完成";
-            } catch (error) {
-                console.error(error);
-                $('status').innerText = error.message || '处理失败，请降低图片尺寸或切片数量后重试。';
-            } finally {
-                downloadBtn.disabled = false;
             }
+
+            zip.generateAsync({ type: "blob" }).then(function (content) {
+                saveAs(content, "puzzle_pieces.zip");
+                $('status').innerText = "Download complete!";
+            });
         }
 
         function loadImage(file) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
-                const url = URL.createObjectURL(file);
-                img.onload = () => {
-                    URL.revokeObjectURL(url);
-                    resolve(img);
-                };
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    reject(new Error(`${file.name} 加载失败`));
-                };
-                img.src = url;
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
             });
-        }
-
-        function getSettings() {
-            const xn = clampInteger($('xn').value, 1, MAX_GRID);
-            const yn = clampInteger($('yn').value, 1, MAX_GRID);
-            const seed = clampInteger($('seed').value, 0, 9999);
-            const tabSize = clampFloat($('tabsize').value, 10, 30);
-            const jitter = clampFloat($('jitter').value, 0, 13);
-            $('xn').value = xn;
-            $('yn').value = yn;
-            $('seed').value = seed;
-            $('tabsize').value = tabSize;
-            $('jitter').value = jitter;
-            return { xn, yn, seed, tabSize, jitter };
-        }
-
-        function createSvgPath(pathD, stroke, strokeWidth, dasharray = '') {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', pathD);
-            path.setAttribute('fill', 'none');
-            path.setAttribute('stroke', stroke);
-            path.setAttribute('stroke-width', strokeWidth);
-            path.setAttribute('vector-effect', 'non-scaling-stroke');
-            if (dasharray) path.setAttribute('stroke-dasharray', dasharray);
-            return path;
-        }
-
-        function clampInteger(value, min, max) {
-            const next = Number.parseInt(value, 10);
-            if (Number.isNaN(next)) return min;
-            return Math.max(min, Math.min(max, next));
-        }
-
-        function clampFloat(value, min, max) {
-            const next = Number.parseFloat(value);
-            if (Number.isNaN(next)) return min;
-            return Math.max(min, Math.min(max, Math.round(next * 10) / 10));
-        }
-
-        function canUseImageSize(width, height) {
-            return width > 0 && height > 0 && width <= MAX_CANVAS_SIDE && height <= MAX_CANVAS_SIDE && width * height <= MAX_IMAGE_PIXELS;
-        }
-
-        function safeBaseName(name) {
-            return (name.replace(/\.[^/.]+$/, '') || 'puzzle').replace(/[\\/:*?"<>|]+/g, '-');
-        }
-
-        function releasePreviewObjectUrl() {
-            if (previewObjectUrl) {
-                URL.revokeObjectURL(previewObjectUrl);
-                previewObjectUrl = '';
-            }
         }
 
         function trimCanvas(c) {

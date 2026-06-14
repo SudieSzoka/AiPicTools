@@ -2,9 +2,11 @@
 <html lang="zh-CN">
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>圆角矩形叠加层生成器</title>
+    <title>圆角矩形生成器 · 叠加层</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f5f7fb; padding: 20px; }
@@ -16,10 +18,10 @@
         .left { width: 40%; border-right: 1px solid #eef2f7; }
         .right { width: 60%; }
         .section-title { font-size: 16px; color: #0f172a; margin-bottom: 10px; font-weight: 600; }
-        .upload-area { display:flex; width:100%; align-items:center; justify-content:center; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; color:inherit; font:inherit; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
         .upload-area:hover { border-color:#60a5fa; background:#f1f5f9; }
         .upload-area.dragover { border-color:#22c55e; background:#ecfdf5; }
-        .upload-area span { color:#475569; font-size:14px; }
+        .upload-area p { color:#475569; font-size:14px; }
         input[type="file"] { display:none; }
         .preview-wrap { margin-top: 12px; display:flex; gap:12px; align-items:flex-start; }
         .thumb { flex:0 0 auto; width: 140px; height: 140px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -38,7 +40,6 @@
         canvas { max-width:100%; height:auto; background: transparent; }
         .actions { margin-top: 10px; display:flex; gap:10px; flex-wrap: wrap; }
         .btn { background:#2563eb; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:14px; }
-        .btn:focus-visible, .upload-area:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid rgba(37,99,235,.28); outline-offset:2px; }
         .btn.secondary { background:#10b981; }
         .btn.warn { background:#ef4444; }
         .list { margin-top: 8px; display:flex; flex-direction:column; gap:8px; max-height: 280px; overflow:auto; }
@@ -49,46 +50,46 @@
         .hint { font-size:12px; color:#6b7280; }
         .palette-inline { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-left:8px; }
         .palette-swatch { width:18px; height:18px; border-radius:4px; border:1px solid #e5e7eb; cursor:pointer; }
-        .top-spaced { margin-top:12px; }
         @media (max-width: 900px) { .main{ flex-direction:column; } .left, .right{ width:100%; border-right:none; border-top:1px solid #eef2f7; } }
     </style>
-
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
-  <script src="scripts/common.js" defer></script>
 </head>
-<body class="tool-page" data-tool-page="image-rounded-rect">
+<body>
 <!-- COMMON_HEADER -->
-<a class="skip-link" href="#main-content">跳到主要内容</a>
-<header class="page-header" aria-label="站点页头">
+<!-- 固定页头 -->
+<header class="page-header">
     <div class="header-container">
         <div class="header-inner">
+            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
-                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
-                    <span>我的工具站</span>
-                </a>
+                <a href="../index.html" class="logo-link">我的工具站</a>
             </div>
-            <nav class="nav-desktop" aria-label="主要导航">
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">工具首页</a>
+                    <a href="../index.html" class="nav-link">首页</a>
                 </div>
             </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
         </div>
     </div>
 </header>
 <!-- END_COMMON_HEADER -->
     <div class="container">
-        <div class="header"><h1>圆角矩形叠加层生成器</h1></div>
+        <div class="header"><h1>圆角矩形生成器 · 叠加层</h1></div>
         <div class="main">
             <div class="left">
                 <div class="section-title">1) 上传图片（用于尺寸与主题色分析）</div>
-                <button id="uploadArea" class="upload-area" type="button">
-                    <span>点击选择图片或拖拽图片到此处</span>
-                </button>
-                <input id="fileInput" type="file" accept="image/*">
-                <div class="preview-wrap" id="leftPreview" hidden>
-                    <div class="thumb"><img id="thumbImg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="预览" decoding="async"></div>
+                <div id="uploadArea" class="upload-area">
+                    <p>点击选择图片或拖拽图片到此处</p>
+                    <input id="fileInput" type="file" accept="image/*">
+                </div>
+                <div class="preview-wrap" id="leftPreview" style="display:none;">
+                    <div class="thumb"><img id="thumbImg" alt="预览"></div>
                     <div class="meta">
                         <div><span class="badge">图片信息</span></div>
                         <div id="imgSize">-</div>
@@ -96,7 +97,6 @@
                         <div id="colorList" class="colors"></div>
                     </div>
                 </div>
-                <div id="statusText" class="hint" aria-live="polite"></div>
             </div>
             <div class="right">
                 <div class="section-title">2) 生成画布并添加圆角矩形（透明背景）</div>
@@ -108,13 +108,13 @@
                     <span class="hint">上传后会自动同步尺寸</span>
                 </div>
                 <div class="actions">
-                    <button id="addRect" class="btn" type="button">+ 添加圆角矩形</button>
-                    <button id="dlBtn" class="btn secondary" type="button">下载 PNG</button>
+                    <button id="addRect" class="btn">+ 添加圆角矩形</button>
+                    <button id="dlBtn" class="btn secondary">下载 PNG</button>
                 </div>
                 <div class="canvas-wrap">
                     <canvas id="outCanvas" width="800" height="400"></canvas>
                 </div>
-                <div class="section-title top-spaced">图层（由下到上）</div>
+                <div class="section-title" style="margin-top:12px;">图层（由下到上）</div>
                 <div id="rectList" class="list"></div>
             </div>
         </div>
@@ -128,14 +128,7 @@
         const thumbImg = document.getElementById('thumbImg');
         const imgSize = document.getElementById('imgSize');
         const colorList = document.getElementById('colorList');
-        const statusText = document.getElementById('statusText');
         let uploadedFileName = '';
-        let sourceObjectUrl = '';
-        let loadToken = 0;
-        const MAX_FILE_BYTES = 50 * 1024 * 1024;
-        const MAX_IMAGE_PIXELS = 24_000_000;
-        const MAX_CANVAS_SIDE = 16_384;
-        const MAX_CANVAS_PIXELS = 64_000_000;
 
         uploadArea.addEventListener('click', () => fileInput.click());
         uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
@@ -144,50 +137,23 @@
         fileInput.addEventListener('change', (e) => { if (e.target.files?.length) handleFile(e.target.files[0]); });
 
         function handleFile(file){
-            if(!file.type.startsWith('image/')){
-                showStatus('请选择图片文件。');
-                return;
-            }
-            if(file.size > MAX_FILE_BYTES){
-                showStatus('图片文件过大，请选择 50MB 以内的图片。');
-                return;
-            }
-
-            const objectUrl = URL.createObjectURL(file);
-            const token = ++loadToken;
-            const img = new Image();
-            img.onload = () => {
-                if(token !== loadToken){
-                    URL.revokeObjectURL(objectUrl);
-                    return;
-                }
-                const width = img.naturalWidth || img.width;
-                const height = img.naturalHeight || img.height;
-                if(!canUseCanvasSize(width, height, MAX_IMAGE_PIXELS)){
-                    URL.revokeObjectURL(objectUrl);
-                    showStatus('图片尺寸过大，请选择不超过 2400 万像素且单边不超过 16384px 的图片。');
-                    return;
-                }
-
-                releaseSourceObjectUrl();
-                sourceObjectUrl = objectUrl;
-                uploadedFileName = file.name || '';
-                thumbImg.src = sourceObjectUrl;
-                leftPreview.hidden = false;
-                imgSize.textContent = `尺寸：${width} × ${height}`;
-                cw.value = width;
-                ch.value = height;
-                resizeCanvas();
-                drawAll();
-                showStatus('已读取图片尺寸和主题色。所有结果仍在浏览器本地生成。');
-                analyzeColors(img).then(renderColors).catch(()=>{});
+            if(!file.type.startsWith('image/')){ return; }
+            uploadedFileName = file.name || '';
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    thumbImg.src = reader.result;
+                    leftPreview.style.display = 'flex';
+                    imgSize.textContent = `尺寸：${img.width} × ${img.height}`;
+                    // 同步右侧画布尺寸
+                    cw.value = img.width; ch.value = img.height; resizeCanvas(); drawAll();
+                    // 主题色统计
+                    analyzeColors(img).then(renderColors).catch(()=>{});
+                };
+                img.src = reader.result;
             };
-            img.onerror = () => {
-                URL.revokeObjectURL(objectUrl);
-                if(token === loadToken) showStatus('图片无法加载，可能是文件损坏或格式不受支持。');
-            };
-            img.src = objectUrl;
-            fileInput.value = '';
+            reader.readAsDataURL(file);
         }
 
         function analyzeColors(img){
@@ -215,7 +181,7 @@
         }
 
         function renderColors(list){
-            colorList.replaceChildren();
+            colorList.innerHTML = '';
             list.forEach(item=>{
                 const [r,g,b] = item.rgb.split(',').map(Number);
                 const hex = rgbToHex(r,g,b);
@@ -223,13 +189,7 @@
                 div.className = 'color-chip';
                 div.setAttribute('data-hex', hex);
                 div.setAttribute('title', `点击应用 ${hex}`);
-                const swatch = document.createElement('span');
-                swatch.className = 'swatch';
-                swatch.style.backgroundColor = hex;
-                const label = document.createElement('span');
-                label.className = 'chip-text';
-                label.textContent = `RGB(${r},${g},${b}) / ${hex} / ${(item.ratio*100).toFixed(1)}%`;
-                div.append(swatch, label);
+                div.innerHTML = `<span class="swatch" style="background:${hex}"></span><span class="chip-text">RGB(${r},${g},${b}) · ${hex} · ${(item.ratio*100).toFixed(1)}%</span>`;
                 colorList.appendChild(div);
             });
         }
@@ -258,11 +218,9 @@
         });
 
         function resizeCanvas(){
-            const size = sanitizeCanvasSize(cw.value, ch.value);
-            cw.value = size.w;
-            ch.value = size.h;
-            outCanvas.width = size.w;
-            outCanvas.height = size.h;
+            const w = Math.max(1, parseInt(cw.value||'0'));
+            const h = Math.max(1, parseInt(ch.value||'0'));
+            outCanvas.width = w; outCanvas.height = h;
         }
 
         ;[cw, ch].forEach(el=>{
@@ -519,25 +477,24 @@
 
         // 下载
         dlBtn.addEventListener('click', ()=>{
-            if(!outCanvas.toBlob){
-                showStatus('当前浏览器不支持导出画布图片，请更新浏览器后重试。');
-                return;
+            const targetW = Math.max(1, parseInt(cw.value||'0'));
+            const targetH = Math.max(1, parseInt(ch.value||'0'));
+            let url;
+            if (outCanvas.width === targetW && outCanvas.height === targetH){
+                url = outCanvas.toDataURL('image/png');
+            } else {
+                const off = document.createElement('canvas');
+                off.width = targetW; off.height = targetH;
+                const octx = off.getContext('2d');
+                octx.clearRect(0,0,targetW,targetH);
+                octx.drawImage(outCanvas, 0,0,outCanvas.width,outCanvas.height, 0,0,targetW,targetH);
+                url = off.toDataURL('image/png');
             }
             const a = document.createElement('a');
-            const name = uploadedFileName ? `${safeFileBase(uploadedFileName)}-rounded.png` : 'rounded-rect.png';
+            a.href = url;
+            const name = uploadedFileName ? (uploadedFileName.replace(/\.[^.]*$/, '') + '.png') : 'rounded-rect.png';
             a.download = name;
-            dlBtn.disabled = true;
-            outCanvas.toBlob((blob)=>{
-                dlBtn.disabled = false;
-                if(!blob){
-                    showStatus('导出失败，请降低画布尺寸后重试。');
-                    return;
-                }
-                const url = URL.createObjectURL(blob);
-                a.href = url;
-                a.click();
-                setTimeout(()=>URL.revokeObjectURL(url), 0);
-            }, 'image/png');
+            a.click();
         });
 
         // 初始
@@ -562,7 +519,7 @@
                 s.className = 'palette-swatch';
                 s.setAttribute('title', `应用 ${hex}`);
                 s.setAttribute('data-hex', hex);
-                s.style.backgroundColor = hex;
+                s.style.background = hex;
                 wrap.appendChild(s);
             });
             return wrap;
@@ -605,54 +562,52 @@
             _origRenderColors(list);
             renderInlinePalettes();
         };
-
-        window.addEventListener('pagehide', releaseSourceObjectUrl);
-
-        function sanitizeCanvasSize(widthValue, heightValue){
-            let w = Math.max(1, Math.min(MAX_CANVAS_SIDE, parseInt(widthValue || '1', 10) || 1));
-            let h = Math.max(1, Math.min(MAX_CANVAS_SIDE, parseInt(heightValue || '1', 10) || 1));
-            if(w * h > MAX_CANVAS_PIXELS){
-                const scale = Math.sqrt(MAX_CANVAS_PIXELS / (w * h));
-                w = Math.max(1, Math.floor(w * scale));
-                h = Math.max(1, Math.floor(h * scale));
-                showStatus('画布尺寸过大，已按浏览器安全范围自动缩小。');
-            }
-            return { w, h };
-        }
-
-        function canUseCanvasSize(width, height, pixelLimit = MAX_CANVAS_PIXELS){
-            return width > 0 && height > 0 && width <= MAX_CANVAS_SIDE && height <= MAX_CANVAS_SIDE && width * height <= pixelLimit;
-        }
-
-        function showStatus(message){
-            statusText.textContent = message;
-        }
-
-        function safeFileBase(name){
-            return (name.replace(/\.[^.]*$/, '') || 'rounded-rect').replace(/[\\/:*?"<>|]+/g, '-');
-        }
-
-        function releaseSourceObjectUrl(){
-            if(sourceObjectUrl){
-                URL.revokeObjectURL(sourceObjectUrl);
-                sourceObjectUrl = '';
-            }
-        }
     </script>
 <!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
 <footer class="page-footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <a href="../index.html" class="footer-logo">我的工具站</a>
-            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
-        </div>
-        <nav class="footer-links" aria-label="页脚导航">
-            <a href="../index.html">全部工具</a>
-        </nav>
-    </div>
-    <div class="footer-bottom">
-        <p>© <span data-current-year>2026</span> 我的工具站</p>
-    </div>
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>

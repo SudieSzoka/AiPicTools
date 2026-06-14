@@ -1,1261 +1,629 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>艺术字 PNG 生成器</title>
+  <title>Text Stroke and Shadow Generator</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 20px;
-      color: #1f2937;
-      background: #f5f5f5;
-      font-family: Arial, "Microsoft YaHei", sans-serif;
+      background-color: #f5f5f5;
     }
-
     .container {
-      width: min(920px, 100%);
+      max-width: 800px;
       margin: 0 auto;
-      padding: 24px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.1);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-
     h1 {
-      margin: 0;
-      color: #1f2937;
       text-align: center;
+      color: #333;
     }
-
-    .intro {
-      max-width: 680px;
-      margin: 10px auto 24px;
-      color: #64748b;
-      line-height: 1.6;
-      text-align: center;
-    }
-
     .control-panel {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
     }
-
     .control-group {
-      min-width: 0;
+      margin-bottom: 10px;
     }
-
-    .control-group.full-width {
-      grid-column: 1 / -1;
-    }
-
-    label,
-    .group-label {
+    label {
       display: block;
-      margin-bottom: 6px;
-      font-weight: 700;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
-
-    input,
-    select,
-    textarea,
-    button {
-      font: inherit;
-    }
-
-    input,
-    select,
-    textarea {
+    input, select {
       width: 100%;
-      min-height: 42px;
-      padding: 9px 10px;
-      color: #1f2937;
-      background: #fff;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
-
-    textarea {
-      min-height: 76px;
-      resize: vertical;
-      line-height: 1.5;
-    }
-
-    input:focus-visible,
-    select:focus-visible,
-    textarea:focus-visible,
-    button:focus-visible {
-      outline: 3px solid rgba(37, 99, 235, 0.3);
-      outline-offset: 2px;
-    }
-
-    input[aria-invalid="true"] {
-      border-color: #dc2626;
-    }
-
-    .helper-text {
-      margin: 6px 0 0;
-      color: #64748b;
-      font-size: 0.875rem;
-      line-height: 1.5;
-    }
-
-    .color-picker {
-      display: grid;
-      grid-template-columns: 48px minmax(0, 1fr);
-      gap: 8px;
-      align-items: center;
-    }
-
-    .color-picker input[type="color"] {
-      width: 48px;
-      padding: 3px;
-      cursor: pointer;
-    }
-
-    .toggle-row {
+    .preview-area {
+      border: 1px dashed #ccc;
+      padding: 20px;
+      min-height: 150px;
+      margin-bottom: 20px;
       display: flex;
+      justify-content: center;
+      align-items: center;
+      background: repeating-conic-gradient(#f5f5f5 0% 25%, transparent 0% 50%) 
+                 50% / 20px 20px;
+      position: relative;
+    }
+    #textPreview {
+      display: inline-block;
+      white-space: pre-wrap;
+      text-align: center;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
       gap: 10px;
-      align-items: center;
-      min-height: 42px;
     }
-
-    .toggle-row input {
-      width: 18px;
-      min-height: 18px;
-      margin: 0;
+    button {
+      padding: 10px 20px;
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
     }
-
-    .toggle-row label {
-      margin: 0;
+    button:hover {
+      background-color: #2d3748;
     }
-
-    .font-actions {
+    .color-picker {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
+      align-items: center;
     }
-
+    .color-picker input[type="color"] {
+      width: 40px;
+      margin-right: 8px;
+    }
+    .color-picker input[type="text"] {
+      flex: 1;
+    }
     #fontFileInput {
       display: none;
     }
-
-    .font-list {
-      display: grid;
-      gap: 8px;
-      margin: 10px 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .font-item {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 10px;
-      background: #f1f5f9;
-      border-radius: 6px;
-    }
-
-    .font-name {
-      min-width: 0;
-      overflow-wrap: anywhere;
-    }
-
-    .preview-section {
-      margin-top: 24px;
-    }
-
-    .preview-heading {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .preview-heading h2 {
-      margin: 0;
-      font-size: 1rem;
-    }
-
-    #outputInfo {
-      color: #64748b;
-      font-size: 0.875rem;
-    }
-
-    .preview-area {
-      position: relative;
-      min-height: 280px;
-      overflow: hidden;
-      background-color: #fff;
-      background-image:
-        linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
-        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
-        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-      background-size: 20px 20px;
-      border: 1px dashed #94a3b8;
-      border-radius: 8px;
-    }
-
-    #previewCanvas {
-      display: block;
-      width: 100%;
-      height: 280px;
-    }
-
-    .preview-empty {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      color: #64748b;
-      text-align: center;
-      pointer-events: none;
-    }
-
-    .preview-empty[hidden] {
-      display: none;
-    }
-
-    .status {
-      min-height: 24px;
-      margin: 10px 0 0;
-      color: #475569;
-      line-height: 1.5;
-    }
-
-    .status[data-type="error"] {
-      color: #b91c1c;
-    }
-
-    .status[data-type="success"] {
-      color: #047857;
-    }
-
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 18px;
-    }
-
-    button {
-      min-height: 42px;
-      padding: 9px 16px;
-      color: #fff;
-      background: #475569;
-      border: 1px solid transparent;
-      border-radius: 6px;
+    .custom-file-upload {
+      display: inline-block;
+      padding: 8px 12px;
       cursor: pointer;
-      font-weight: 700;
+      background-color: #e2e8f0;
+      border-radius: 4px;
+      margin-top: 5px;
+      text-align: center;
     }
-
-    button:hover:not(:disabled) {
-      background: #334155;
+    .custom-file-upload:hover {
+      background-color: #cbd5e0;
     }
-
-    button.primary {
-      background: #2563eb;
+    #fontsList {
+      margin-top: 10px;
     }
-
-    button.primary:hover:not(:disabled) {
-      background: #1d4ed8;
+    .font-item {
+      margin-bottom: 5px;
+      padding: 5px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
     }
-
-    button.secondary {
-      color: #334155;
-      background: #e2e8f0;
-    }
-
-    button.secondary:hover:not(:disabled) {
-      background: #cbd5e1;
-    }
-
-    button.danger {
-      padding: 5px 10px;
-      min-height: 34px;
-      color: #b91c1c;
-      background: #fff;
-      border-color: #fecaca;
-      font-size: 0.875rem;
-    }
-
-    button.danger:hover:not(:disabled) {
-      background: #fef2f2;
-    }
-
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.55;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    @media (max-width: 680px) {
-      body {
-        padding: 12px;
-      }
-
-      .container {
-        padding: 18px;
-      }
-
-      .control-panel {
-        grid-template-columns: 1fr;
-      }
-
-      .control-group.full-width {
-        grid-column: auto;
-      }
+    .remove-font {
+      cursor: pointer;
+      color: #e53e3e;
     }
   </style>
-
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
-  <script src="scripts/common.js" defer></script>
 </head>
-<body class="tool-page" data-tool-page="image-art-font">
+<body>
 <!-- COMMON_HEADER -->
-<a class="skip-link" href="#main-content">跳到主要内容</a>
-<header class="page-header" aria-label="站点页头">
+<!-- 固定页头 -->
+<header class="page-header">
     <div class="header-container">
         <div class="header-inner">
+            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
-                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
-                    <span>我的工具站</span>
-                </a>
+                <a href="../index.html" class="logo-link">我的工具站</a>
             </div>
-            <nav class="nav-desktop" aria-label="主要导航">
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">工具首页</a>
+                    <a href="../index.html" class="nav-link">首页</a>
                 </div>
             </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
         </div>
     </div>
 </header>
 <!-- END_COMMON_HEADER -->
-  <main class="container" id="main-content" tabindex="-1">
-    <h1>艺术字 PNG 生成器</h1>
-    <p class="intro">设置文字、描边与阴影，实时预览并导出透明背景 PNG。字体文件只在当前浏览器页面中处理，不会上传。</p>
-
-    <form id="artFontForm" novalidate>
-      <div class="control-panel">
-        <div class="control-group full-width">
-          <label for="textInput">文本</label>
-          <textarea id="textInput" rows="2" maxlength="200" placeholder="输入要显示的文本" aria-describedby="textHelp">签到</textarea>
-          <p class="helper-text" id="textHelp">最多 200 个字符、10 行；导出文件会保留换行。</p>
-        </div>
-
-        <div class="control-group">
-          <label for="fontSize">字体大小（px）</label>
-          <input type="number" id="fontSize" value="72" min="10" max="500" step="1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="lineHeight">行高（倍）</label>
-          <input type="number" id="lineHeight" value="1.2" min="0.8" max="3" step="0.1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="letterSpacing">字距（px）</label>
-          <input type="number" id="letterSpacing" value="0" min="-20" max="50" step="1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="fontFamily">字体</label>
-          <select id="fontFamily">
-            <option value="Arial">Arial</option>
-            <option value="&quot;Times New Roman&quot;">Times New Roman</option>
-            <option value="&quot;Microsoft YaHei&quot;">Microsoft YaHei</option>
-            <option value="SimHei">SimHei</option>
-            <option value="KaiTi">KaiTi</option>
-            <option value="SimSun">SimSun</option>
-            <option value="sans-serif">Sans-serif</option>
-            <option value="serif">Serif</option>
-            <option value="monospace">Monospace</option>
-          </select>
-          <div class="font-actions">
-            <button type="button" class="secondary" id="uploadFontBtn">上传自定义字体</button>
-            <button type="button" class="secondary" id="clearFontsBtn" disabled>清空自定义字体</button>
-          </div>
-          <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2">
-          <p class="helper-text" id="fontHelp">支持 TTF、OTF、WOFF、WOFF2，单个文件不超过 20 MB。请确认字体授权允许使用和导出。</p>
-          <h2 class="sr-only">已上传的自定义字体</h2>
-          <ul id="fontsList" class="font-list"></ul>
-        </div>
-
-        <div class="control-group">
-          <label for="textColor">文字颜色</label>
-          <div class="color-picker">
-            <input type="color" id="textColorPicker" value="#ff0000" aria-label="选择文字颜色">
-            <input type="text" id="textColor" value="#ff0000" maxlength="7" spellcheck="false" inputmode="text" aria-describedby="colorHelp">
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label for="strokeWidth">描边宽度（px）</label>
-          <input type="number" id="strokeWidth" value="4" min="0" max="50" step="0.5" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="strokeColor">描边颜色</label>
-          <div class="color-picker">
-            <input type="color" id="strokeColorPicker" value="#000000" aria-label="选择描边颜色">
-            <input type="text" id="strokeColor" value="#000000" maxlength="7" spellcheck="false" inputmode="text" aria-describedby="colorHelp">
-          </div>
-        </div>
-
-        <div class="control-group">
-          <span class="group-label">阴影</span>
-          <div class="toggle-row">
-            <input type="checkbox" id="shadowEnabled" checked>
-            <label for="shadowEnabled">启用阴影效果</label>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label for="shadowOffsetX">阴影水平偏移（px）</label>
-          <input type="number" id="shadowOffsetX" value="0" min="-100" max="100" step="1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="shadowOffsetY">阴影垂直偏移（px）</label>
-          <input type="number" id="shadowOffsetY" value="5" min="-100" max="100" step="1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="shadowBlur">阴影模糊（px）</label>
-          <input type="number" id="shadowBlur" value="3" min="0" max="100" step="1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="shadowColor">阴影颜色</label>
-          <div class="color-picker">
-            <input type="color" id="shadowColorPicker" value="#000000" aria-label="选择阴影颜色">
-            <input type="text" id="shadowColor" value="#000000" maxlength="7" spellcheck="false" inputmode="text" aria-describedby="colorHelp">
-          </div>
-          <p class="helper-text" id="colorHelp">颜色格式为 #RRGGBB。</p>
-        </div>
-
-        <div class="control-group">
-          <label for="transparentPadding">透明边距（px）</label>
-          <input type="number" id="transparentPadding" value="10" min="0" max="200" step="1" inputmode="decimal">
-        </div>
-
-        <div class="control-group">
-          <label for="exportScale">导出倍率</label>
-          <select id="exportScale">
-            <option value="1">1×</option>
-            <option value="2">2×</option>
-            <option value="4">4×</option>
-          </select>
+  <div class="container">
+    <h1>文本描边与阴影生成器</h1>
+    
+    <div class="control-panel">
+      <div class="control-group">
+        <label for="textInput">输入文本:</label>
+        <input type="text" id="textInput" value="签到" placeholder="输入要显示的文本">
+      </div>
+      
+      <div class="control-group">
+        <label for="fontSize">字体大小 (px):</label>
+        <input type="number" id="fontSize" value="72" min="10" max="500">
+      </div>
+      
+      <div class="control-group">
+        <label for="letterSpacing">字距 (px):</label>
+        <input type="number" id="letterSpacing" value="0" min="-20" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="fontFamily">字体选择:</label>
+        <select id="fontFamily">
+          <option value="Arial">Arial</option>
+          <option value="'Times New Roman'">Times New Roman</option>
+          <option value="'Microsoft YaHei'">Microsoft YaHei</option>
+          <option value="SimHei">SimHei</option>
+          <option value="KaiTi">KaiTi</option>
+          <option value="SimSun">SimSun</option>
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
+        </select>
+        <label for="fontFileInput" class="custom-file-upload">
+          上传自定义字体
+        </label>
+        <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2">
+        <div id="fontsList"></div>
+      </div>
+      
+      <div class="control-group">
+        <label for="textColor">文本颜色:</label>
+        <div class="color-picker">
+          <input type="color" id="textColorPicker" value="#ff0000">
+          <input type="text" id="textColor" value="#ff0000">
         </div>
       </div>
-
-      <section class="preview-section" aria-labelledby="previewTitle">
-        <div class="preview-heading">
-          <h2 id="previewTitle">透明背景预览</h2>
-          <span id="outputInfo">正在计算尺寸…</span>
-        </div>
-        <div class="preview-area" id="previewArea">
-          <canvas id="previewCanvas" role="img" aria-label="艺术字预览"></canvas>
-          <div class="preview-empty" id="previewEmpty" hidden>请输入可见文本后预览。</div>
-        </div>
-        <p class="status" id="statusMessage" role="status" aria-live="polite"></p>
-      </section>
-
-      <div class="button-group">
-        <button type="submit" class="primary" id="downloadBtn">导出透明 PNG</button>
-        <button type="button" class="secondary" id="resetBtn">重置参数</button>
+      
+      <div class="control-group">
+        <label for="strokeWidth">描边宽度 (px):</label>
+        <input type="number" id="strokeWidth" value="4" min="0" max="50" step="0.5">
       </div>
-    </form>
-  </main>
+      
+      <div class="control-group">
+        <label for="strokeColor">描边颜色:</label>
+        <div class="color-picker">
+          <input type="color" id="strokeColorPicker" value="#000000">
+          <input type="text" id="strokeColor" value="#000000">
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowOffsetX">阴影水平偏移 (px):</label>
+        <input type="number" id="shadowOffsetX" value="0" min="-50" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowOffsetY">阴影垂直偏移 (px):</label>
+        <input type="number" id="shadowOffsetY" value="5" min="-50" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowBlur">阴影模糊 (px):</label>
+        <input type="number" id="shadowBlur" value="3" min="0" max="50">
+      </div>
+      
+      <div class="control-group">
+        <label for="shadowColor">阴影颜色:</label>
+        <div class="color-picker">
+          <input type="color" id="shadowColorPicker" value="#000000">
+          <input type="text" id="shadowColor" value="#000000">
+        </div>
+      </div>
+    </div>
+    
+    <div class="preview-area">
+      <div id="textPreview">签到</div>
+    </div>
+    
+    <div class="button-group">
+      <button id="downloadBtn">导出为PNG</button>
+    </div>
+  </div>
 
   <script>
-    (() => {
-      "use strict";
+    // 全局变量存储自定义字体
+    const customFonts = [];
+    
+    // 初始渲染和事件监听
+    document.addEventListener('DOMContentLoaded', () => {
+      // 初始化渲染
+      updateTextStyle();
+      
+      // 监听输入变化
+      document.getElementById('textInput').addEventListener('input', updateTextStyle);
+      document.getElementById('fontSize').addEventListener('input', updateTextStyle);
+      document.getElementById('letterSpacing').addEventListener('input', updateTextStyle);
+      document.getElementById('fontFamily').addEventListener('change', updateTextStyle);
+      document.getElementById('textColorPicker').addEventListener('input', e => {
+        document.getElementById('textColor').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('textColor').addEventListener('change', e => {
+        document.getElementById('textColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('textColor').addEventListener('input', e => {
+        document.getElementById('textColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('strokeWidth').addEventListener('input', updateTextStyle);
+      document.getElementById('strokeColorPicker').addEventListener('input', e => {
+        document.getElementById('strokeColor').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('strokeColor').addEventListener('input', e => {
+        document.getElementById('strokeColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('shadowOffsetX').addEventListener('input', updateTextStyle);
+      document.getElementById('shadowOffsetY').addEventListener('input', updateTextStyle);
+      document.getElementById('shadowBlur').addEventListener('input', updateTextStyle);
+      document.getElementById('shadowColorPicker').addEventListener('input', e => {
+        document.getElementById('shadowColor').value = e.target.value;
+        updateTextStyle();
+      });
+      document.getElementById('shadowColor').addEventListener('input', e => {
+        document.getElementById('shadowColorPicker').value = e.target.value;
+        updateTextStyle();
+      });
+      
+      // 字体文件上传处理
+      document.getElementById('fontFileInput').addEventListener('change', handleFontUpload);
+      
+      // 下载按钮点击事件
+      document.getElementById('downloadBtn').addEventListener('click', downloadAsPNG);
+    });
 
-      const MAX_FONT_BYTES = 20 * 1024 * 1024;
-      const MAX_CANVAS_SIDE = 16384;
-      const MAX_CANVAS_PIXELS = 64 * 1024 * 1024;
-      const MAX_TEXT_LINES = 10;
-      const PREVIEW_HEIGHT = 280;
-      const SHADOW_BLUR_EXTENT = 2;
-      const customFonts = [];
-      const colorValues = new Map();
-      let customFontSequence = 0;
-      let previewFrame = 0;
+    // 更新文本样式
+    function updateTextStyle() {
+      const textPreview = document.getElementById('textPreview');
+      const text = document.getElementById('textInput').value || '签到';
+      const fontSize = document.getElementById('fontSize').value + 'px';
+      const fontFamily = document.getElementById('fontFamily').value;
+      const textColor = document.getElementById('textColor').value;
+      const strokeWidth = document.getElementById('strokeWidth').value + 'px';
+      const strokeColor = document.getElementById('strokeColor').value;
+      const shadowOffsetX = document.getElementById('shadowOffsetX').value + 'px';
+      const shadowOffsetY = document.getElementById('shadowOffsetY').value + 'px';
+      const shadowBlur = document.getElementById('shadowBlur').value + 'px';
+      const shadowColor = document.getElementById('shadowColor').value;
+      const letterSpacing = document.getElementById('letterSpacing').value + 'px';
+      
+      textPreview.textContent = text;
+      textPreview.style.fontFamily = fontFamily;
+      textPreview.style.fontSize = fontSize;
+      textPreview.style.color = textColor;
+      textPreview.style.letterSpacing = letterSpacing;
+      textPreview.style.webkitTextStroke = `${strokeWidth} ${strokeColor}`;
+      textPreview.style.textStroke = `${strokeWidth} ${strokeColor}`;
+      textPreview.style.textShadow = `${shadowOffsetX} ${shadowOffsetY} ${shadowBlur} ${shadowColor}`;
+    }
 
-      const numberFields = {
-        fontSize: { min: 10, max: 500, fallback: 72 },
-        lineHeight: { min: 0.8, max: 3, fallback: 1.2 },
-        letterSpacing: { min: -20, max: 50, fallback: 0 },
-        strokeWidth: { min: 0, max: 50, fallback: 4 },
-        shadowOffsetX: { min: -100, max: 100, fallback: 0 },
-        shadowOffsetY: { min: -100, max: 100, fallback: 5 },
-        shadowBlur: { min: 0, max: 100, fallback: 3 },
-        transparentPadding: { min: 0, max: 200, fallback: 10 }
-      };
-
-      const colorFields = [
-        ["textColor", "textColorPicker"],
-        ["strokeColor", "strokeColorPicker"],
-        ["shadowColor", "shadowColorPicker"]
-      ];
-
-      const elements = {};
-
-      document.addEventListener("DOMContentLoaded", initialize);
-
-      function initialize() {
-        [
-          "artFontForm", "textInput", "fontFamily", "fontFileInput", "uploadFontBtn",
-          "clearFontsBtn", "fontsList", "shadowEnabled", "exportScale", "previewArea",
-          "previewCanvas", "previewEmpty", "outputInfo", "statusMessage", "downloadBtn",
-          "resetBtn"
-        ].forEach((id) => {
-          elements[id] = document.getElementById(id);
+    // 处理字体上传
+    function handleFontUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // 检查文件扩展名
+      const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validExtensions.includes(fileExtension)) {
+        alert('请上传有效的字体文件：.ttf, .otf, .woff, 或 .woff2');
+        return;
+      }
+      
+      const fontName = file.name.split('.')[0];
+      const fontUrl = URL.createObjectURL(file);
+      
+      // 创建自定义字体
+      const fontFace = new FontFace(fontName, `url(${fontUrl})`);
+      
+      fontFace.load().then(loadedFace => {
+        // 添加到文档
+        document.fonts.add(loadedFace);
+        
+        // 保存自定义字体信息
+        customFonts.push({
+          name: fontName,
+          face: loadedFace,
+          url: fontUrl
         });
-
-        Object.keys(numberFields).forEach((id) => {
-          elements[id] = document.getElementById(id);
-          elements[id].addEventListener("input", schedulePreview);
-          elements[id].addEventListener("change", () => normalizeNumberInput(id));
-          elements[id].addEventListener("blur", () => normalizeNumberInput(id));
-        });
-
-        colorFields.forEach(([textId, pickerId]) => setupColorPair(textId, pickerId));
-
-        elements.textInput.addEventListener("input", schedulePreview);
-        elements.fontFamily.addEventListener("change", schedulePreview);
-        elements.shadowEnabled.addEventListener("change", () => {
-          setShadowControlsEnabled(elements.shadowEnabled.checked);
-          schedulePreview();
-        });
-        elements.exportScale.addEventListener("change", schedulePreview);
-        elements.uploadFontBtn.addEventListener("click", () => elements.fontFileInput.click());
-        elements.fontFileInput.addEventListener("change", handleFontUpload);
-        elements.clearFontsBtn.addEventListener("click", clearCustomFonts);
-        elements.artFontForm.addEventListener("submit", (event) => {
-          event.preventDefault();
-          void downloadAsPNG();
-        });
-        elements.resetBtn.addEventListener("click", resetParameters);
-
-        if ("ResizeObserver" in window) {
-          new ResizeObserver(schedulePreview).observe(elements.previewArea);
-        } else {
-          window.addEventListener("resize", schedulePreview);
-        }
-
-        setShadowControlsEnabled(true);
-        schedulePreview();
-      }
-
-      function setupColorPair(textId, pickerId) {
-        const textInput = document.getElementById(textId);
-        const picker = document.getElementById(pickerId);
-        elements[textId] = textInput;
-        elements[pickerId] = picker;
-        colorValues.set(textId, picker.value.toLowerCase());
-
-        picker.addEventListener("input", () => {
-          const value = picker.value.toLowerCase();
-          textInput.value = value;
-          textInput.removeAttribute("aria-invalid");
-          colorValues.set(textId, value);
-          schedulePreview();
-        });
-
-        textInput.addEventListener("input", () => {
-          const normalized = normalizeColor(textInput.value);
-          if (normalized) {
-            picker.value = normalized;
-            colorValues.set(textId, normalized);
-            textInput.removeAttribute("aria-invalid");
-          } else {
-            textInput.setAttribute("aria-invalid", "true");
-          }
-          schedulePreview();
-        });
-
-        textInput.addEventListener("blur", () => {
-          const normalized = normalizeColor(textInput.value);
-          if (normalized) {
-            textInput.value = normalized;
-            picker.value = normalized;
-            colorValues.set(textId, normalized);
-            textInput.removeAttribute("aria-invalid");
-          } else {
-            const previous = colorValues.get(textId);
-            textInput.value = previous;
-            picker.value = previous;
-            textInput.removeAttribute("aria-invalid");
-            setStatus("无效颜色已恢复为上一次有效值。", "error");
-          }
-          schedulePreview();
-        });
-      }
-
-      function normalizeColor(value) {
-        const trimmed = String(value).trim().toLowerCase();
-        const shortMatch = /^#([0-9a-f]{3})$/.exec(trimmed);
-        if (shortMatch) {
-          return "#" + shortMatch[1].split("").map((char) => char + char).join("");
-        }
-        return /^#[0-9a-f]{6}$/.test(trimmed) ? trimmed : "";
-      }
-
-      function normalizeNumberInput(id) {
-        const input = elements[id];
-        const config = numberFields[id];
-        const parsed = Number(input.value);
-        const normalized = Number.isFinite(parsed)
-          ? Math.min(config.max, Math.max(config.min, parsed))
-          : config.fallback;
-        input.value = String(normalized);
-        input.removeAttribute("aria-invalid");
-        schedulePreview();
-      }
-
-      function readNumber(id, errors) {
-        const input = elements[id];
-        const config = numberFields[id];
-        const value = Number(input.value);
-        if (!Number.isFinite(value) || value < config.min || value > config.max) {
-          input.setAttribute("aria-invalid", "true");
-          errors.push(`${input.previousElementSibling ? input.previousElementSibling.textContent : id}超出允许范围`);
-          return config.fallback;
-        }
-        input.removeAttribute("aria-invalid");
-        return value;
-      }
-
-      function getState() {
-        const errors = [];
-        const text = elements.textInput.value.replace(/\r\n?/g, "\n");
-        const lines = text.split("\n");
-
-        if (!text.trim()) {
-          errors.push("请输入可见文本");
-        }
-        if (lines.length > MAX_TEXT_LINES) {
-          errors.push(`文本不能超过 ${MAX_TEXT_LINES} 行`);
-        }
-
-        colorFields.forEach(([textId]) => {
-          if (!normalizeColor(elements[textId].value)) {
-            errors.push(`${elements[textId].parentElement.previousElementSibling.textContent}格式无效`);
-          }
-        });
-
-        const state = {
-          text,
-          lines,
-          fontSize: readNumber("fontSize", errors),
-          lineHeight: readNumber("lineHeight", errors),
-          letterSpacing: readNumber("letterSpacing", errors),
-          fontFamily: elements.fontFamily.value,
-          textColor: colorValues.get("textColor"),
-          strokeWidth: readNumber("strokeWidth", errors),
-          strokeColor: colorValues.get("strokeColor"),
-          shadowEnabled: elements.shadowEnabled.checked,
-          shadowOffsetX: readNumber("shadowOffsetX", errors),
-          shadowOffsetY: readNumber("shadowOffsetY", errors),
-          shadowBlur: readNumber("shadowBlur", errors),
-          shadowColor: colorValues.get("shadowColor"),
-          transparentPadding: readNumber("transparentPadding", errors),
-          exportScale: Number(elements.exportScale.value)
-        };
-
-        return { state, errors };
-      }
-
-      function getGraphemes(text) {
-        if ("Segmenter" in Intl) {
-          const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-          return Array.from(segmenter.segment(text), (entry) => entry.segment);
-        }
-        return Array.from(text);
-      }
-
-      function setTextContext(ctx, state) {
-        ctx.font = `${state.fontSize}px ${state.fontFamily}`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        ctx.lineJoin = "round";
-        ctx.miterLimit = 2;
-      }
-
-      function metricValue(metrics, property, fallback) {
-        const value = metrics[property];
-        return Number.isFinite(value) ? value : fallback;
-      }
-
-      function measureLine(ctx, text, state) {
-        const fallbackAscent = state.fontSize * 0.8;
-        const fallbackDescent = state.fontSize * 0.2;
-
-        if (!text) {
-          return {
-            text,
-            glyphs: [],
-            minX: 0,
-            maxX: 0,
-            ascent: fallbackAscent,
-            descent: fallbackDescent,
-            originX: 0
-          };
-        }
-
-        if (state.letterSpacing === 0) {
-          const metrics = ctx.measureText(text);
-          const left = metricValue(metrics, "actualBoundingBoxLeft", 0);
-          const right = metricValue(metrics, "actualBoundingBoxRight", metrics.width);
-          return {
-            text,
-            glyphs: null,
-            minX: -left,
-            maxX: right,
-            ascent: metricValue(metrics, "actualBoundingBoxAscent", fallbackAscent),
-            descent: metricValue(metrics, "actualBoundingBoxDescent", fallbackDescent),
-            originX: (left - right) / 2
-          };
-        }
-
-        const glyphs = [];
-        let cursor = 0;
-        let minX = Infinity;
-        let maxX = -Infinity;
-        let ascent = 0;
-        let descent = 0;
-
-        getGraphemes(text).forEach((grapheme, index, array) => {
-          const metrics = ctx.measureText(grapheme);
-          const left = metricValue(metrics, "actualBoundingBoxLeft", 0);
-          const right = metricValue(metrics, "actualBoundingBoxRight", metrics.width);
-          const glyphMinX = cursor - left;
-          const glyphMaxX = cursor + right;
-          minX = Math.min(minX, glyphMinX);
-          maxX = Math.max(maxX, glyphMaxX);
-          ascent = Math.max(ascent, metricValue(metrics, "actualBoundingBoxAscent", fallbackAscent));
-          descent = Math.max(descent, metricValue(metrics, "actualBoundingBoxDescent", fallbackDescent));
-          glyphs.push({ text: grapheme, x: cursor });
-          cursor += metrics.width;
-          if (index < array.length - 1) {
-            cursor += state.letterSpacing;
-          }
-        });
-
-        return {
-          text,
-          glyphs,
-          minX,
-          maxX,
-          ascent: ascent || fallbackAscent,
-          descent: descent || fallbackDescent,
-          originX: -(minX + maxX) / 2
-        };
-      }
-
-      function measureArtwork(state) {
-        const measurementCanvas = document.createElement("canvas");
-        const ctx = measurementCanvas.getContext("2d");
-        if (!ctx) {
-          throw new Error("当前浏览器不支持 Canvas 2D。");
-        }
-        setTextContext(ctx, state);
-
-        const lineGap = state.fontSize * state.lineHeight;
-        const lines = state.lines.map((line, index) => {
-          const measured = measureLine(ctx, line, state);
-          measured.baselineY = index * lineGap;
-          return measured;
-        });
-
-        let inkLeft = Infinity;
-        let inkRight = -Infinity;
-        let inkTop = Infinity;
-        let inkBottom = -Infinity;
-
-        lines.forEach((line) => {
-          inkLeft = Math.min(inkLeft, line.originX + line.minX);
-          inkRight = Math.max(inkRight, line.originX + line.maxX);
-          inkTop = Math.min(inkTop, line.baselineY - line.ascent);
-          inkBottom = Math.max(inkBottom, line.baselineY + line.descent);
-        });
-
-        if (!Number.isFinite(inkLeft) || inkRight <= inkLeft) {
-          inkLeft = -state.fontSize * 0.25;
-          inkRight = state.fontSize * 0.25;
-        }
-        if (!Number.isFinite(inkTop) || inkBottom <= inkTop) {
-          inkTop = -state.fontSize * 0.8;
-          inkBottom = state.fontSize * 0.2;
-        }
-
-        const strokeExtent = state.strokeWidth / 2;
-        const safety = 2;
-        const baseBounds = {
-          left: inkLeft - strokeExtent - safety,
-          top: inkTop - strokeExtent - safety,
-          right: inkRight + strokeExtent + safety,
-          bottom: inkBottom + strokeExtent + safety
-        };
-
-        const effectBounds = { ...baseBounds };
-        if (state.shadowEnabled) {
-          const shadowExtent = state.shadowBlur * SHADOW_BLUR_EXTENT + safety;
-          effectBounds.left = Math.min(
-            effectBounds.left,
-            baseBounds.left + state.shadowOffsetX - shadowExtent
-          );
-          effectBounds.top = Math.min(
-            effectBounds.top,
-            baseBounds.top + state.shadowOffsetY - shadowExtent
-          );
-          effectBounds.right = Math.max(
-            effectBounds.right,
-            baseBounds.right + state.shadowOffsetX + shadowExtent
-          );
-          effectBounds.bottom = Math.max(
-            effectBounds.bottom,
-            baseBounds.bottom + state.shadowOffsetY + shadowExtent
-          );
-        }
-
-        const outputBounds = {
-          left: effectBounds.left - state.transparentPadding,
-          top: effectBounds.top - state.transparentPadding,
-          right: effectBounds.right + state.transparentPadding,
-          bottom: effectBounds.bottom + state.transparentPadding
-        };
-
-        return {
-          lines,
-          baseBounds,
-          outputBounds,
-          width: Math.max(1, outputBounds.right - outputBounds.left),
-          height: Math.max(1, outputBounds.bottom - outputBounds.top)
-        };
-      }
-
-      function drawLine(ctx, line, state) {
-        if (!line.text) return;
-
-        if (line.glyphs === null) {
-          if (state.strokeWidth > 0) {
-            ctx.strokeText(line.text, line.originX, line.baselineY);
-          }
-          ctx.fillText(line.text, line.originX, line.baselineY);
-          return;
-        }
-
-        line.glyphs.forEach((glyph) => {
-          const x = line.originX + glyph.x;
-          if (state.strokeWidth > 0) {
-            ctx.strokeText(glyph.text, x, line.baselineY);
-          }
-          ctx.fillText(glyph.text, x, line.baselineY);
-        });
-      }
-
-      function renderArtwork(state, layout, scale) {
-        const baseWidth = Math.max(1, Math.ceil((layout.baseBounds.right - layout.baseBounds.left) * scale));
-        const baseHeight = Math.max(1, Math.ceil((layout.baseBounds.bottom - layout.baseBounds.top) * scale));
-        const baseCanvas = document.createElement("canvas");
-        baseCanvas.width = baseWidth;
-        baseCanvas.height = baseHeight;
-        const baseCtx = baseCanvas.getContext("2d");
-        if (!baseCtx) {
-          throw new Error("无法创建文字渲染画布。");
-        }
-
-        baseCtx.scale(scale, scale);
-        baseCtx.translate(-layout.baseBounds.left, -layout.baseBounds.top);
-        setTextContext(baseCtx, state);
-        baseCtx.fillStyle = state.textColor;
-        baseCtx.strokeStyle = state.strokeColor;
-        baseCtx.lineWidth = state.strokeWidth;
-        layout.lines.forEach((line) => drawLine(baseCtx, line, state));
-
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.ceil(layout.width * scale));
-        canvas.height = Math.max(1, Math.ceil(layout.height * scale));
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          throw new Error("无法创建导出画布。");
-        }
-
-        const x = (layout.baseBounds.left - layout.outputBounds.left) * scale;
-        const y = (layout.baseBounds.top - layout.outputBounds.top) * scale;
-        if (state.shadowEnabled) {
-          ctx.shadowColor = state.shadowColor;
-          ctx.shadowOffsetX = state.shadowOffsetX * scale;
-          ctx.shadowOffsetY = state.shadowOffsetY * scale;
-          ctx.shadowBlur = state.shadowBlur * scale;
-        }
-        ctx.drawImage(baseCanvas, x, y);
-        return canvas;
-      }
-
-      function getExportDimensions(layout, scale) {
-        return {
-          width: Math.max(1, Math.ceil(layout.width * scale)),
-          height: Math.max(1, Math.ceil(layout.height * scale))
-        };
-      }
-
-      function validateCanvasDimensions(dimensions) {
-        if (
-          dimensions.width > MAX_CANVAS_SIDE ||
-          dimensions.height > MAX_CANVAS_SIDE ||
-          dimensions.width * dimensions.height > MAX_CANVAS_PIXELS
-        ) {
-          return `导出尺寸 ${dimensions.width} × ${dimensions.height} px 过大，请减小文本、字号、边距或导出倍率`;
-        }
-        return "";
-      }
-
-      function schedulePreview() {
-        if (previewFrame) {
-          cancelAnimationFrame(previewFrame);
-        }
-        previewFrame = requestAnimationFrame(() => {
-          previewFrame = 0;
-          updatePreview();
-        });
-      }
-
-      function updatePreview() {
-        const { state, errors } = getState();
-        const previewCanvas = elements.previewCanvas;
-        const empty = !state.text.trim();
-
-        if (empty) {
-          clearPreviewCanvas();
-          elements.previewEmpty.hidden = false;
-          elements.outputInfo.textContent = "等待输入文本";
-          elements.downloadBtn.disabled = true;
-          previewCanvas.setAttribute("aria-label", "艺术字预览：当前没有文本");
-          setStatus("请输入可见文本后再导出。", "error");
-          return;
-        }
-
-        elements.previewEmpty.hidden = true;
-
-        try {
-          const layout = measureArtwork(state);
-          const dimensions = getExportDimensions(layout, state.exportScale);
-          const dimensionError = validateCanvasDimensions(dimensions);
-          const allErrors = dimensionError ? errors.concat(dimensionError) : errors;
-
-          drawPreviewCanvas(state, layout);
-          elements.outputInfo.textContent = `导出尺寸：${dimensions.width} × ${dimensions.height} px`;
-          previewCanvas.setAttribute(
-            "aria-label",
-            `艺术字预览，文本为“${state.text.slice(0, 60).replace(/\n/g, "，")}”，导出尺寸 ${dimensions.width} × ${dimensions.height} 像素`
-          );
-          elements.downloadBtn.disabled = allErrors.length > 0;
-
-          if (allErrors.length) {
-            setStatus(allErrors[0], "error");
-          } else {
-            setStatus("预览已更新，可导出透明背景 PNG。", "success");
-          }
-        } catch (error) {
-          console.error("预览失败:", error);
-          clearPreviewCanvas();
-          elements.downloadBtn.disabled = true;
-          elements.outputInfo.textContent = "无法计算导出尺寸";
-          setStatus(error.message || "预览失败，请检查输入。", "error");
-        }
-      }
-
-      function clearPreviewCanvas() {
-        const canvas = elements.previewCanvas;
-        const width = Math.max(1, Math.round(elements.previewArea.clientWidth || 300));
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(width * dpr);
-        canvas.height = Math.round(PREVIEW_HEIGHT * dpr);
-        canvas.style.height = `${PREVIEW_HEIGHT}px`;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-      }
-
-      function drawPreviewCanvas(state, layout) {
-        const canvas = elements.previewCanvas;
-        const cssWidth = Math.max(1, elements.previewArea.clientWidth || 300);
-        const cssHeight = PREVIEW_HEIGHT;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(cssWidth * dpr);
-        canvas.height = Math.round(cssHeight * dpr);
-        canvas.style.height = `${cssHeight}px`;
-
-        const fitScale = Math.max(
-          0.001,
-          Math.min((cssWidth - 32) / layout.width, (cssHeight - 32) / layout.height, 2)
-        );
-        const previewScale = fitScale * dpr;
-        const artwork = renderArtwork(state, layout, previewScale);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          throw new Error("当前浏览器不支持 Canvas 2D。");
-        }
-        const x = Math.round((canvas.width - artwork.width) / 2);
-        const y = Math.round((canvas.height - artwork.height) / 2);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(artwork, x, y);
-      }
-
-      function setShadowControlsEnabled(enabled) {
-        ["shadowOffsetX", "shadowOffsetY", "shadowBlur", "shadowColor", "shadowColorPicker"]
-          .forEach((id) => {
-            document.getElementById(id).disabled = !enabled;
-          });
-      }
-
-      async function handleFontUpload(event) {
-        const file = event.target.files[0];
-        event.target.value = "";
-        if (!file) return;
-
-        const extensionMatch = /\.[^.]+$/.exec(file.name);
-        const extension = extensionMatch ? extensionMatch[0].toLowerCase() : "";
-        const validExtensions = new Set([".ttf", ".otf", ".woff", ".woff2"]);
-        if (!validExtensions.has(extension)) {
-          setStatus("请选择 TTF、OTF、WOFF 或 WOFF2 字体文件。", "error");
-          return;
-        }
-        if (file.size <= 0 || file.size > MAX_FONT_BYTES) {
-          setStatus("字体文件必须大于 0 字节且不超过 20 MB。", "error");
-          return;
-        }
-
-        const fingerprint = `${file.name.toLowerCase()}|${file.size}|${file.lastModified}`;
-        const duplicate = customFonts.find((font) => font.fingerprint === fingerprint);
-        if (duplicate) {
-          elements.fontFamily.value = duplicate.family;
-          schedulePreview();
-          setStatus(`“${duplicate.displayName}”已上传，已直接选中。`, "success");
-          return;
-        }
-
-        elements.uploadFontBtn.disabled = true;
-        setStatus(`正在加载“${file.name}”…`, "info");
-
-        try {
-          const buffer = await file.arrayBuffer();
-          const family = `AiPicCustomFont${++customFontSequence}`;
-          const fontFace = new FontFace(family, buffer);
-          const loadedFace = await fontFace.load();
-          document.fonts.add(loadedFace);
-
-          const font = {
-            displayName: file.name.replace(/\.[^.]+$/, "") || file.name,
-            family,
-            face: loadedFace,
-            fingerprint
-          };
-          customFonts.push(font);
-
-          const option = document.createElement("option");
-          option.value = family;
-          option.textContent = `${font.displayName}（自定义）`;
-          option.dataset.customFont = family;
-          elements.fontFamily.appendChild(option);
-          elements.fontFamily.value = family;
-          updateFontsList();
-          schedulePreview();
-          setStatus(`字体“${font.displayName}”加载成功。`, "success");
-        } catch (error) {
-          console.error("字体加载失败:", error);
-          setStatus("字体无法解析或浏览器不支持该文件，请尝试其他字体。", "error");
-        } finally {
-          elements.uploadFontBtn.disabled = false;
-        }
-      }
-
-      function updateFontsList() {
-        elements.fontsList.replaceChildren();
-        customFonts.forEach((font) => {
-          const item = document.createElement("li");
-          item.className = "font-item";
-
-          const name = document.createElement("span");
-          name.className = "font-name";
-          name.textContent = font.displayName;
-
-          const removeButton = document.createElement("button");
-          removeButton.type = "button";
-          removeButton.className = "danger";
-          removeButton.textContent = "移除";
-          removeButton.setAttribute("aria-label", `移除自定义字体 ${font.displayName}`);
-          removeButton.addEventListener("click", () => removeCustomFont(font.family));
-
-          item.append(name, removeButton);
-          elements.fontsList.appendChild(item);
-        });
-        elements.clearFontsBtn.disabled = customFonts.length === 0;
-      }
-
-      function removeCustomFont(family, silent = false) {
-        const index = customFonts.findIndex((font) => font.family === family);
-        if (index === -1) return;
-
-        const font = customFonts[index];
-        const wasSelected = elements.fontFamily.value === family;
-        document.fonts.delete(font.face);
-        customFonts.splice(index, 1);
-        elements.fontFamily.querySelector(`option[data-custom-font="${family}"]`)?.remove();
-
-        if (wasSelected) {
-          elements.fontFamily.value = "Arial";
-        }
+        
+        // 更新字体选择下拉框
+        const fontSelect = document.getElementById('fontFamily');
+        const option = document.createElement('option');
+        option.value = fontName;
+        option.textContent = fontName + ' (自定义)';
+        fontSelect.appendChild(option);
+        option.selected = true;
+        
+        // 更新字体列表显示
         updateFontsList();
-        schedulePreview();
-        if (!silent) {
-          setStatus(`已移除自定义字体“${font.displayName}”。`, "success");
-        }
-      }
+        
+        // 更新文本样式
+        updateTextStyle();
+      }).catch(error => {
+        console.error('字体加载失败:', error);
+        alert('字体加载失败，请尝试其他字体文件');
+      });
+      
+      // 清除文件输入，允许重复上传相同文件
+      event.target.value = '';
+    }
 
-      function clearCustomFonts() {
-        const count = customFonts.length;
-        [...customFonts].forEach((font) => removeCustomFont(font.family, true));
-        setStatus(`已清空 ${count} 个自定义字体。`, "success");
-      }
-
-      function resetParameters() {
-        elements.artFontForm.reset();
-        colorFields.forEach(([textId, pickerId]) => {
-          const value = elements[pickerId].value.toLowerCase();
-          elements[textId].value = value;
-          elements[textId].removeAttribute("aria-invalid");
-          colorValues.set(textId, value);
+    // 更新自定义字体列表显示
+    function updateFontsList() {
+      const fontsList = document.getElementById('fontsList');
+      fontsList.innerHTML = '';
+      
+      customFonts.forEach((font, index) => {
+        const fontItem = document.createElement('div');
+        fontItem.className = 'font-item';
+        fontItem.innerHTML = `
+          <span>${font.name}</span>
+          <span class="remove-font" data-index="${index}">×</span>
+        `;
+        fontsList.appendChild(fontItem);
+      });
+      
+      // 添加删除事件监听
+      document.querySelectorAll('.remove-font').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          removeCustomFont(index);
         });
-        Object.keys(numberFields).forEach((id) => elements[id].removeAttribute("aria-invalid"));
-        setShadowControlsEnabled(true);
-        schedulePreview();
-        setStatus("参数已重置；已上传的自定义字体仍保留。", "success");
-      }
+      });
+    }
 
-      async function downloadAsPNG() {
-        const { state, errors } = getState();
-        if (errors.length) {
-          setStatus(errors[0], "error");
-          schedulePreview();
-          return;
-        }
-
-        elements.downloadBtn.disabled = true;
-        elements.downloadBtn.textContent = "正在导出…";
-        setStatus("正在生成 PNG…", "info");
-
-        try {
-          await document.fonts.load(`${state.fontSize}px ${state.fontFamily}`, state.text.replace(/\n/g, " "));
-          const layout = measureArtwork(state);
-          const dimensions = getExportDimensions(layout, state.exportScale);
-          const dimensionError = validateCanvasDimensions(dimensions);
-          if (dimensionError) {
-            throw new Error(dimensionError);
-          }
-
-          const canvas = renderArtwork(state, layout, state.exportScale);
-          const blob = await new Promise((resolve, reject) => {
-            canvas.toBlob((result) => {
-              if (result) resolve(result);
-              else reject(new Error("浏览器未能生成 PNG 文件。"));
-            }, "image/png");
-          });
-
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `${createSafeFilename(state.text)}_art-font.png`;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-          setStatus(`已导出 ${canvas.width} × ${canvas.height} px 透明 PNG。`, "success");
-        } catch (error) {
-          console.error("导出失败:", error);
-          setStatus(error.message || "导出失败，请减小参数后重试。", "error");
-        } finally {
-          elements.downloadBtn.textContent = "导出透明 PNG";
-          const current = getState();
-          let disabled = current.errors.length > 0;
-          if (!disabled) {
-            try {
-              const layout = measureArtwork(current.state);
-              disabled = Boolean(
-                validateCanvasDimensions(getExportDimensions(layout, current.state.exportScale))
-              );
-            } catch (error) {
-              disabled = true;
-            }
-          }
-          elements.downloadBtn.disabled = disabled;
+    // 移除自定义字体
+    function removeCustomFont(index) {
+      if (index < 0 || index >= customFonts.length) return;
+      
+      const fontName = customFonts[index].name;
+      
+      // 从下拉列表中移除
+      const fontSelect = document.getElementById('fontFamily');
+      for (let i = 0; i < fontSelect.options.length; i++) {
+        if (fontSelect.options[i].value === fontName) {
+          fontSelect.remove(i);
+          break;
         }
       }
-
-      function createSafeFilename(text) {
-        const firstLine = text.split("\n").find((line) => line.trim()) || "art-font";
-        const sanitized = firstLine
-          .trim()
-          .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
-          .replace(/\s+/g, "_")
-          .replace(/[. ]+$/g, "")
-          .slice(0, 40);
-        return sanitized || "art-font";
+      
+      // 如果当前选中的是被删除的字体，切换到默认字体
+      if (fontSelect.value === fontName) {
+        fontSelect.value = 'Arial';
+        updateTextStyle();
       }
+      
+      // 从自定义字体列表中移除
+      customFonts.splice(index, 1);
+      
+      // 更新字体列表显示
+      updateFontsList();
+    }
 
-      function setStatus(message, type = "info") {
-        elements.statusMessage.textContent = message;
-        elements.statusMessage.dataset.type = type;
+    // 下载为PNG
+    function downloadAsPNG() {
+      const textPreview = document.getElementById('textPreview');
+      const text = textPreview.textContent;
+      
+      // 创建临时canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 设置canvas初始尺寸
+      canvas.width = 1000;
+      canvas.height = 500;
+      
+      // 清除背景
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 应用文本样式
+      const fontSize = parseInt(document.getElementById('fontSize').value);
+      const fontFamily = document.getElementById('fontFamily').value;
+      const textColor = document.getElementById('textColor').value;
+      const strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+      const strokeColor = document.getElementById('strokeColor').value;
+      const shadowOffsetX = parseInt(document.getElementById('shadowOffsetX').value);
+      const shadowOffsetY = parseInt(document.getElementById('shadowOffsetY').value);
+      const shadowBlur = parseInt(document.getElementById('shadowBlur').value);
+      const shadowColor = document.getElementById('shadowColor').value;
+      const letterSpacing = parseInt(document.getElementById('letterSpacing').value);
+      
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.fillStyle = textColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.shadowOffsetX = shadowOffsetX;
+      ctx.shadowOffsetY = shadowOffsetY;
+      ctx.shadowBlur = shadowBlur;
+      ctx.shadowColor = shadowColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // 先使用临时canvas测量文本尺寸
+      const textMetrics = ctx.measureText(text);
+      const textWidth = Math.ceil(textMetrics.width + strokeWidth * 2 + shadowBlur * 2 + Math.abs(shadowOffsetX) * 2);
+      const textHeight = Math.ceil(fontSize * 1.2 + strokeWidth * 2 + shadowBlur * 2 + Math.abs(shadowOffsetY) * 2);
+      
+      // 调整canvas尺寸到实际需要
+      canvas.width = textWidth;
+      canvas.height = textHeight;
+      
+      // 重新设置样式（因为改变canvas尺寸会重置上下文）
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.fillStyle = textColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.shadowOffsetX = shadowOffsetX;
+      ctx.shadowOffsetY = shadowOffsetY;
+      ctx.shadowBlur = shadowBlur;
+      ctx.shadowColor = shadowColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // 在中心绘制文本
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // 应用字距设置
+      if (letterSpacing !== 0) {
+        // 绘制带字距的文本
+        let currentX = centerX - (ctx.measureText(text).width / 2);
+        // 调整起始位置
+        currentX -= (letterSpacing * (text.length - 1)) / 2;
+        
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const charWidth = ctx.measureText(char).width;
+          
+          if (strokeWidth > 0) {
+            ctx.strokeText(char, currentX + (charWidth / 2), centerY);
+          }
+          ctx.fillText(char, currentX + (charWidth / 2), centerY);
+          
+          currentX += charWidth + letterSpacing;
+        }
+      } else {
+        // 正常绘制文本
+        if (strokeWidth > 0) {
+          ctx.strokeText(text, centerX, centerY);
+        }
+        ctx.fillText(text, centerX, centerY);
       }
-    })();
+      
+      // 裁剪掉透明区域
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+      
+      // 找到非透明像素的边界
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          const alpha = data[(y * canvas.width + x) * 4 + 3];
+          if (alpha > 0) {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+      
+      // 确保有非透明像素
+      if (minX <= maxX && minY <= maxY) {
+        // 添加一点边距
+        const padding = 10;
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(canvas.width - 1, maxX + padding);
+        maxY = Math.min(canvas.height - 1, maxY + padding);
+        
+        // 裁剪图像
+        const croppedWidth = maxX - minX + 1;
+        const croppedHeight = maxY - minY + 1;
+        
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = croppedWidth;
+        croppedCanvas.height = croppedHeight;
+        
+        const croppedCtx = croppedCanvas.getContext('2d');
+        croppedCtx.drawImage(
+          canvas,
+          minX, minY, croppedWidth, croppedHeight,
+          0, 0, croppedWidth, croppedHeight
+        );
+        
+        // 导出为PNG
+        const dataURL = croppedCanvas.toDataURL('image/png');
+        
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = `${text.substring(0, 20)}_text.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // 如果没有可见内容，导出整个canvas
+        const dataURL = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = `${text.substring(0, 20)}_text.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
   </script>
 <!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
 <footer class="page-footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <a href="../index.html" class="footer-logo">我的工具站</a>
-            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
-        </div>
-        <nav class="footer-links" aria-label="页脚导航">
-            <a href="../index.html">全部工具</a>
-        </nav>
-    </div>
-    <div class="footer-bottom">
-        <p>© <span data-current-year>2026</span> 我的工具站</p>
-    </div>
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>

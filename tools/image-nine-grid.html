@@ -3,6 +3,8 @@
 
 <head>
   <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>九宫格图片生成工具</title>
@@ -27,7 +29,7 @@
         body {
             background: var(--bg-gradient);
             color: var(--text);
-            min-height: 100dvh;
+            min-height: 100vh;
         }
 
         .main-wrapper {
@@ -35,7 +37,7 @@
             align-items: center;
             justify-content: center;
             padding: 60px 20px;
-            min-height: calc(100dvh - 200px);
+            min-height: calc(100vh - 200px);
         }
 
         .container {
@@ -104,13 +106,10 @@
         }
 
         .drop-zone {
-            width: 100%;
             border: 2px dashed var(--border);
             border-radius: 16px;
             padding: 40px 20px;
             text-align: center;
-            color: inherit;
-            font: inherit;
             transition: all 0.3s;
             cursor: pointer;
             background: rgba(255, 255, 255, 0.03);
@@ -119,61 +118,30 @@
         }
 
         .drop-zone:hover,
-        .drop-zone:focus-visible,
-        .drop-zone.drag-over,
-        .drop-zone.is-dragover {
+        .drop-zone.drag-over {
             border-color: var(--primary);
             background: rgba(99, 102, 241, 0.05);
         }
 
-        .drop-zone .icon {
+        .drop-zone i {
             font-size: 3rem;
             color: var(--primary);
             margin-bottom: 15px;
             display: block;
         }
 
-        .drop-zone .icon::before {
-            content: "+";
-        }
-
-        .drop-zone .upload-title {
-            display: block;
+        .drop-zone p {
             color: var(--text-muted);
             margin-bottom: 5px;
         }
 
-        .drop-zone span:not(.icon) {
+        .drop-zone span {
             font-size: 0.85rem;
             color: rgba(148, 163, 184, 0.6);
         }
 
         #file-input {
             display: none;
-        }
-
-        .status-message,
-        .file-meta,
-        .field-hint {
-            color: var(--text-muted);
-            font-size: 0.86rem;
-            line-height: 1.5;
-        }
-
-        .status-message {
-            min-height: 1.5em;
-        }
-
-        .status-message[data-type="success"] {
-            color: #86efac;
-        }
-
-        .status-message[data-type="error"] {
-            color: #fca5a5;
-        }
-
-        .status-message[data-type="warning"] {
-            color: #fde68a;
         }
 
         /* Controls */
@@ -215,11 +183,6 @@
             border-color: var(--primary);
         }
 
-        input[aria-invalid="true"] {
-            border-color: #f87171;
-            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
-        }
-
         .full-width {
             grid-column: span 2;
         }
@@ -248,13 +211,6 @@
             transform: translateY(0);
         }
 
-        .btn-generate:disabled {
-            cursor: not-allowed;
-            opacity: 0.58;
-            transform: none;
-            box-shadow: none;
-        }
-
         .btn-download {
             background: #10b981;
             margin-top: 10px;
@@ -264,17 +220,13 @@
             padding: 16px;
             border-radius: 12px;
             font-weight: 600;
-            display: block;
+            display: none;
             transition: all 0.3s;
         }
 
         .btn-download:hover {
             background: #059669;
             box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-download[hidden] {
-            display: none;
         }
 
         /* Preview Area */
@@ -309,15 +261,11 @@
             color: var(--text-muted);
         }
 
-        .empty-state span[aria-hidden="true"] {
+        .empty-state i {
             font-size: 4rem;
             margin-bottom: 20px;
             opacity: 0.2;
             display: block;
-        }
-
-        .empty-state span[aria-hidden="true"]::before {
-            content: "3x3";
         }
 
         /* Tooltip style info */
@@ -341,68 +289,37 @@
         .canvas-container {
             position: relative;
             display: none;
-            width: 100%;
-        }
-
-        [hidden] {
-            display: none !important;
-        }
-
-        @media (max-width: 560px) {
-            .main-wrapper {
-                padding: 24px 12px;
-            }
-
-            .container {
-                padding: 24px 18px;
-                border-radius: 18px;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .control-group {
-                grid-template-columns: 1fr;
-            }
-
-            .full-width {
-                grid-column: span 1;
-            }
-
-            .preview-section {
-                min-height: 280px;
-            }
         }
     </style>
-
-  <link rel="stylesheet" href="styles/common.css">
-  <link rel="stylesheet" href="themes/default.css">
-  <script src="scripts/common.js" defer></script>
 </head>
 
-<body class="tool-page" data-tool-page="image-nine-grid">
+<body>
 <!-- COMMON_HEADER -->
-<a class="skip-link" href="#main-content">跳到主要内容</a>
-<header class="page-header" aria-label="站点页头">
+<!-- 固定页头 -->
+<header class="page-header">
     <div class="header-container">
         <div class="header-inner">
+            <!-- Logo -->
             <div class="logo">
-                <a href="../index.html" class="logo-link" aria-label="我的工具站首页">
-                    <img class="brand-mark" src="../icon/aipictools.png" alt="">
-                    <span>我的工具站</span>
-                </a>
+                <a href="../index.html" class="logo-link">我的工具站</a>
             </div>
-            <nav class="nav-desktop" aria-label="主要导航">
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
                 <div class="nav-list">
-                    <a href="../index.html" class="nav-link">工具首页</a>
+                    <a href="../index.html" class="nav-link">首页</a>
                 </div>
             </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
         </div>
     </div>
 </header>
 <!-- END_COMMON_HEADER -->
-    <main class="main-wrapper" id="main-content">
+    <div class="main-wrapper">
         <div class="container">
             <header>
                 <h1>九宫格图片工具</h1>
@@ -411,50 +328,46 @@
 
             <div class="main-layout">
                 <div class="upload-section">
-                    <button class="drop-zone" id="drop-zone" type="button" aria-describedby="upload-help status-message">
-                        <span class="icon" aria-hidden="true"></span>
-                        <span class="upload-title">拖拽图片到这里</span>
-                        <span id="upload-help">或点击上传 PNG、JPG、WebP、GIF、BMP 图片</span>
-                    </button>
-                    <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp">
-                    <p class="status-message" id="status-message" role="status" aria-live="polite" aria-atomic="true">请选择一张图片开始，所有处理都在本地浏览器完成。</p>
-                    <p class="file-meta" id="file-meta"></p>
+                    <div class="drop-zone" id="drop-zone">
+                        <i class="icon">🖼️</i>
+                        <p>拖拽图片到这里</p>
+                        <span>或点击上传图片</span>
+                        <input type="file" id="file-input" accept="image/*">
+                    </div>
 
                     <div class="controls">
                         <div class="control-group">
                             <div class="input-item">
-                                <label for="slice-top">上边距 (Top)</label>
-                                <input type="number" id="slice-top" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
+                                <label>上边距 (Top)</label>
+                                <input type="number" id="slice-top" value="40" min="1">
                             </div>
                             <div class="input-item">
-                                <label for="slice-right">右边距 (Right)</label>
-                                <input type="number" id="slice-right" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
+                                <label>右边距 (Right)</label>
+                                <input type="number" id="slice-right" value="40" min="1">
                             </div>
                             <div class="input-item">
-                                <label for="slice-bottom">下边距 (Bottom)</label>
-                                <input type="number" id="slice-bottom" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
+                                <label>下边距 (Bottom)</label>
+                                <input type="number" id="slice-bottom" value="40" min="1">
                             </div>
                             <div class="input-item">
-                                <label for="slice-left">左边距 (Left)</label>
-                                <input type="number" id="slice-left" value="40" min="1" step="1" inputmode="numeric" aria-describedby="slice-hint">
+                                <label>左边距 (Left)</label>
+                                <input type="number" id="slice-left" value="40" min="1">
                             </div>
-                            <p class="field-hint full-width" id="slice-hint">边距必须小于原图尺寸，且上下、左右相加后仍要留出可拉伸区域。</p>
                         </div>
 
                         <div class="control-group">
                             <div class="input-item">
-                                <label for="target-width">目标宽度 (px)</label>
-                                <input type="number" id="target-width" value="500" min="1" max="4096" step="1" inputmode="numeric" aria-describedby="target-hint">
+                                <label>目标宽度 (px)</label>
+                                <input type="number" id="target-width" value="500" min="1">
                             </div>
                             <div class="input-item">
-                                <label for="target-height">目标高度 (px)</label>
-                                <input type="number" id="target-height" value="500" min="1" max="4096" step="1" inputmode="numeric" aria-describedby="target-hint">
+                                <label>目标高度 (px)</label>
+                                <input type="number" id="target-height" value="500" min="1">
                             </div>
-                            <p class="field-hint full-width" id="target-hint">为兼容移动端 Canvas，目标宽高上限为 4096px，且总像素不超过 4096 × 4096。</p>
                         </div>
 
-                        <button class="btn-generate" id="btn-generate" type="button" disabled>生成九宫格图</button>
-                        <a class="btn-download" id="btn-download" href="#" download="nine-grid-result.png" hidden aria-disabled="true">下载生成图</a>
+                        <button class="btn-generate" id="btn-generate">生成九宫格图</button>
+                        <a href="#" class="btn-download" id="btn-download" download="nine-grid-result.png">下载生成图</a>
                     </div>
 
                     <div class="info-panel">
@@ -465,17 +378,17 @@
 
                 <div class="preview-section" id="preview-section">
                     <div class="empty-state" id="empty-state">
-                        <span aria-hidden="true"></span>
+                        <i>🎨</i>
                         <p>预览区域</p>
                         <span>上传图片后即可查看效果</span>
                     </div>
                     <div class="canvas-container" id="canvas-container">
-                        <canvas id="preview-canvas">当前浏览器不支持 Canvas，无法生成预览。</canvas>
+                        <canvas id="preview-canvas"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <script>
         const dropZone = document.getElementById('drop-zone');
@@ -486,8 +399,6 @@
         const ctx = canvas.getContext('2d');
         const emptyState = document.getElementById('empty-state');
         const canvasContainer = document.getElementById('canvas-container');
-        const statusMessage = document.getElementById('status-message');
-        const fileMeta = document.getElementById('file-meta');
 
         const inputTop = document.getElementById('slice-top');
         const inputRight = document.getElementById('slice-right');
@@ -495,52 +406,20 @@
         const inputLeft = document.getElementById('slice-left');
         const inputTargetW = document.getElementById('target-width');
         const inputTargetH = document.getElementById('target-height');
-        const numericInputs = [
-            inputTop,
-            inputRight,
-            inputBottom,
-            inputLeft,
-            inputTargetW,
-            inputTargetH
-        ];
-
-        const MAX_FILE_SIZE = 50 * 1024 * 1024;
-        const MAX_CANVAS_SIZE = 4096;
-        const MAX_CANVAS_AREA = MAX_CANVAS_SIZE * MAX_CANVAS_SIZE;
-        const SUPPORTED_MIME_TYPES = new Set([
-            'image/png',
-            'image/jpeg',
-            'image/webp',
-            'image/gif',
-            'image/bmp'
-        ]);
-        const SUPPORTED_EXTENSIONS = /\.(png|jpe?g|webp|gif|bmp)$/i;
 
         let sourceImg = null;
-        let sourceObjectUrl = '';
-        let downloadObjectUrl = '';
-        let uploadSequence = 0;
-        let renderSequence = 0;
 
         // --- Event Listeners ---
 
-        if (!ctx) {
-            setStatus('当前浏览器不支持 Canvas 2D，无法使用此工具。', 'error');
-        }
-
-        dropZone.addEventListener('click', () => {
-            fileInput.click();
-        });
+        dropZone.addEventListener('click', () => fileInput.click());
 
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('drag-over');
         });
 
-        dropZone.addEventListener('dragleave', (event) => {
-            if (!dropZone.contains(event.relatedTarget)) {
-                dropZone.classList.remove('drag-over');
-            }
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
         });
 
         dropZone.addEventListener('drop', (e) => {
@@ -555,372 +434,151 @@
             if (e.target.files.length) {
                 handleFile(e.target.files[0]);
             }
-            fileInput.value = '';
         });
 
         btnGenerate.addEventListener('click', generateNineGrid);
 
-        numericInputs.forEach((input) => {
-            input.addEventListener('input', () => {
-                input.removeAttribute('aria-invalid');
-                renderSequence += 1;
-                clearDownload();
-                if (sourceImg) {
-                    setStatus('参数已修改，请重新生成九宫格图。', 'warning');
-                }
-            });
-        });
-
-        window.addEventListener('beforeunload', () => {
-            revokeDownloadUrl();
-            revokeSourceUrl();
-        });
-
         // --- Functions ---
 
         function handleFile(file) {
-            const validationMessage = validateFile(file);
-            if (validationMessage) {
-                setStatus(validationMessage, 'error');
+            if (!file.type.startsWith('image/')) {
+                alert('请上传图片文件');
                 return;
             }
 
-            const token = uploadSequence + 1;
-            uploadSequence = token;
-            renderSequence += 1;
-            sourceImg = null;
-            clearDownload();
-            clearInputErrors();
-            setGenerateBusy(true, '读取图片中...');
-            setStatus(`正在读取 ${file.name}...`, 'info');
-            fileMeta.textContent = '';
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                sourceImg = new Image();
+                sourceImg.onload = () => {
+                    // Initialize inputs based on image size
+                    const defaultMargin = Math.floor(Math.min(sourceImg.width, sourceImg.height) / 4);
+                    inputTop.value = defaultMargin;
+                    inputRight.value = defaultMargin;
+                    inputBottom.value = defaultMargin;
+                    inputLeft.value = defaultMargin;
 
-            const objectUrl = URL.createObjectURL(file);
-            const image = new Image();
-            image.decoding = 'async';
+                    // Set target size to twice the original for demo purposes
+                    inputTargetW.value = sourceImg.width * 2;
+                    inputTargetH.value = sourceImg.height * 2;
 
-            image.onload = () => {
-                if (token !== uploadSequence) {
-                    URL.revokeObjectURL(objectUrl);
-                    return;
-                }
-
-                const sourceWidth = image.naturalWidth || image.width;
-                const sourceHeight = image.naturalHeight || image.height;
-
-                if (sourceWidth < 3 || sourceHeight < 3) {
-                    URL.revokeObjectURL(objectUrl);
-                    setGenerateBusy(false);
-                    hideCanvas();
-                    setStatus('图片尺寸至少需要 3 × 3 像素，才能设置九宫格边距。', 'error');
-                    return;
-                }
-
-                revokeSourceUrl();
-                sourceObjectUrl = objectUrl;
-                sourceImg = image;
-
-                initializeInputs(sourceWidth, sourceHeight);
-                showCanvas();
-                fileMeta.textContent = `${file.name} · ${sourceWidth} × ${sourceHeight}px · ${formatBytes(file.size)}`;
-                setStatus('图片已载入，已按原图尺寸预设边距和目标尺寸。', 'success');
-                generateNineGrid();
+                    showCanvas();
+                    generateNineGrid();
+                };
+                sourceImg.src = e.target.result;
             };
-
-            image.onerror = () => {
-                if (token !== uploadSequence) {
-                    URL.revokeObjectURL(objectUrl);
-                    return;
-                }
-
-                URL.revokeObjectURL(objectUrl);
-                setGenerateBusy(false);
-                hideCanvas();
-                setStatus('图片读取失败，请换一张常见位图格式图片。', 'error');
-            };
-
-            image.src = objectUrl;
-        }
-
-        function validateFile(file) {
-            if (!file) {
-                return '没有获取到文件，请重新选择图片。';
-            }
-
-            const hasSupportedType = file.type ? SUPPORTED_MIME_TYPES.has(file.type) : false;
-            const hasSupportedExtension = SUPPORTED_EXTENSIONS.test(file.name);
-
-            if (!hasSupportedType && !hasSupportedExtension) {
-                return '仅支持 PNG、JPG、WebP、GIF、BMP 位图图片。';
-            }
-
-            if (file.size > MAX_FILE_SIZE) {
-                return '图片文件不能超过 50MB，请先压缩后再处理。';
-            }
-
-            return '';
-        }
-
-        function initializeInputs(sourceWidth, sourceHeight) {
-            const defaultMargin = Math.max(1, Math.floor(Math.min(sourceWidth, sourceHeight) / 4));
-            const maxDefaultMargin = Math.floor((Math.min(sourceWidth, sourceHeight, MAX_CANVAS_SIZE) - 1) / 2);
-            const safeMargin = Math.min(defaultMargin, maxDefaultMargin);
-            const targetWidth = clamp(sourceWidth * 2, safeMargin * 2, MAX_CANVAS_SIZE);
-            const targetHeight = clamp(sourceHeight * 2, safeMargin * 2, MAX_CANVAS_SIZE);
-
-            inputTop.max = String(sourceHeight - 1);
-            inputBottom.max = String(sourceHeight - 1);
-            inputLeft.max = String(sourceWidth - 1);
-            inputRight.max = String(sourceWidth - 1);
-
-            inputTop.value = String(safeMargin);
-            inputRight.value = String(safeMargin);
-            inputBottom.value = String(safeMargin);
-            inputLeft.value = String(safeMargin);
-            inputTargetW.value = String(targetWidth);
-            inputTargetH.value = String(targetHeight);
+            reader.readAsDataURL(file);
         }
 
         function showCanvas() {
             emptyState.style.display = 'none';
             canvasContainer.style.display = 'block';
-        }
-
-        function hideCanvas() {
-            emptyState.style.display = 'block';
-            canvasContainer.style.display = 'none';
-            canvas.width = 0;
-            canvas.height = 0;
+            btnDownload.style.display = 'block';
         }
 
         function generateNineGrid() {
-            const token = renderSequence + 1;
-            renderSequence = token;
-            clearDownload();
-            clearInputErrors();
-
-            if (!ctx) {
-                setStatus('当前浏览器不支持 Canvas 2D，无法生成图片。', 'error');
-                setGenerateBusy(false);
-                return;
-            }
-
             if (!sourceImg) {
-                setStatus('请先上传图片。', 'error');
-                setGenerateBusy(false);
+                alert('请先上传图片');
                 return;
             }
 
-            let settings;
-            try {
-                settings = readSettings();
-            } catch (error) {
-                setStatus(error.message, 'error');
-                setGenerateBusy(false);
+            const sW = sourceImg.width;
+            const sH = sourceImg.height;
+
+            const t = parseInt(inputTop.value);
+            const r = parseInt(inputRight.value);
+            const b = parseInt(inputBottom.value);
+            const l = parseInt(inputLeft.value);
+
+            const tW = parseInt(inputTargetW.value);
+            const tH = parseInt(inputTargetH.value);
+
+            if (t + b >= sH || l + r >= sW) {
+                alert('切片边距总和不能超过原图尺寸');
                 return;
             }
 
-            setGenerateBusy(true, '生成中...');
+            canvas.width = tW;
+            canvas.height = tH;
+            ctx.clearRect(0, 0, tW, tH);
 
-            const { sW, sH, t, r, b, l, tW, tH } = settings;
+            // Source regions
+            // 1: Top-Left, 2: Top-Center, 3: Top-Right
+            // 4: Mid-Left, 5: Mid-Center, 6: Mid-Right
+            // 7: Bot-Left, 8: Bot-Center, 9: Bot-Right
 
-            try {
-                canvas.width = tW;
-                canvas.height = tH;
-                ctx.clearRect(0, 0, tW, tH);
+            const regions = [
+                // [sx, sy, sw, sh, dx, dy, dw, dh]
+                // Corners
+                [0, 0, l, t, 0, 0, l, t], // 1
+                [sW - r, 0, r, t, tW - r, 0, r, t], // 3
+                [0, sH - b, l, b, 0, tH - b, l, b], // 7
+                [sW - r, sH - b, r, b, tW - r, tH - b, r, b], // 9
 
-                // Source regions:
-                // 1: Top-Left, 2: Top-Center, 3: Top-Right
-                // 4: Mid-Left, 5: Mid-Center, 6: Mid-Right
-                // 7: Bot-Left, 8: Bot-Center, 9: Bot-Right
-                const regions = [
-                    [0, 0, l, t, 0, 0, l, t],
-                    [sW - r, 0, r, t, tW - r, 0, r, t],
-                    [0, sH - b, l, b, 0, tH - b, l, b],
-                    [sW - r, sH - b, r, b, tW - r, tH - b, r, b],
+                // Edges
+                [l, 0, sW - l - r, t, l, 0, tW - l - r, t], // 2 (Top)
+                [l, sH - b, sW - l - r, b, l, tH - b, tW - l - r, b], // 8 (Bottom)
+                [0, t, l, sH - t - b, 0, t, l, tH - t - b], // 4 (Left)
+                [sW - r, t, r, sH - t - b, tW - r, t, r, tH - t - b], // 6 (Right)
 
-                    [l, 0, sW - l - r, t, l, 0, tW - l - r, t],
-                    [l, sH - b, sW - l - r, b, l, tH - b, tW - l - r, b],
-                    [0, t, l, sH - t - b, 0, t, l, tH - t - b],
-                    [sW - r, t, r, sH - t - b, tW - r, t, r, tH - t - b],
+                // Center
+                [l, t, sW - l - r, sH - t - b, l, t, tW - l - r, tH - t - b] // 5
+            ];
 
-                    [l, t, sW - l - r, sH - t - b, l, t, tW - l - r, tH - t - b]
-                ];
-
-                regions.forEach((region) => {
-                    if (region.every(Number.isFinite) && region[2] > 0 && region[3] > 0 && region[6] > 0 && region[7] > 0) {
-                        ctx.drawImage(sourceImg, region[0], region[1], region[2], region[3], region[4], region[5], region[6], region[7]);
-                    }
-                });
-            } catch (error) {
-                setGenerateBusy(false);
-                setStatus(`绘制失败：${error.message}`, 'error');
-                return;
-            }
-
-            createDownloadUrl(token, tW, tH);
-        }
-
-        function readSettings() {
-            const sW = sourceImg.naturalWidth || sourceImg.width;
-            const sH = sourceImg.naturalHeight || sourceImg.height;
-            const t = readInteger(inputTop, '上边距', 1, sH - 1);
-            const r = readInteger(inputRight, '右边距', 1, sW - 1);
-            const b = readInteger(inputBottom, '下边距', 1, sH - 1);
-            const l = readInteger(inputLeft, '左边距', 1, sW - 1);
-            const tW = readInteger(inputTargetW, '目标宽度', 1, MAX_CANVAS_SIZE);
-            const tH = readInteger(inputTargetH, '目标高度', 1, MAX_CANVAS_SIZE);
-
-            if (t + b >= sH) {
-                markInvalid(inputTop, inputBottom);
-                throw new Error('上边距和下边距之和必须小于原图高度。');
-            }
-
-            if (l + r >= sW) {
-                markInvalid(inputLeft, inputRight);
-                throw new Error('左边距和右边距之和必须小于原图宽度。');
-            }
-
-            if (tW < l + r) {
-                markInvalid(inputTargetW);
-                throw new Error('目标宽度不能小于左右固定边距之和。');
-            }
-
-            if (tH < t + b) {
-                markInvalid(inputTargetH);
-                throw new Error('目标高度不能小于上下固定边距之和。');
-            }
-
-            if (tW * tH > MAX_CANVAS_AREA) {
-                markInvalid(inputTargetW, inputTargetH);
-                throw new Error('目标图片总像素不能超过 4096 × 4096。');
-            }
-
-            return { sW, sH, t, r, b, l, tW, tH };
-        }
-
-        function readInteger(input, label, min, max) {
-            const value = Number(input.value);
-
-            if (!Number.isInteger(value)) {
-                markInvalid(input);
-                throw new Error(`${label}必须是整数。`);
-            }
-
-            if (value < min || value > max) {
-                markInvalid(input);
-                throw new Error(`${label}必须在 ${min} 到 ${max} 之间。`);
-            }
-
-            return value;
-        }
-
-        function createDownloadUrl(token, width, height) {
-            try {
-                canvas.toBlob((blob) => {
-                    if (token !== renderSequence) {
-                        return;
-                    }
-
-                    if (!blob) {
-                        setGenerateBusy(false);
-                        setStatus('生成下载文件失败，请降低目标尺寸后重试。', 'error');
-                        return;
-                    }
-
-                    revokeDownloadUrl();
-                    downloadObjectUrl = URL.createObjectURL(blob);
-                    btnDownload.href = downloadObjectUrl;
-                    btnDownload.hidden = false;
-                    btnDownload.removeAttribute('aria-disabled');
-                    setGenerateBusy(false);
-                    setStatus(`已生成 ${width} × ${height}px PNG，可直接下载。`, 'success');
-                }, 'image/png');
-            } catch (error) {
-                setGenerateBusy(false);
-                setStatus(`生成下载文件失败：${error.message}`, 'error');
-            }
-        }
-
-        function setGenerateBusy(isBusy, label) {
-            btnGenerate.disabled = isBusy || !sourceImg || !ctx;
-            btnGenerate.textContent = label || '生成九宫格图';
-        }
-
-        function clearDownload() {
-            revokeDownloadUrl();
-            btnDownload.hidden = true;
-            btnDownload.href = '#';
-            btnDownload.setAttribute('aria-disabled', 'true');
-        }
-
-        function revokeDownloadUrl() {
-            if (downloadObjectUrl) {
-                URL.revokeObjectURL(downloadObjectUrl);
-                downloadObjectUrl = '';
-            }
-        }
-
-        function revokeSourceUrl() {
-            if (sourceObjectUrl) {
-                URL.revokeObjectURL(sourceObjectUrl);
-                sourceObjectUrl = '';
-            }
-        }
-
-        function setStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.dataset.type = type || 'info';
-            statusMessage.setAttribute('role', type === 'error' ? 'alert' : 'status');
-        }
-
-        function clearInputErrors() {
-            numericInputs.forEach((input) => {
-                input.removeAttribute('aria-invalid');
+            regions.forEach(reg => {
+                if (reg[2] > 0 && reg[3] > 0 && reg[6] > 0 && reg[7] > 0) {
+                    ctx.drawImage(sourceImg, reg[0], reg[1], reg[2], reg[3], reg[4], reg[5], reg[6], reg[7]);
+                }
             });
-        }
 
-        function markInvalid(...inputs) {
-            inputs.forEach((input) => {
-                input.setAttribute('aria-invalid', 'true');
-            });
-        }
-
-        function clamp(value, min, max) {
-            return Math.min(Math.max(value, min), max);
-        }
-
-        function formatBytes(bytes) {
-            if (!Number.isFinite(bytes) || bytes <= 0) {
-                return '0 B';
-            }
-
-            const units = ['B', 'KB', 'MB'];
-            let size = bytes;
-            let unitIndex = 0;
-
-            while (size >= 1024 && unitIndex < units.length - 1) {
-                size /= 1024;
-                unitIndex += 1;
-            }
-
-            return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+            // Update download button
+            btnDownload.href = canvas.toDataURL('image/png');
         }
     </script>
 <!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
 <footer class="page-footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <a href="../index.html" class="footer-logo">我的工具站</a>
-            <p class="footer-description">一组在浏览器中运行的图片处理工具，专注常用任务与清晰操作。</p>
-        </div>
-        <nav class="footer-links" aria-label="页脚导航">
-            <a href="../index.html">全部工具</a>
-        </nav>
-    </div>
-    <div class="footer-bottom">
-        <p>© <span data-current-year>2026</span> 我的工具站</p>
-    </div>
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
 </footer>
 <!-- END_COMMON_FOOTER -->
 </body>
