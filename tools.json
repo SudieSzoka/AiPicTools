@@ -196,5 +196,14 @@
     "category": "image",
     "icon": "image-extend",
     "show": true
+  },
+  {
+    "id": 19,
+    "name": "图片中段裁切",
+    "description": "删除图片中间指定像素或比例，并把两侧自动拼接",
+    "path": "tools/image-center-cut.html",
+    "category": "image",
+    "icon": "image-crop-mid",
+    "show": true
   }
 ]

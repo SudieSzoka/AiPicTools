@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="icon" type="image/png" href="/icon/aipictools.png">
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="themes/default.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片中段裁切工具</title>
+    <style>
+        :root {
+            --page-bg: #f5f7fb;
+            --panel: #ffffff;
+            --panel-soft: #f8fafc;
+            --line: #d9e2ec;
+            --line-strong: #b8c5d4;
+            --text: #1f2937;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-strong: #1d4ed8;
+            --accent: #0f766e;
+            --warning: #b45309;
+            --danger: #dc2626;
+            --checker-a: #eef2f7;
+            --checker-b: #ffffff;
+            --shadow: 0 18px 42px rgba(31, 41, 55, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            color: var(--text);
+            background: var(--page-bg);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+            line-height: 1.5;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+        }
+
+        .tool-shell {
+            max-width: 1360px;
+            margin: 24px auto 0;
+            padding: 0 18px 34px;
+        }
+
+        .tool-hero {
+            margin-bottom: 16px;
+            padding: 24px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .tool-hero h1 {
+            margin-bottom: 8px;
+            font-size: 2rem;
+            line-height: 1.15;
+            letter-spacing: 0;
+        }
+
+        .tool-hero p,
+        .muted {
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .sidebar,
+        .preview-column {
+            display: grid;
+            gap: 16px;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel);
+            box-shadow: 0 10px 30px rgba(31, 41, 55, 0.05);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            background: var(--panel-soft);
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        .upload-zone {
+            display: grid;
+            gap: 10px;
+            place-items: center;
+            min-height: 150px;
+            padding: 22px;
+            border: 2px dashed var(--line-strong);
+            border-radius: 8px;
+            background: #fbfdff;
+            text-align: center;
+            transition: border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .upload-mark {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: #dbeafe;
+            color: var(--primary);
+            font-size: 1.35rem;
+            font-weight: 800;
+        }
+
+        .file-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .file-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text);
+            text-align: left;
+        }
+
+        .file-row.active {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .file-name {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .file-size {
+            color: var(--muted);
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        .control-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .control-row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .field-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .field-label small {
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .input,
+        .select {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid var(--line-strong);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text);
+            outline: none;
+        }
+
+        .input:focus,
+        .select:focus,
+        .seg-btn:focus-visible,
+        .plain-btn:focus-visible,
+        .primary-btn:focus-visible,
+        .ghost-btn:focus-visible {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+        }
+
+        .segmented {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .seg-btn,
+        .plain-btn,
+        .ghost-btn,
+        .primary-btn {
+            min-height: 40px;
+            border: 1px solid var(--line-strong);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .seg-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .plain-btn:hover,
+        .ghost-btn:hover,
+        .seg-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .primary-btn {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .primary-btn:hover {
+            background: var(--primary-strong);
+        }
+
+        .ghost-btn {
+            background: var(--panel-soft);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .actions button {
+            padding: 0 14px;
+        }
+
+        .range-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 88px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel-soft);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .check-row input {
+            width: 17px;
+            height: 17px;
+            accent-color: var(--primary);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .metric {
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+            min-width: 0;
+        }
+
+        .metric span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .metric strong {
+            display: block;
+            margin-top: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+
+        .stage-wrap,
+        .result-wrap,
+        .thumb-frame {
+            background-color: var(--checker-b);
+            background-image:
+                linear-gradient(45deg, var(--checker-a) 25%, transparent 25%),
+                linear-gradient(-45deg, var(--checker-a) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, var(--checker-a) 75%),
+                linear-gradient(-45deg, transparent 75%, var(--checker-a) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+        }
+
+        .stage-wrap {
+            min-height: 430px;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            overflow: auto;
+        }
+
+        .stage-inner {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+        }
+
+        #sourceCanvas {
+            display: block;
+            max-width: 100%;
+            border: 1px solid rgba(15, 23, 42, 0.18);
+            background: transparent;
+        }
+
+        .cut-overlay {
+            position: absolute;
+            display: none;
+            border: 2px solid var(--danger);
+            background: rgba(220, 38, 38, 0.2);
+            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.24);
+            cursor: move;
+            touch-action: none;
+        }
+
+        .cut-overlay::before,
+        .cut-overlay::after {
+            content: "";
+            position: absolute;
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        .cut-overlay::before {
+            left: 50%;
+            top: 0;
+            width: 1px;
+            height: 100%;
+        }
+
+        .cut-overlay::after {
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+        }
+
+        .cut-badge {
+            position: absolute;
+            left: 50%;
+            top: -31px;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.88);
+            color: #fff;
+            font-size: 0.78rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .empty-stage {
+            min-height: 230px;
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .result-wrap {
+            min-height: 430px;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            overflow: auto;
+        }
+
+        #resultCanvas {
+            display: none;
+            max-width: 100%;
+            max-height: 620px;
+            border: 1px solid rgba(15, 23, 42, 0.18);
+            background: transparent;
+        }
+
+        .result-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .result-card {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .thumb-frame {
+            min-height: 130px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .thumb-frame canvas {
+            max-width: 100%;
+            max-height: 170px;
+            display: block;
+        }
+
+        .card-foot {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .card-foot strong {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: #ecfdf5;
+            color: var(--accent);
+            font-size: 0.78rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status-line {
+            min-height: 22px;
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .status-line.warning {
+            color: var(--warning);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 1080px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            .tool-shell {
+                margin-top: 14px;
+                padding: 0 12px 24px;
+            }
+
+            .tool-hero,
+            .panel-body {
+                padding: 14px;
+            }
+
+            .panel-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .two-col,
+            .segmented,
+            .metrics,
+            .range-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stage-wrap,
+            .result-wrap {
+                min-height: 300px;
+                padding: 10px;
+            }
+
+            .actions button {
+                flex: 1 1 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- COMMON_HEADER -->
+<!-- 固定页头 -->
+<header class="page-header">
+    <div class="header-container">
+        <div class="header-inner">
+            <!-- Logo -->
+            <div class="logo">
+                <a href="../index.html" class="logo-link">我的工具站</a>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="nav-desktop">
+                <div class="nav-list">
+                    <a href="../index.html" class="nav-link">首页</a>
+                </div>
+            </nav>
+
+            <!-- 移动端菜单按钮 -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- END_COMMON_HEADER -->
+    <div class="tool-shell">
+        <section class="tool-hero">
+            <h1>图片中段裁切</h1>
+            <p>删除图片中间指定宽度或高度，把保留的两侧自动拼接，支持多张图片同规则处理。</p>
+        </section>
+
+        <main class="layout">
+            <aside class="sidebar">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">图片</h2>
+                        <span class="tag" id="imageCount">0 张</span>
+                    </div>
+                    <div class="panel-body">
+                        <label class="upload-zone" id="uploadZone">
+                            <span class="upload-mark">+</span>
+                            <strong>选择或拖入图片</strong>
+                            <span class="muted">可一次选择多张，当前参数会应用到全部图片。</span>
+                            <input id="fileInput" type="file" accept="image/*" multiple>
+                        </label>
+                        <div class="file-list" id="fileList"></div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">裁切规则</h2>
+                        <button class="ghost-btn" id="resetBtn" type="button">重置</button>
+                    </div>
+                    <div class="panel-body">
+                        <div class="control-grid">
+                            <div class="control-row">
+                                <label class="field-label">方向</label>
+                                <div class="segmented" id="directionGroup">
+                                    <button class="seg-btn active" type="button" data-direction="horizontal">水平</button>
+                                    <button class="seg-btn" type="button" data-direction="vertical">垂直</button>
+                                    <button class="seg-btn" type="button" data-direction="both">双向</button>
+                                </div>
+                            </div>
+
+                            <div class="control-row">
+                                <label class="field-label" for="inputMode">输入方式</label>
+                                <select class="select" id="inputMode">
+                                    <option value="remove">删除像素</option>
+                                    <option value="target">目标尺寸</option>
+                                    <option value="percent">删除比例</option>
+                                </select>
+                            </div>
+
+                            <div class="two-col mode-fields" id="removeFields">
+                                <div class="control-row x-control">
+                                    <label class="field-label" for="removeX">删除宽度 <small>px</small></label>
+                                    <input class="input" id="removeX" type="number" min="1" step="1" value="100">
+                                </div>
+                                <div class="control-row y-control">
+                                    <label class="field-label" for="removeY">删除高度 <small>px</small></label>
+                                    <input class="input" id="removeY" type="number" min="1" step="1" value="100">
+                                </div>
+                            </div>
+
+                            <div class="two-col mode-fields hidden" id="targetFields">
+                                <div class="control-row x-control">
+                                    <label class="field-label" for="targetWidth">目标宽度 <small>px</small></label>
+                                    <input class="input" id="targetWidth" type="number" min="1" step="1" value="">
+                                </div>
+                                <div class="control-row y-control">
+                                    <label class="field-label" for="targetHeight">目标高度 <small>px</small></label>
+                                    <input class="input" id="targetHeight" type="number" min="1" step="1" value="">
+                                </div>
+                            </div>
+
+                            <div class="two-col mode-fields hidden" id="percentFields">
+                                <div class="control-row x-control">
+                                    <label class="field-label" for="percentX">删除宽度 <small>%</small></label>
+                                    <input class="input" id="percentX" type="number" min="1" max="99" step="1" value="25">
+                                </div>
+                                <div class="control-row y-control">
+                                    <label class="field-label" for="percentY">删除高度 <small>%</small></label>
+                                    <input class="input" id="percentY" type="number" min="1" max="99" step="1" value="25">
+                                </div>
+                            </div>
+
+                            <div class="actions">
+                                <button class="plain-btn" type="button" data-preset="10">删 10%</button>
+                                <button class="plain-btn" type="button" data-preset="25">删 25%</button>
+                                <button class="plain-btn" type="button" data-preset="50">删 50%</button>
+                                <button class="plain-btn" id="halfTargetBtn" type="button">目标减半</button>
+                                <button class="plain-btn" id="centerBtn" type="button">居中</button>
+                            </div>
+
+                            <div class="control-row x-control" id="centerXControl">
+                                <label class="field-label" for="centerXRange">中心 X <small id="centerXHint">-</small></label>
+                                <div class="range-row">
+                                    <input id="centerXRange" type="range" min="0" max="100" step="1" value="50">
+                                    <input class="input" id="centerXInput" type="number" min="0" step="1" value="0">
+                                </div>
+                            </div>
+
+                            <div class="control-row y-control" id="centerYControl">
+                                <label class="field-label" for="centerYRange">中心 Y <small id="centerYHint">-</small></label>
+                                <div class="range-row">
+                                    <input id="centerYRange" type="range" min="0" max="100" step="1" value="50">
+                                    <input class="input" id="centerYInput" type="number" min="0" step="1" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">接缝与导出</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="control-grid">
+                            <div class="two-col">
+                                <div class="control-row">
+                                    <label class="field-label" for="blendMode">拼接方式</label>
+                                    <select class="select" id="blendMode">
+                                        <option value="hard">直接拼接</option>
+                                        <option value="feather">羽化拼接</option>
+                                        <option value="overlap">重叠融合</option>
+                                    </select>
+                                </div>
+                                <div class="control-row">
+                                    <label class="field-label" for="blendSize">融合宽度 <small>px</small></label>
+                                    <input class="input" id="blendSize" type="number" min="0" max="120" step="1" value="8">
+                                </div>
+                            </div>
+
+                            <label class="check-row">
+                                <input id="smartSeam" type="checkbox">
+                                <span>自动微调接缝</span>
+                            </label>
+
+                            <div class="control-row" id="smartRangeRow">
+                                <label class="field-label" for="smartRange">搜索范围 <small>px</small></label>
+                                <input class="input" id="smartRange" type="number" min="1" max="200" step="1" value="24">
+                            </div>
+
+                            <div class="two-col">
+                                <div class="control-row">
+                                    <label class="field-label" for="outputType">格式</label>
+                                    <select class="select" id="outputType">
+                                        <option value="image/png">PNG</option>
+                                        <option value="image/jpeg">JPG</option>
+                                        <option value="image/webp">WebP</option>
+                                    </select>
+                                </div>
+                                <div class="control-row">
+                                    <label class="field-label" for="quality">质量 <small id="qualityLabel">92%</small></label>
+                                    <input id="quality" type="range" min="50" max="100" step="1" value="92">
+                                </div>
+                            </div>
+
+                            <div class="actions">
+                                <button class="primary-btn" id="downloadCurrentBtn" type="button" disabled>下载当前</button>
+                                <button class="primary-btn" id="downloadAllBtn" type="button" disabled>批量下载</button>
+                            </div>
+
+                            <div class="status-line" id="statusLine">等待图片。</div>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+            <section class="preview-column">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">原图与删除区域</h2>
+                        <span class="tag" id="activeImageLabel">未选择</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="metrics">
+                            <div class="metric"><span>原图</span><strong id="originalMetric">-</strong></div>
+                            <div class="metric"><span>删除</span><strong id="removeMetric">-</strong></div>
+                            <div class="metric"><span>输出</span><strong id="outputMetric">-</strong></div>
+                            <div class="metric"><span>位置</span><strong id="positionMetric">-</strong></div>
+                        </div>
+                    </div>
+                    <div class="stage-wrap">
+                        <div class="empty-stage" id="sourceEmpty">上传图片后显示删除区域。</div>
+                        <div class="stage-inner" id="stageInner">
+                            <canvas id="sourceCanvas"></canvas>
+                            <div class="cut-overlay" id="cutOverlay">
+                                <span class="cut-badge" id="cutBadge"></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">拼接结果</h2>
+                        <span class="tag" id="resultLabel">-</span>
+                    </div>
+                    <div class="result-wrap">
+                        <div class="empty-stage" id="resultEmpty">结果会实时生成。</div>
+                        <canvas id="resultCanvas"></canvas>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">批量结果</h2>
+                        <span class="tag" id="batchLabel">0 个结果</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="result-list" id="resultList"></div>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = {
+            images: [],
+            results: [],
+            activeIndex: -1,
+            direction: 'horizontal',
+            inputMode: 'remove',
+            removeX: 100,
+            removeY: 100,
+            targetWidth: 0,
+            targetHeight: 0,
+            percentX: 25,
+            percentY: 25,
+            centerRatioX: 0.5,
+            centerRatioY: 0.5,
+            blendMode: 'hard',
+            blendSize: 8,
+            smartSeam: false,
+            smartRange: 24,
+            outputType: 'image/png',
+            quality: 0.92,
+            previewScale: 1,
+            renderTimer: null
+        };
+
+        const els = {
+            uploadZone: document.getElementById('uploadZone'),
+            fileInput: document.getElementById('fileInput'),
+            fileList: document.getElementById('fileList'),
+            imageCount: document.getElementById('imageCount'),
+            directionGroup: document.getElementById('directionGroup'),
+            inputMode: document.getElementById('inputMode'),
+            removeFields: document.getElementById('removeFields'),
+            targetFields: document.getElementById('targetFields'),
+            percentFields: document.getElementById('percentFields'),
+            removeX: document.getElementById('removeX'),
+            removeY: document.getElementById('removeY'),
+            targetWidth: document.getElementById('targetWidth'),
+            targetHeight: document.getElementById('targetHeight'),
+            percentX: document.getElementById('percentX'),
+            percentY: document.getElementById('percentY'),
+            centerXRange: document.getElementById('centerXRange'),
+            centerXInput: document.getElementById('centerXInput'),
+            centerXHint: document.getElementById('centerXHint'),
+            centerYRange: document.getElementById('centerYRange'),
+            centerYInput: document.getElementById('centerYInput'),
+            centerYHint: document.getElementById('centerYHint'),
+            centerBtn: document.getElementById('centerBtn'),
+            halfTargetBtn: document.getElementById('halfTargetBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            blendMode: document.getElementById('blendMode'),
+            blendSize: document.getElementById('blendSize'),
+            smartSeam: document.getElementById('smartSeam'),
+            smartRange: document.getElementById('smartRange'),
+            smartRangeRow: document.getElementById('smartRangeRow'),
+            outputType: document.getElementById('outputType'),
+            quality: document.getElementById('quality'),
+            qualityLabel: document.getElementById('qualityLabel'),
+            downloadCurrentBtn: document.getElementById('downloadCurrentBtn'),
+            downloadAllBtn: document.getElementById('downloadAllBtn'),
+            statusLine: document.getElementById('statusLine'),
+            activeImageLabel: document.getElementById('activeImageLabel'),
+            originalMetric: document.getElementById('originalMetric'),
+            removeMetric: document.getElementById('removeMetric'),
+            outputMetric: document.getElementById('outputMetric'),
+            positionMetric: document.getElementById('positionMetric'),
+            sourceEmpty: document.getElementById('sourceEmpty'),
+            stageInner: document.getElementById('stageInner'),
+            sourceCanvas: document.getElementById('sourceCanvas'),
+            cutOverlay: document.getElementById('cutOverlay'),
+            cutBadge: document.getElementById('cutBadge'),
+            resultEmpty: document.getElementById('resultEmpty'),
+            resultCanvas: document.getElementById('resultCanvas'),
+            resultLabel: document.getElementById('resultLabel'),
+            resultList: document.getElementById('resultList'),
+            batchLabel: document.getElementById('batchLabel')
+        };
+
+        const sourceCtx = els.sourceCanvas.getContext('2d');
+        const resultCtx = els.resultCanvas.getContext('2d');
+
+        bindEvents();
+        syncControls();
+        render();
+
+        function bindEvents() {
+            els.uploadZone.addEventListener('click', () => els.fileInput.click());
+            els.fileInput.addEventListener('change', (event) => {
+                loadFiles(Array.from(event.target.files));
+                els.fileInput.value = '';
+            });
+
+            ['dragover', 'dragenter'].forEach((type) => {
+                els.uploadZone.addEventListener(type, (event) => {
+                    event.preventDefault();
+                    els.uploadZone.classList.add('drag-over');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach((type) => {
+                els.uploadZone.addEventListener(type, () => {
+                    els.uploadZone.classList.remove('drag-over');
+                });
+            });
+
+            els.uploadZone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                loadFiles(Array.from(event.dataTransfer.files));
+            });
+
+            els.directionGroup.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-direction]');
+                if (!button) return;
+                state.direction = button.dataset.direction;
+                scheduleRender();
+            });
+
+            els.inputMode.addEventListener('change', () => {
+                state.inputMode = els.inputMode.value;
+                scheduleRender();
+            });
+
+            bindNumber(els.removeX, 'removeX', 1, 100000);
+            bindNumber(els.removeY, 'removeY', 1, 100000);
+            bindNumber(els.targetWidth, 'targetWidth', 0, 100000);
+            bindNumber(els.targetHeight, 'targetHeight', 0, 100000);
+            bindNumber(els.percentX, 'percentX', 1, 99);
+            bindNumber(els.percentY, 'percentY', 1, 99);
+            bindNumber(els.blendSize, 'blendSize', 0, 120);
+            bindNumber(els.smartRange, 'smartRange', 1, 200);
+
+            els.blendMode.addEventListener('change', () => {
+                state.blendMode = els.blendMode.value;
+                scheduleRender();
+            });
+
+            els.smartSeam.addEventListener('change', () => {
+                state.smartSeam = els.smartSeam.checked;
+                scheduleRender();
+            });
+
+            els.outputType.addEventListener('change', () => {
+                state.outputType = els.outputType.value;
+                syncControls();
+            });
+
+            els.quality.addEventListener('input', () => {
+                state.quality = clamp(parseInt(els.quality.value, 10) / 100, 0.5, 1);
+                syncControls();
+            });
+
+            els.centerXRange.addEventListener('input', () => updateCenterFromActive('x', els.centerXRange.value));
+            els.centerXInput.addEventListener('input', () => updateCenterFromActive('x', els.centerXInput.value));
+            els.centerYRange.addEventListener('input', () => updateCenterFromActive('y', els.centerYRange.value));
+            els.centerYInput.addEventListener('input', () => updateCenterFromActive('y', els.centerYInput.value));
+
+            document.querySelectorAll('[data-preset]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const value = parseInt(button.dataset.preset, 10);
+                    state.inputMode = 'percent';
+                    state.percentX = value;
+                    state.percentY = value;
+                    els.inputMode.value = 'percent';
+                    els.percentX.value = String(value);
+                    els.percentY.value = String(value);
+                    scheduleRender();
+                });
+            });
+
+            els.halfTargetBtn.addEventListener('click', () => {
+                const item = getActiveImage();
+                state.inputMode = 'target';
+                els.inputMode.value = 'target';
+                if (item) {
+                    state.targetWidth = Math.max(1, Math.round(item.width / 2));
+                    state.targetHeight = Math.max(1, Math.round(item.height / 2));
+                    els.targetWidth.value = String(state.targetWidth);
+                    els.targetHeight.value = String(state.targetHeight);
+                }
+                scheduleRender();
+            });
+
+            els.centerBtn.addEventListener('click', () => {
+                state.centerRatioX = 0.5;
+                state.centerRatioY = 0.5;
+                scheduleRender();
+            });
+
+            els.resetBtn.addEventListener('click', () => {
+                state.direction = 'horizontal';
+                state.inputMode = 'remove';
+                state.removeX = 100;
+                state.removeY = 100;
+                state.targetWidth = 0;
+                state.targetHeight = 0;
+                state.percentX = 25;
+                state.percentY = 25;
+                state.centerRatioX = 0.5;
+                state.centerRatioY = 0.5;
+                state.blendMode = 'hard';
+                state.blendSize = 8;
+                state.smartSeam = false;
+                state.smartRange = 24;
+                syncFormValues();
+                scheduleRender();
+            });
+
+            els.fileList.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-index]');
+                if (!button) return;
+                state.activeIndex = parseInt(button.dataset.index, 10);
+                scheduleRender();
+            });
+
+            els.resultList.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-download-index]');
+                if (!button) return;
+                const result = state.results[parseInt(button.dataset.downloadIndex, 10)];
+                if (result) downloadResult(result);
+            });
+
+            els.downloadCurrentBtn.addEventListener('click', () => {
+                const result = state.results[state.activeIndex];
+                if (result) downloadResult(result);
+            });
+
+            els.downloadAllBtn.addEventListener('click', downloadAll);
+            els.cutOverlay.addEventListener('pointerdown', startOverlayDrag);
+            window.addEventListener('resize', scheduleRender);
+        }
+
+        function bindNumber(input, key, min, max) {
+            input.addEventListener('input', () => {
+                const value = parseInt(input.value, 10);
+                if (Number.isNaN(value)) {
+                    state[key] = min;
+                } else {
+                    state[key] = clamp(value, min, max);
+                }
+                scheduleRender();
+            });
+        }
+
+        async function loadFiles(files) {
+            const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+            if (!imageFiles.length) {
+                setStatus('没有可处理的图片文件。', true);
+                return;
+            }
+
+            setStatus(`正在读取 ${imageFiles.length} 张图片...`, false);
+            const loaded = [];
+
+            for (const file of imageFiles) {
+                try {
+                    loaded.push(await loadImageFile(file));
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            if (!loaded.length) {
+                setStatus('图片读取失败。', true);
+                return;
+            }
+
+            state.images = loaded;
+            state.activeIndex = 0;
+            const first = loaded[0];
+            if (!state.targetWidth) state.targetWidth = Math.max(1, first.width - state.removeX);
+            if (!state.targetHeight) state.targetHeight = Math.max(1, first.height - state.removeY);
+            syncFormValues();
+            scheduleRender();
+        }
+
+        function loadImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error(`无法读取文件：${file.name}`));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        resolve({
+                            file,
+                            name: file.name,
+                            dataUrl: reader.result,
+                            image: img,
+                            width: img.naturalWidth || img.width,
+                            height: img.naturalHeight || img.height,
+                            pixelData: null
+                        });
+                    };
+                    img.onerror = () => reject(new Error(`无法加载图片：${file.name}`));
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function scheduleRender() {
+            window.clearTimeout(state.renderTimer);
+            state.renderTimer = window.setTimeout(render, 40);
+        }
+
+        function render() {
+            syncControls();
+            state.results = state.images.map((item) => composeResult(item));
+            renderFileList();
+            renderActiveSource();
+            renderActiveResult();
+            renderResultList();
+            updateMetrics();
+            updateDownloadState();
+        }
+
+        function syncControls() {
+            const hasX = cutsX();
+            const hasY = cutsY();
+            document.querySelectorAll('.x-control').forEach((node) => node.classList.toggle('hidden', !hasX));
+            document.querySelectorAll('.y-control').forEach((node) => node.classList.toggle('hidden', !hasY));
+
+            document.querySelectorAll('[data-direction]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.direction === state.direction);
+            });
+
+            els.removeFields.classList.toggle('hidden', state.inputMode !== 'remove');
+            els.targetFields.classList.toggle('hidden', state.inputMode !== 'target');
+            els.percentFields.classList.toggle('hidden', state.inputMode !== 'percent');
+            els.smartRangeRow.classList.toggle('hidden', !state.smartSeam);
+            els.qualityLabel.textContent = `${Math.round(state.quality * 100)}%`;
+
+            const active = getActiveImage();
+            if (active) {
+                const cut = getCut(active);
+                setCenterControls(active, cut);
+                els.targetWidth.placeholder = String(Math.max(1, active.width - cut.removeX));
+                els.targetHeight.placeholder = String(Math.max(1, active.height - cut.removeY));
+            } else {
+                els.centerXInput.value = '0';
+                els.centerYInput.value = '0';
+                els.centerXHint.textContent = '-';
+                els.centerYHint.textContent = '-';
+            }
+        }
+
+        function syncFormValues() {
+            els.inputMode.value = state.inputMode;
+            els.removeX.value = String(state.removeX);
+            els.removeY.value = String(state.removeY);
+            els.targetWidth.value = state.targetWidth ? String(state.targetWidth) : '';
+            els.targetHeight.value = state.targetHeight ? String(state.targetHeight) : '';
+            els.percentX.value = String(state.percentX);
+            els.percentY.value = String(state.percentY);
+            els.blendMode.value = state.blendMode;
+            els.blendSize.value = String(state.blendSize);
+            els.smartSeam.checked = state.smartSeam;
+            els.smartRange.value = String(state.smartRange);
+            els.outputType.value = state.outputType;
+            els.quality.value = String(Math.round(state.quality * 100));
+        }
+
+        function setCenterControls(item, cut) {
+            const xMin = cut.removeX ? Math.round(cut.removeX / 2) : 0;
+            const xMax = cut.removeX ? Math.round(item.width - cut.removeX / 2) : item.width;
+            const yMin = cut.removeY ? Math.round(cut.removeY / 2) : 0;
+            const yMax = cut.removeY ? Math.round(item.height - cut.removeY / 2) : item.height;
+            const centerX = clamp(Math.round(state.centerRatioX * item.width), xMin, xMax);
+            const centerY = clamp(Math.round(state.centerRatioY * item.height), yMin, yMax);
+
+            els.centerXRange.min = String(xMin);
+            els.centerXRange.max = String(xMax);
+            els.centerXRange.value = String(centerX);
+            els.centerXInput.min = String(xMin);
+            els.centerXInput.max = String(xMax);
+            els.centerXInput.value = String(centerX);
+            els.centerXHint.textContent = `${xMin}-${xMax}px`;
+            els.centerXRange.disabled = !cut.removeX;
+            els.centerXInput.disabled = !cut.removeX;
+
+            els.centerYRange.min = String(yMin);
+            els.centerYRange.max = String(yMax);
+            els.centerYRange.value = String(centerY);
+            els.centerYInput.min = String(yMin);
+            els.centerYInput.max = String(yMax);
+            els.centerYInput.value = String(centerY);
+            els.centerYHint.textContent = `${yMin}-${yMax}px`;
+            els.centerYRange.disabled = !cut.removeY;
+            els.centerYInput.disabled = !cut.removeY;
+        }
+
+        function updateCenterFromActive(axis, value) {
+            const item = getActiveImage();
+            if (!item) return;
+            const number = parseInt(value, 10);
+            if (Number.isNaN(number)) return;
+            if (axis === 'x') {
+                state.centerRatioX = clamp(number / item.width, 0, 1);
+            } else {
+                state.centerRatioY = clamp(number / item.height, 0, 1);
+            }
+            scheduleRender();
+        }
+
+        function renderFileList() {
+            els.imageCount.textContent = `${state.images.length} 张`;
+            els.fileList.innerHTML = '';
+
+            state.images.forEach((item, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `file-row${index === state.activeIndex ? ' active' : ''}`;
+                button.dataset.index = String(index);
+
+                const name = document.createElement('span');
+                name.className = 'file-name';
+                name.textContent = item.name;
+
+                const size = document.createElement('span');
+                size.className = 'file-size';
+                size.textContent = `${item.width}x${item.height}`;
+
+                button.append(name, size);
+                els.fileList.appendChild(button);
+            });
+        }
+
+        function renderActiveSource() {
+            const item = getActiveImage();
+            const result = state.results[state.activeIndex];
+            const hasImage = Boolean(item && result);
+            els.sourceEmpty.style.display = hasImage ? 'none' : 'grid';
+            els.stageInner.style.display = hasImage ? 'inline-block' : 'none';
+
+            if (!hasImage) {
+                els.activeImageLabel.textContent = '未选择';
+                els.cutOverlay.style.display = 'none';
+                return;
+            }
+
+            els.activeImageLabel.textContent = item.name;
+            const maxWidth = Math.max(280, Math.min(760, els.stageInner.parentElement.clientWidth - 40));
+            const maxHeight = 520;
+            const scale = Math.min(1, maxWidth / item.width, maxHeight / item.height);
+            state.previewScale = scale;
+            const previewWidth = Math.max(1, Math.round(item.width * scale));
+            const previewHeight = Math.max(1, Math.round(item.height * scale));
+
+            els.sourceCanvas.width = previewWidth;
+            els.sourceCanvas.height = previewHeight;
+            sourceCtx.clearRect(0, 0, previewWidth, previewHeight);
+            sourceCtx.imageSmoothingEnabled = true;
+            sourceCtx.drawImage(item.image, 0, 0, previewWidth, previewHeight);
+
+            positionOverlay(result.cut, previewWidth, previewHeight, scale);
+        }
+
+        function positionOverlay(cut, previewWidth, previewHeight, scale) {
+            const overlay = els.cutOverlay;
+            if (!cut.removeX && !cut.removeY) {
+                overlay.style.display = 'none';
+                return;
+            }
+
+            const x = cut.removeX ? Math.round(cut.startX * scale) : 0;
+            const y = cut.removeY ? Math.round(cut.startY * scale) : 0;
+            const width = cut.removeX ? Math.max(3, Math.round(cut.removeX * scale)) : previewWidth;
+            const height = cut.removeY ? Math.max(3, Math.round(cut.removeY * scale)) : previewHeight;
+
+            overlay.style.display = 'block';
+            overlay.style.left = `${x}px`;
+            overlay.style.top = `${y}px`;
+            overlay.style.width = `${width}px`;
+            overlay.style.height = `${height}px`;
+            els.cutBadge.textContent = cut.removeX && cut.removeY
+                ? `${cut.removeX}x${cut.removeY}px`
+                : cut.removeX
+                    ? `${cut.removeX}px`
+                    : `${cut.removeY}px`;
+        }
+
+        function renderActiveResult() {
+            const result = state.results[state.activeIndex];
+            const hasResult = Boolean(result);
+            els.resultEmpty.style.display = hasResult ? 'none' : 'grid';
+            els.resultCanvas.style.display = hasResult ? 'block' : 'none';
+
+            if (!hasResult) {
+                els.resultLabel.textContent = '-';
+                return;
+            }
+
+            const canvas = result.canvas;
+            els.resultCanvas.width = canvas.width;
+            els.resultCanvas.height = canvas.height;
+            resultCtx.clearRect(0, 0, canvas.width, canvas.height);
+            resultCtx.drawImage(canvas, 0, 0);
+            els.resultLabel.textContent = `${canvas.width} x ${canvas.height}px`;
+        }
+
+        function renderResultList() {
+            els.batchLabel.textContent = `${state.results.length} 个结果`;
+            els.resultList.innerHTML = '';
+
+            state.results.forEach((result, index) => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+
+                const frame = document.createElement('div');
+                frame.className = 'thumb-frame';
+
+                const thumb = document.createElement('canvas');
+                thumb.width = result.canvas.width;
+                thumb.height = result.canvas.height;
+                thumb.getContext('2d').drawImage(result.canvas, 0, 0);
+                frame.appendChild(thumb);
+
+                const foot = document.createElement('div');
+                foot.className = 'card-foot';
+
+                const name = document.createElement('strong');
+                name.textContent = result.item.name;
+
+                const button = document.createElement('button');
+                button.className = 'ghost-btn';
+                button.type = 'button';
+                button.dataset.downloadIndex = String(index);
+                button.textContent = '下载';
+
+                foot.append(name, button);
+                card.append(frame, foot);
+                els.resultList.appendChild(card);
+            });
+        }
+
+        function updateMetrics() {
+            const item = getActiveImage();
+            const result = state.results[state.activeIndex];
+
+            if (!item || !result) {
+                els.originalMetric.textContent = '-';
+                els.removeMetric.textContent = '-';
+                els.outputMetric.textContent = '-';
+                els.positionMetric.textContent = '-';
+                setStatus('等待图片。', false);
+                return;
+            }
+
+            const cut = result.cut;
+            els.originalMetric.textContent = `${item.width} x ${item.height}px`;
+            els.removeMetric.textContent = cut.removeX && cut.removeY
+                ? `${cut.removeX} x ${cut.removeY}px`
+                : cut.removeX
+                    ? `${cut.removeX}px 宽`
+                    : cut.removeY
+                        ? `${cut.removeY}px 高`
+                        : '不删除';
+            els.outputMetric.textContent = `${result.canvas.width} x ${result.canvas.height}px`;
+            els.positionMetric.textContent = cut.removeX && cut.removeY
+                ? `X ${cut.startX}-${cut.endX} / Y ${cut.startY}-${cut.endY}`
+                : cut.removeX
+                    ? `X ${cut.startX}-${cut.endX}`
+                    : `Y ${cut.startY}-${cut.endY}`;
+
+            const smartText = state.smartSeam ? '，已自动微调接缝' : '';
+            setStatus(`当前规则已应用到 ${state.images.length} 张图片${smartText}。`, false);
+        }
+
+        function updateDownloadState() {
+            const hasResults = state.results.length > 0;
+            els.downloadCurrentBtn.disabled = !state.results[state.activeIndex];
+            els.downloadAllBtn.disabled = !hasResults;
+        }
+
+        function composeResult(item) {
+            const cut = getCut(item);
+            const outputWidth = Math.max(1, item.width - cut.removeX);
+            const outputHeight = Math.max(1, item.height - cut.removeY);
+            const canvas = document.createElement('canvas');
+            canvas.width = outputWidth;
+            canvas.height = outputHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, outputWidth, outputHeight);
+            ctx.imageSmoothingEnabled = false;
+
+            drawHardComposite(ctx, item, cut);
+
+            if (state.blendMode !== 'hard' && state.blendSize > 0) {
+                if (cut.removeX) applyVerticalJoinBlend(canvas, item, cut);
+                if (cut.removeY) applyHorizontalJoinBlend(canvas, item, cut);
+            }
+
+            return { item, cut, canvas };
+        }
+
+        function drawHardComposite(ctx, item, cut) {
+            const w = item.width;
+            const h = item.height;
+            const leftW = cut.startX;
+            const rightW = w - cut.endX;
+            const topH = cut.startY;
+            const bottomH = h - cut.endY;
+
+            if (cut.removeX && cut.removeY) {
+                if (leftW && topH) ctx.drawImage(item.image, 0, 0, leftW, topH, 0, 0, leftW, topH);
+                if (rightW && topH) ctx.drawImage(item.image, cut.endX, 0, rightW, topH, leftW, 0, rightW, topH);
+                if (leftW && bottomH) ctx.drawImage(item.image, 0, cut.endY, leftW, bottomH, 0, topH, leftW, bottomH);
+                if (rightW && bottomH) ctx.drawImage(item.image, cut.endX, cut.endY, rightW, bottomH, leftW, topH, rightW, bottomH);
+                return;
+            }
+
+            if (cut.removeX) {
+                if (leftW) ctx.drawImage(item.image, 0, 0, leftW, h, 0, 0, leftW, h);
+                if (rightW) ctx.drawImage(item.image, cut.endX, 0, rightW, h, leftW, 0, rightW, h);
+                return;
+            }
+
+            if (cut.removeY) {
+                if (topH) ctx.drawImage(item.image, 0, 0, w, topH, 0, 0, w, topH);
+                if (bottomH) ctx.drawImage(item.image, 0, cut.endY, w, bottomH, 0, topH, w, bottomH);
+                return;
+            }
+
+            ctx.drawImage(item.image, 0, 0);
+        }
+
+        function applyVerticalJoinBlend(canvas, item, cut) {
+            if (cut.startX <= 0 || cut.endX >= item.width) return;
+
+            const ctx = canvas.getContext('2d');
+            const output = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const source = getSourceData(item);
+            const maxBlend = Math.min(state.blendSize, cut.startX, canvas.width - cut.startX, item.width - cut.endX);
+            if (maxBlend <= 0) return;
+
+            if (state.blendMode === 'overlap') {
+                const left = cut.startX - maxBlend;
+                const right = cut.startX;
+                for (let y = 0; y < canvas.height; y += 1) {
+                    const sy = mapOutputYToSource(y, cut);
+                    for (let x = left; x < right; x += 1) {
+                        const local = x - left;
+                        const t = maxBlend === 1 ? 0.5 : local / (maxBlend - 1);
+                        const leftPixel = sample(source, item.width, cut.startX - maxBlend + local, sy);
+                        const rightPixel = sample(source, item.width, cut.endX + local, sy);
+                        writeBlend(output, canvas.width, x, y, leftPixel, rightPixel, t);
+                    }
+                }
+            } else {
+                const left = cut.startX - maxBlend;
+                const right = cut.startX + maxBlend;
+                const span = Math.max(1, right - left - 1);
+                for (let y = 0; y < canvas.height; y += 1) {
+                    const sy = mapOutputYToSource(y, cut);
+                    for (let x = left; x < right; x += 1) {
+                        const t = (x - left) / span;
+                        const leftX = Math.round(lerp(cut.startX - maxBlend, cut.startX - 1, t));
+                        const rightX = Math.round(lerp(cut.endX, cut.endX + maxBlend - 1, t));
+                        const leftPixel = sample(source, item.width, leftX, sy);
+                        const rightPixel = sample(source, item.width, rightX, sy);
+                        writeBlend(output, canvas.width, x, y, leftPixel, rightPixel, t);
+                    }
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function applyHorizontalJoinBlend(canvas, item, cut) {
+            if (cut.startY <= 0 || cut.endY >= item.height) return;
+
+            const ctx = canvas.getContext('2d');
+            const output = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const source = getSourceData(item);
+            const maxBlend = Math.min(state.blendSize, cut.startY, canvas.height - cut.startY, item.height - cut.endY);
+            if (maxBlend <= 0) return;
+
+            if (state.blendMode === 'overlap') {
+                const top = cut.startY - maxBlend;
+                const bottom = cut.startY;
+                for (let y = top; y < bottom; y += 1) {
+                    const local = y - top;
+                    const t = maxBlend === 1 ? 0.5 : local / (maxBlend - 1);
+                    for (let x = 0; x < canvas.width; x += 1) {
+                        const sx = mapOutputXToSource(x, cut);
+                        const topPixel = sample(source, item.width, sx, cut.startY - maxBlend + local);
+                        const bottomPixel = sample(source, item.width, sx, cut.endY + local);
+                        writeBlend(output, canvas.width, x, y, topPixel, bottomPixel, t);
+                    }
+                }
+            } else {
+                const top = cut.startY - maxBlend;
+                const bottom = cut.startY + maxBlend;
+                const span = Math.max(1, bottom - top - 1);
+                for (let y = top; y < bottom; y += 1) {
+                    const t = (y - top) / span;
+                    const topY = Math.round(lerp(cut.startY - maxBlend, cut.startY - 1, t));
+                    const bottomY = Math.round(lerp(cut.endY, cut.endY + maxBlend - 1, t));
+                    for (let x = 0; x < canvas.width; x += 1) {
+                        const sx = mapOutputXToSource(x, cut);
+                        const topPixel = sample(source, item.width, sx, topY);
+                        const bottomPixel = sample(source, item.width, sx, bottomY);
+                        writeBlend(output, canvas.width, x, y, topPixel, bottomPixel, t);
+                    }
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function getCut(item) {
+            const remove = getRemoveSize(item);
+            let startX = 0;
+            let endX = 0;
+            let startY = 0;
+            let endY = 0;
+
+            if (remove.x) {
+                const center = clamp(state.centerRatioX * item.width, remove.x / 2, item.width - remove.x / 2);
+                startX = clamp(Math.round(center - remove.x / 2), 0, item.width - remove.x);
+                if (state.smartSeam) startX = findBestStartX(item, remove.x, startX);
+                endX = startX + remove.x;
+            }
+
+            if (remove.y) {
+                const center = clamp(state.centerRatioY * item.height, remove.y / 2, item.height - remove.y / 2);
+                startY = clamp(Math.round(center - remove.y / 2), 0, item.height - remove.y);
+                if (state.smartSeam) startY = findBestStartY(item, remove.y, startY);
+                endY = startY + remove.y;
+            }
+
+            return {
+                removeX: remove.x,
+                removeY: remove.y,
+                startX,
+                endX,
+                startY,
+                endY
+            };
+        }
+
+        function getRemoveSize(item) {
+            let x = 0;
+            let y = 0;
+
+            if (cutsX()) {
+                if (state.inputMode === 'target') {
+                    const target = state.targetWidth || Math.max(1, item.width - state.removeX);
+                    x = item.width - clamp(target, 1, item.width);
+                } else if (state.inputMode === 'percent') {
+                    x = Math.round(item.width * clamp(state.percentX, 1, 99) / 100);
+                } else {
+                    x = state.removeX;
+                }
+                x = item.width <= 1
+                    ? 0
+                    : clamp(Math.round(x), state.inputMode === 'target' ? 0 : 1, item.width - 1);
+            }
+
+            if (cutsY()) {
+                if (state.inputMode === 'target') {
+                    const target = state.targetHeight || Math.max(1, item.height - state.removeY);
+                    y = item.height - clamp(target, 1, item.height);
+                } else if (state.inputMode === 'percent') {
+                    y = Math.round(item.height * clamp(state.percentY, 1, 99) / 100);
+                } else {
+                    y = state.removeY;
+                }
+                y = item.height <= 1
+                    ? 0
+                    : clamp(Math.round(y), state.inputMode === 'target' ? 0 : 1, item.height - 1);
+            }
+
+            return { x, y };
+        }
+
+        function findBestStartX(item, removeWidth, baseStart) {
+            if (removeWidth >= item.width - 1) return baseStart;
+            const min = clamp(baseStart - state.smartRange, 1, item.width - removeWidth - 1);
+            const max = clamp(baseStart + state.smartRange, 1, item.width - removeWidth - 1);
+            let bestStart = baseStart;
+            let bestScore = Number.POSITIVE_INFINITY;
+
+            for (let start = min; start <= max; start += 1) {
+                const score = seamScoreX(item, start, start + removeWidth);
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestStart = start;
+                }
+            }
+
+            return bestStart;
+        }
+
+        function findBestStartY(item, removeHeight, baseStart) {
+            if (removeHeight >= item.height - 1) return baseStart;
+            const min = clamp(baseStart - state.smartRange, 1, item.height - removeHeight - 1);
+            const max = clamp(baseStart + state.smartRange, 1, item.height - removeHeight - 1);
+            let bestStart = baseStart;
+            let bestScore = Number.POSITIVE_INFINITY;
+
+            for (let start = min; start <= max; start += 1) {
+                const score = seamScoreY(item, start, start + removeHeight);
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestStart = start;
+                }
+            }
+
+            return bestStart;
+        }
+
+        function seamScoreX(item, leftX, rightX) {
+            const source = getSourceData(item);
+            const step = Math.max(1, Math.floor(item.height / 180));
+            let total = 0;
+            let count = 0;
+
+            for (let y = 0; y < item.height; y += step) {
+                total += pixelDistance(
+                    sample(source, item.width, leftX - 1, y),
+                    sample(source, item.width, rightX, y)
+                );
+                count += 1;
+            }
+
+            return total / Math.max(1, count);
+        }
+
+        function seamScoreY(item, topY, bottomY) {
+            const source = getSourceData(item);
+            const step = Math.max(1, Math.floor(item.width / 180));
+            let total = 0;
+            let count = 0;
+
+            for (let x = 0; x < item.width; x += step) {
+                total += pixelDistance(
+                    sample(source, item.width, x, topY - 1),
+                    sample(source, item.width, x, bottomY)
+                );
+                count += 1;
+            }
+
+            return total / Math.max(1, count);
+        }
+
+        function getSourceData(item) {
+            if (item.pixelData) return item.pixelData;
+            const canvas = document.createElement('canvas');
+            canvas.width = item.width;
+            canvas.height = item.height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(item.image, 0, 0);
+            item.pixelData = ctx.getImageData(0, 0, item.width, item.height);
+            return item.pixelData;
+        }
+
+        function sample(imageData, width, x, y) {
+            const sx = clamp(Math.round(x), 0, width - 1);
+            const sy = clamp(Math.round(y), 0, Math.floor(imageData.data.length / 4 / width) - 1);
+            const index = (sy * width + sx) * 4;
+            return [
+                imageData.data[index],
+                imageData.data[index + 1],
+                imageData.data[index + 2],
+                imageData.data[index + 3]
+            ];
+        }
+
+        function writeBlend(imageData, width, x, y, a, b, t) {
+            const index = (y * width + x) * 4;
+            const alphaA = a[3] / 255;
+            const alphaB = b[3] / 255;
+            const weightA = (1 - t) * alphaA;
+            const weightB = t * alphaB;
+            const outAlpha = weightA + weightB;
+
+            if (outAlpha <= 0.0001) {
+                imageData.data[index] = 0;
+                imageData.data[index + 1] = 0;
+                imageData.data[index + 2] = 0;
+                imageData.data[index + 3] = 0;
+                return;
+            }
+
+            imageData.data[index] = Math.round((a[0] * weightA + b[0] * weightB) / outAlpha);
+            imageData.data[index + 1] = Math.round((a[1] * weightA + b[1] * weightB) / outAlpha);
+            imageData.data[index + 2] = Math.round((a[2] * weightA + b[2] * weightB) / outAlpha);
+            imageData.data[index + 3] = Math.round(outAlpha * 255);
+        }
+
+        function pixelDistance(a, b) {
+            const alphaPenalty = Math.abs(a[3] - b[3]) * 0.6;
+            return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) + alphaPenalty;
+        }
+
+        function mapOutputXToSource(x, cut) {
+            return cut.removeX && x >= cut.startX ? x + cut.removeX : x;
+        }
+
+        function mapOutputYToSource(y, cut) {
+            return cut.removeY && y >= cut.startY ? y + cut.removeY : y;
+        }
+
+        function startOverlayDrag(event) {
+            const item = getActiveImage();
+            const result = state.results[state.activeIndex];
+            if (!item || !result) return;
+
+            event.preventDefault();
+            els.cutOverlay.setPointerCapture(event.pointerId);
+            moveOverlayCenter(event);
+
+            const onMove = (moveEvent) => moveOverlayCenter(moveEvent);
+            const onUp = () => {
+                els.cutOverlay.removeEventListener('pointermove', onMove);
+                els.cutOverlay.removeEventListener('pointerup', onUp);
+                els.cutOverlay.removeEventListener('pointercancel', onUp);
+            };
+
+            els.cutOverlay.addEventListener('pointermove', onMove);
+            els.cutOverlay.addEventListener('pointerup', onUp);
+            els.cutOverlay.addEventListener('pointercancel', onUp);
+        }
+
+        function moveOverlayCenter(event) {
+            const item = getActiveImage();
+            if (!item) return;
+            const rect = els.stageInner.getBoundingClientRect();
+            const localX = clamp((event.clientX - rect.left) / state.previewScale, 0, item.width);
+            const localY = clamp((event.clientY - rect.top) / state.previewScale, 0, item.height);
+
+            if (cutsX()) state.centerRatioX = clamp(localX / item.width, 0, 1);
+            if (cutsY()) state.centerRatioY = clamp(localY / item.height, 0, 1);
+            scheduleRender();
+        }
+
+        async function downloadAll() {
+            if (!state.results.length) return;
+            const originalText = els.downloadAllBtn.textContent;
+            els.downloadAllBtn.disabled = true;
+
+            for (let index = 0; index < state.results.length; index += 1) {
+                els.downloadAllBtn.textContent = `下载中 ${index + 1}/${state.results.length}`;
+                await downloadResult(state.results[index], true);
+                await wait(240);
+            }
+
+            els.downloadAllBtn.textContent = originalText;
+            els.downloadAllBtn.disabled = false;
+        }
+
+        async function downloadResult(result, silent) {
+            const canvas = prepareExportCanvas(result.canvas);
+            const blob = await canvasToBlob(canvas, state.outputType, state.quality);
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = buildOutputName(result.item.name);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            if (!silent) setStatus(`已生成下载：${link.download}`, false);
+        }
+
+        function prepareExportCanvas(canvas) {
+            if (state.outputType !== 'image/jpeg') return canvas;
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+            const ctx = exportCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            ctx.drawImage(canvas, 0, 0);
+            return exportCanvas;
+        }
+
+        function canvasToBlob(canvas, type, quality) {
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        const dataUrl = canvas.toDataURL(type, quality);
+                        resolve(dataUrlToBlob(dataUrl));
+                    }
+                }, type, quality);
+            });
+        }
+
+        function dataUrlToBlob(dataUrl) {
+            const parts = dataUrl.split(',');
+            const mime = parts[0].match(/:(.*?);/)[1];
+            const binary = atob(parts[1]);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+            return new Blob([bytes], { type: mime });
+        }
+
+        function buildOutputName(name) {
+            const base = name.replace(/\.[^.]+$/, '') || 'image';
+            const extMap = {
+                'image/png': 'png',
+                'image/jpeg': 'jpg',
+                'image/webp': 'webp'
+            };
+            return `${base}-center-cut.${extMap[state.outputType] || 'png'}`;
+        }
+
+        function setStatus(message, isWarning) {
+            els.statusLine.textContent = message;
+            els.statusLine.classList.toggle('warning', Boolean(isWarning));
+        }
+
+        function getActiveImage() {
+            return state.images[state.activeIndex] || null;
+        }
+
+        function cutsX() {
+            return state.direction === 'horizontal' || state.direction === 'both';
+        }
+
+        function cutsY() {
+            return state.direction === 'vertical' || state.direction === 'both';
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => window.setTimeout(resolve, ms));
+        }
+    </script>
+<!-- COMMON_FOOTER -->
+<!-- 固定页脚 -->
+<footer class="page-footer">
+  <div class="footer-container">
+      <div class="footer-brand">
+          <a href="../index.html" class="footer-logo">我的工具站</a>
+          <p class="footer-description">提供高质量、免费的在线工具，帮助您提高工作效率，解决日常问题。</p>
+      </div>
+      
+      <div class="footer-links">
+          <div class="footer-column">
+              <h3>产品</h3>
+              <ul>
+                  <li><a href="#">所有工具</a></li>
+                  <li><a href="#">热门工具</a></li>
+                  <li><a href="#">新工具</a></li>
+                  <li><a href="#">API</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>资源</h3>
+              <ul>
+                  <li><a href="#">帮助中心</a></li>
+                  <li><a href="#">使用教程</a></li>
+                  <li><a href="#">博客</a></li>
+                  <li><a href="#">更新日志</a></li>
+              </ul>
+          </div>
+          
+          <div class="footer-column">
+              <h3>公司</h3>
+              <ul>
+                  <li><a href="#">关于我们</a></li>
+                  <li><a href="#">联系我们</a></li>
+                  <li><a href="#">隐私政策</a></li>
+                  <li><a href="#">服务条款</a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div class="footer-bottom">
+      <p>© 2023 我的工具站 版权所有</p>
+  </div>
+</footer>
+<!-- END_COMMON_FOOTER -->
+</body>
+</html>
