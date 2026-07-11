@@ -36,7 +36,9 @@
         .btn{background:#3b82f6;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px}
         .btn.up{background:#6366f1}
         .btn.del{background:#ef4444}
+        .btn.clear{background:#64748b}
         .btn:disabled{background:#cbd5e1;cursor:not-allowed}
+        .upload-actions{margin-top:10px;display:flex;justify-content:flex-end}
 
         .canvas-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:center;min-height:360px}
         canvas{max-width:100%;height:auto;background:repeating-conic-gradient(#f3f4f6 0% 25%,#fff 0% 50%) 50%/20px 20px}
@@ -88,8 +90,11 @@
                 </div>
                 
                 <div id="uploadArea" class="upload-area">
-                    <p>点击选择图片或拖拽图片到此处</p>
+                    <p>点击或拖拽添加图片（支持多次追加）</p>
                     <input id="fileInput" type="file" accept="image/*" multiple>
+                </div>
+                <div class="upload-actions">
+                    <button id="clearBtn" class="btn clear" disabled>清空全部</button>
                 </div>
                 <div class="list" id="list"></div>
             </div>
@@ -99,6 +104,7 @@
     <script>
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
+        const clearBtn = document.getElementById('clearBtn');
         const listEl = document.getElementById('list');
         // 实时预览，无需手动生成按钮
         const dlBtn = document.getElementById('dlBtn');
@@ -119,7 +125,11 @@
         uploadArea.addEventListener('dragover', (e)=>{ e.preventDefault(); uploadArea.classList.add('dragover'); });
         uploadArea.addEventListener('dragleave', ()=> uploadArea.classList.remove('dragover'));
         uploadArea.addEventListener('drop', (e)=>{ e.preventDefault(); uploadArea.classList.remove('dragover'); if(e.dataTransfer.files?.length){ handleFiles(e.dataTransfer.files); } });
-        fileInput.addEventListener('change', (e)=>{ if(e.target.files?.length){ handleFiles(e.target.files); } });
+        fileInput.addEventListener('change', (e)=>{
+            if(e.target.files?.length){ handleFiles(e.target.files); }
+            e.target.value = '';
+        });
+        clearBtn.addEventListener('click', clearItems);
         
         // 透明背景事件监听
         useTransparentBg.addEventListener('change', ()=>{
@@ -133,7 +143,8 @@
 
         function handleFiles(fileList){
             const files = Array.from(fileList).filter(f=> f.type.startsWith('image/'));
-            items = files.map(f=>({
+            if(!files.length) return;
+            items.push(...files.map(f=>({
                 file: f,
                 url: URL.createObjectURL(f),
                 posMode: 'anchor',
@@ -141,13 +152,21 @@
                 customX: 0,
                 customY: 0,
                 opacity: 100
-            }));
+            })));
+            renderList();
+            scheduleGenerate();
+        }
+
+        function clearItems(){
+            items.forEach(it=> URL.revokeObjectURL(it.url));
+            items = [];
             renderList();
             scheduleGenerate();
         }
 
         function renderList(){
             listEl.innerHTML = '';
+            clearBtn.disabled = items.length === 0;
             items.forEach((it, index)=>{
                 const div = document.createElement('div');
                 div.className = 'item';
@@ -182,7 +201,7 @@
                         </div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px">
-                        <button class="btn up" ${index===0 && !useTransparentBg.checked?'disabled':''} title="上移">上移</button>
+                        <button class="btn up" ${index===0?'disabled':''} title="上移">上移</button>
                         <button class="btn del" title="删除">删除</button>
                     </div>
                 `;
@@ -226,7 +245,7 @@
 
                 // 上移
                 div.querySelector('.btn.up').addEventListener('click', ()=>{
-                    if(index>0 || (index===0 && useTransparentBg.checked)){
+                    if(index>0){
                         const tmp = items[index-1];
                         items[index-1] = items[index];
                         items[index] = tmp;
@@ -253,6 +272,14 @@
                 dlBtn.disabled = true;
                 return;
             }
+
+            if(items.length){
+                try{
+                    await Promise.all(items.map(loadItemImage));
+                }catch(ex){
+                    return showErr('有图片加载失败，请重试');
+                }
+            }
             
             // 如果使用透明背景
             if(useTransparentBg.checked){
@@ -263,12 +290,6 @@
                 ctx.clearRect(0,0,canvas.width,canvas.height);
                 // 透明背景不需要绘制任何内容
             } else {
-                // 预加载所有图片
-                try{
-                    await Promise.all(items.map(loadItemImage));
-                }catch(ex){
-                    return showErr('有图片加载失败，请重试');
-                }
                 const bg = items[0].img;
                 if(!bg){ return showErr('背景图片加载失败'); }
                 // 以背景尺寸作为画布
@@ -279,7 +300,8 @@
             }
 
             // 绘制叠加图片
-            for(let i=0;i<items.length;i++){
+            const startIndex = useTransparentBg.checked ? 0 : 1;
+            for(let i=startIndex;i<items.length;i++){
                 const it = items[i];
                 const img = it.img; if(!img) continue;
                 const pos = computePosition(it, canvas.width, canvas.height, img.width, img.height);
