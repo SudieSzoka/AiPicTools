@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图像元素提取工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -373,7 +374,7 @@
                 </div>
                 
                 <div class="button-group">
-                    <button id="download-all" class="download-btn" disabled>下载全部</button>
+                    <button id="download-all" class="download-btn" disabled>打包下载 ZIP</button>
                     <button id="reset-btn" class="reset-btn">重置</button>
                 </div>
                 
@@ -747,7 +748,7 @@
         }
         
         // 下载所有图标
-        function downloadAllIcons() {
+        async function downloadAllIcons() {
             if (extractedIcons.length === 0) return;
 
             // 筛选当前显示的图标
@@ -760,7 +761,27 @@
 
             // 禁用下载按钮防止重复点击
             downloadAllBtn.disabled = true;
-            downloadAllBtn.textContent = '下载中...';
+            downloadAllBtn.textContent = '正在打包...';
+
+            if (typeof JSZip !== 'undefined') {
+                const zip = new JSZip();
+                filteredIcons.forEach((icon, index) => {
+                    zip.file(`icon_${formatIndex(index + 1, filteredIcons.length)}.png`, icon.dataURL.split(',')[1], {base64: true});
+                });
+                const blob = await zip.generateAsync({type: 'blob'}, metadata => {
+                    downloadAllBtn.textContent = `正在打包 ${Math.round(metadata.percent)}%`;
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `extracted-icons-${filteredIcons.length}.zip`;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.textContent = '打包下载 ZIP';
+                statusElement.textContent = `已打包下载 ${filteredIcons.length} 个图标`;
+                return;
+            }
 
             // 使用延迟下载避免浏览器限制
             let downloadCount = 0;

@@ -265,7 +265,7 @@
             <div class="upload-area">
                 <div class="drop-zone" id="dropZone">
                     <i>📁</i>
-                    <p>拖放图像文件到此处<br>或点击选择文件</p>
+                    <p>拖放图像文件到此处<br>或点击选择文件（也可直接粘贴）</p>
                 </div>
                 <input type="file" id="fileInput" accept="image/png" class="hidden">
                 <button id="processBtn" class="button" disabled>
@@ -317,6 +317,7 @@
             
             let originalImage = null;
             let croppedImageDataUrl = null;
+            let sourceFileName = 'cropped-image.png';
             
             // 点击拖放区域触发文件选择
             dropZone.addEventListener('click', () => {
@@ -357,7 +358,11 @@
                 const files = dt.files;
                 handleFiles(files);
             }
-            
+            document.addEventListener('paste', (e) => {
+                const file = Array.from(e.clipboardData?.files || []).find(item => item.type === 'image/png');
+                if (file) handleFiles([file]);
+            });
+
             // 处理文件选择
             fileInput.addEventListener('change', () => {
                 handleFiles(fileInput.files);
@@ -367,6 +372,7 @@
                 if (files.length === 0) return;
                 
                 const file = files[0];
+                sourceFileName = file.name.replace(/\.png$/i, '') + '-cropped.png';
                 if (!file.type.match('image.*')) {
                     showStatus('请选择图像文件', 'error');
                     return;
@@ -499,7 +505,7 @@
                 
                 const link = document.createElement('a');
                 link.href = croppedImageDataUrl;
-                link.download = 'cropped-image.png';
+                link.download = sourceFileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

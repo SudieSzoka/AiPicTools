@@ -18,6 +18,7 @@
         .left { width: 40%; border-right: 1px solid #eef2f7; }
         .right { width: 60%; }
         .section-title { font-size: 16px; color: #0f172a; margin-bottom: 10px; font-weight: 600; }
+        @media (max-width: 820px) { body{padding:8px}.main{flex-direction:column}.left,.right{width:100%}.left{border-right:0;border-bottom:1px solid #eef2f7} }
         .upload-area { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; height: 200px; text-align: center; background:#f8fafc; transition:.2s; cursor:pointer; }
         .upload-area:hover { border-color:#60a5fa; background:#f1f5f9; }
         .upload-area.dragover { border-color:#22c55e; background:#ecfdf5; }
@@ -260,6 +261,7 @@
                     <div class="item-header">
                         <div class="item-title">#${idx+1} 圆角矩形</div>
                         <div>
+                            <button class="btn" data-copy="${ly.id}">复制</button>
                             <button class="btn warn" data-del="${ly.id}">删除</button>
                         </div>
                     </div>
@@ -315,8 +317,12 @@
 
         rectList.addEventListener('click', (e)=>{
             const delId = e.target.getAttribute('data-del');
+            const copyId = e.target.getAttribute('data-copy');
             const addStopId = e.target.getAttribute('data-addstop');
-            if (delId){
+            if(copyId){
+                const source = layers.find(l=>String(l.id)===String(copyId));
+                if(source){ const clone=JSON.parse(JSON.stringify(source)); clone.id=idSeq++; clone.x+=12; clone.y+=12; layers.push(clone); renderList(); drawAll(); }
+            } else if (delId){
                 layers = layers.filter(l=> String(l.id)!==String(delId));
                 renderList(); drawAll();
             } else if (addStopId){

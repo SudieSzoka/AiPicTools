@@ -409,6 +409,11 @@
         });
 
         btnGenerate.addEventListener('click', generateNineGrid);
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && btnDownload.href && btnDownload.href !== '#') {
+                e.preventDefault(); btnDownload.click();
+            }
+        });
 
         // --- Functions ---
 

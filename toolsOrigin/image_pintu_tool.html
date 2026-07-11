@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Jigsaw Tool</title>
+    <title>图片拼图切片工具</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -178,12 +178,12 @@
 
     <div class="tool-container">
         <div class="sidebar">
-            <h1>Jigsaw Tool</h1>
+            <h1>图片拼图切片</h1>
 
             <div class="control-group">
-                <label>Upload Images</label>
-                <div class="file-upload" onclick="document.getElementById('fileInput').click()">
-                    Click to Upload
+                <label>上传图片（支持批量）</label>
+                <div class="file-upload" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    点击选择或拖拽图片到这里
                     <input type="file" id="fileInput" multiple accept="image/*" style="display: none"
                         onchange="handleFiles(this.files)">
                 </div>
@@ -191,7 +191,7 @@
             </div>
 
             <div class="control-group">
-                <label>Tiles (X * Y)</label>
+                <label>拼图块数（横 × 纵）</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="number" id="xn" value="5" min="1" onchange="updatePreview()">
                     <input type="number" id="yn" value="5" min="1" onchange="updatePreview()">
@@ -199,36 +199,46 @@
             </div>
 
             <div class="control-group">
-                <label>Seed: <span id="seed-val">0</span></label>
+                <label>随机种子：<span id="seed-val">0</span></label>
                 <input type="range" id="seed" min="0" max="9999" value="0" oninput="updatePreview()">
             </div>
 
             <div class="control-group">
-                <label>Tab Size: <span id="tabsize-val">20%</span></label>
+                <label>卡口大小：<span id="tabsize-val">20%</span></label>
                 <input type="range" id="tabsize" min="10" max="30" step="0.1" value="20" oninput="updatePreview()">
             </div>
 
             <div class="control-group">
-                <label>Jitter: <span id="jitter-val">4%</span></label>
+                <label>边缘扰动：<span id="jitter-val">4%</span></label>
                 <input type="range" id="jitter" min="0" max="13" step="0.1" value="4" oninput="updatePreview()">
             </div>
 
             <div class="control-group">
-                <button onclick="downloadAll()">Download All (Zip)</button>
+                <button onclick="downloadAll()">批量生成并下载 ZIP</button>
             </div>
 
-            <div class="status-bar" id="status">Ready</div>
+            <div class="status-bar" id="status">请选择图片</div>
         </div>
 
         <div class="main-content">
             <div id="preview-container">
-                <img id="preview-image" src="" alt="Upload an image to start" style="display: none;">
+                <img id="preview-image" src="" alt="上传图片后显示预览" style="display: none;">
                 <svg id="puzzle-overlay"></svg>
             </div>
         </div>
     </div>
 
     <script>
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(type => dropZone.addEventListener(type, event => {
+            event.preventDefault();
+            dropZone.style.borderColor = '#fff';
+        }));
+        ['dragleave', 'drop'].forEach(type => dropZone.addEventListener(type, event => {
+            event.preventDefault();
+            dropZone.style.borderColor = '';
+        }));
+        dropZone.addEventListener('drop', event => handleFiles(event.dataTransfer.files));
         // --- Jigsaw Logic (Ported from jigsaw.html) ---
         const Jigsaw = {
             seed: 0,

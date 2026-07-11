@@ -45,6 +45,7 @@
         .actions{margin-top:14px;display:flex;gap:10px;align-items:center}
         .hint{font-size:12px;color:#6b7280}
         .error{color:#dc2626;font-size:13px;margin-top:8px}
+        @media(max-width:800px){body{padding:8px}.main{flex-direction:column}.left,.right{width:100%}.left{border-right:0;border-bottom:1px solid #eef2f7}.canvas-wrap{min-height:240px}.item{align-items:flex-start}.meta{min-width:0}}
     </style>
     <!--
         说明：
@@ -202,6 +203,7 @@
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px">
                         <button class="btn up" ${index===0?'disabled':''} title="上移">上移</button>
+                        <button class="btn down" ${index===items.length-1?'disabled':''} title="下移">下移</button>
                         <button class="btn del" title="删除">删除</button>
                     </div>
                 `;
@@ -251,6 +253,12 @@
                         items[index] = tmp;
                         renderList();
                         scheduleGenerate();
+                    }
+                });
+                div.querySelector('.btn.down').addEventListener('click', ()=>{
+                    if(index<items.length-1){
+                        [items[index], items[index+1]] = [items[index+1], items[index]];
+                        renderList(); scheduleGenerate();
                     }
                 });
                 // 删除

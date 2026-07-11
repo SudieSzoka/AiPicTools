@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片批量等比例缩放工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -157,6 +158,17 @@
             font-size: 14px;
             margin-top: 10px;
         }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .secondary { background: #2196F3; }
+        .secondary:hover { background: #1976D2; }
+        .status { color: #666; font-size: 14px; }
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .container { padding: 18px; }
+            .input-group { align-items: flex-start; flex-direction: column; }
+            #sizeGroup { flex-wrap: wrap; }
+        }
     </style>
 </head>
 <body>
@@ -187,7 +199,12 @@
                 <input type="number" id="heightInput" min="1" style="width:70px;">
                 <label><input type="checkbox" id="lockRatio"> 锁定比例</label>
             </span>
-            <button id="processBtn" onclick="processImages()">开始处理</button>
+            <div class="actions">
+                <button id="processBtn" onclick="processImages()">开始处理</button>
+                <button id="downloadAllBtn" class="secondary" onclick="downloadAll()" disabled>打包下载 ZIP</button>
+                <button type="button" onclick="clearAll()">清空</button>
+                <span id="status" class="status">尚未选择图片</span>
+            </div>
         </div>
 
         <div id="error" class="error" style="display: none;"></div>
@@ -243,6 +260,7 @@
                 img.src = URL.createObjectURL(file);
             });
             displayPreview();
+            document.getElementById('status').textContent = selectedFiles.length ? `已选择 ${selectedFiles.length} 张图片` : '未发现可用图片';
         }
 
         function displayPreview() {
@@ -271,6 +289,7 @@
 
             document.getElementById('error').style.display = 'none';
             processedImages = [];
+            document.getElementById('downloadAllBtn').disabled = true;
         }
 
         // 模式切换逻辑
@@ -310,6 +329,10 @@
         });
 
         async function processImages() {
+            if (!selectedFiles.length) {
+                showError('请先选择至少一张图片');
+                return;
+            }
             const mode = document.getElementById('modeSelect').value;
             let scale = parseFloat(document.getElementById('scaleInput').value);
             let width = parseInt(document.getElementById('widthInput') && document.getElementById('widthInput').value);
@@ -329,6 +352,8 @@
             processBtn.disabled = true;
             processBtn.innerHTML = '处理中<span class="loading"></span>';
             processedImages = [];
+            document.getElementById('downloadAllBtn').disabled = true;
+            document.getElementById('status').textContent = `正在处理 0 / ${selectedFiles.length}`;
             for (let i = 0; i < selectedFiles.length; i++) {
                 try {
                     let processedBlob;
@@ -352,12 +377,48 @@
                     const downloadBtn = document.querySelectorAll('.download-btn')[i];
                     downloadBtn.disabled = false;
                     downloadBtn.textContent = '下载';
+                    document.getElementById('status').textContent = `正在处理 ${i + 1} / ${selectedFiles.length}`;
                 } catch (error) {
                     console.error('处理图片失败:', error);
                 }
             }
             processBtn.disabled = false;
             processBtn.innerHTML = '开始处理';
+            document.getElementById('downloadAllBtn').disabled = processedImages.length === 0;
+            document.getElementById('status').textContent = `处理完成：${processedImages.length} / ${selectedFiles.length}`;
+        }
+
+        async function downloadAll() {
+            if (!processedImages.length) return;
+            const button = document.getElementById('downloadAllBtn');
+            button.disabled = true;
+            button.textContent = '正在打包…';
+            try {
+                const zip = new JSZip();
+                processedImages.forEach(({ blob, filename }) => zip.file(filename, blob));
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `scaled-images-${processedImages.length}.zip`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (error) {
+                showError('打包失败，请检查网络后重试');
+            } finally {
+                button.disabled = false;
+                button.textContent = '打包下载 ZIP';
+            }
+        }
+
+        function clearAll() {
+            selectedFiles = [];
+            processedImages = [];
+            originalSizes = [];
+            fileInput.value = '';
+            document.getElementById('previewArea').innerHTML = '';
+            document.getElementById('downloadAllBtn').disabled = true;
+            document.getElementById('status').textContent = '尚未选择图片';
         }
 
         function resizeImage(file, scale) {

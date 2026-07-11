@@ -681,6 +681,11 @@
             if (file) loadImageFile(file);
         });
 
+        document.addEventListener('paste', (event) => {
+            const file = Array.from(event.clipboardData?.files || []).find((item) => item.type.startsWith('image/'));
+            if (file) loadImageFile(file);
+        });
+
         uploadZone.addEventListener('dragover', (event) => {
             event.preventDefault();
             uploadZone.classList.add('drag-over');

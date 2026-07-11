@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>批量图片渐变背景处理工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -554,7 +555,7 @@
                 
                 <div class="actions">
                     <button id="processBtn" disabled>批量处理</button>
-                    <button id="downloadBtn" disabled>下载所有</button>
+            <button id="downloadBtn" disabled>打包下载 ZIP</button>
                     <button id="clearBtn">清空文件</button>
                 </div>
                 
@@ -892,8 +893,26 @@
         }
 
         // 下载所有处理后的图片
-        function downloadAllImages() {
+        async function downloadAllImages() {
             if (processedImages.length === 0) return;
+
+            if (typeof JSZip !== 'undefined') {
+                downloadBtn.disabled = true;
+                const zip = new JSZip();
+                processedImages.forEach(item => zip.file(item.name, item.canvas.toDataURL('image/png').split(',')[1], {base64: true}));
+                const blob = await zip.generateAsync({type: 'blob'}, metadata => {
+                    downloadBtn.textContent = `正在打包 ${Math.round(metadata.percent)}%`;
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `gradient-images-${processedImages.length}.zip`;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = '打包下载 ZIP';
+                return;
+            }
 
             processedImages.forEach((item, index) => {
                 setTimeout(() => {
@@ -1043,4 +1062,4 @@
         window.addEventListener('load', init);
     </script>
 </body>
-</html> 
+</html>

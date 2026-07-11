@@ -172,7 +172,7 @@
                 </select>
             </div>
             <button id="convertBtn" onclick="convertAll()">开始转换</button>
-            <button id="downloadAllBtn" class="btn-blue" onclick="downloadAll()" style="display:none;">全部下载</button>
+            <button id="downloadAllBtn" class="btn-blue" onclick="downloadAll()" style="display:none;">保存全部到文件夹</button>
         </div>
         <div class="preview-area" id="previewArea"></div>
     </div>
@@ -331,7 +331,23 @@ function download(i) {
     URL.revokeObjectURL(a.href);
 }
 
-function downloadAll() {
+async function downloadAll() {
+    const entries = converted.filter(Boolean);
+    if (!entries.length) return;
+    if (window.showDirectoryPicker) {
+        try {
+            const directory = await window.showDirectoryPicker({ mode: 'readwrite' });
+            for (const entry of entries) {
+                const handle = await directory.getFileHandle(entry.name, { create: true });
+                const writable = await handle.createWritable();
+                await writable.write(entry.blob);
+                await writable.close();
+            }
+            return;
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
     converted.forEach((c, i) => c && download(i));
 }
 </script>
