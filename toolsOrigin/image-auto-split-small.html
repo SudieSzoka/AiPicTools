@@ -668,8 +668,10 @@
             const minWidth = parseInt(minWidthInput.value) || 0;
             const minHeight = parseInt(minHeightInput.value) || 0;
             
-            const filteredIcons = extractedIcons.filter(icon => 
-                icon.width >= minWidth && icon.height >= minHeight
+            const filteredIcons = sortIconsByReadingOrder(
+                extractedIcons.filter(icon =>
+                    icon.width >= minWidth && icon.height >= minHeight
+                )
             );
             
             // 更新显示数量
@@ -688,6 +690,66 @@
             // 否则根据总位数补0
             const digits = String(total).length;
             return String(index).padStart(digits, '0');
+        }
+
+        // 按阅读顺序排序：先识别从上到下的行，再将每行从左到右排列。
+        // 同一行图标的轮廓顶部可能不齐，因此不能直接使用 y 坐标排序。
+        function sortIconsByReadingOrder(icons) {
+            if (icons.length < 2) return [...icons];
+
+            const heights = icons
+                .map(icon => icon.height)
+                .sort((a, b) => a - b);
+            const medianHeight = heights[Math.floor(heights.length / 2)];
+            const rowTolerance = Math.max(8, medianHeight * 0.55);
+
+            const iconsByVerticalPosition = icons
+                .map((icon, originalIndex) => ({
+                    ...icon,
+                    originalIndex,
+                    centerY: icon.y + icon.height / 2
+                }))
+                .sort((a, b) =>
+                    a.centerY - b.centerY ||
+                    a.x - b.x ||
+                    a.originalIndex - b.originalIndex
+                );
+
+            const rows = [];
+
+            iconsByVerticalPosition.forEach(icon => {
+                let bestRow = null;
+                let bestDistance = Infinity;
+
+                rows.forEach(row => {
+                    const distance = Math.abs(icon.centerY - row.centerY);
+                    if (distance <= rowTolerance && distance < bestDistance) {
+                        bestRow = row;
+                        bestDistance = distance;
+                    }
+                });
+
+                if (bestRow) {
+                    bestRow.icons.push(icon);
+                    bestRow.centerY = bestRow.icons.reduce(
+                        (sum, item) => sum + item.centerY,
+                        0
+                    ) / bestRow.icons.length;
+                } else {
+                    rows.push({ centerY: icon.centerY, icons: [icon] });
+                }
+            });
+
+            return rows
+                .sort((a, b) => a.centerY - b.centerY)
+                .flatMap(row => row.icons
+                    .sort((a, b) =>
+                        a.x - b.x ||
+                        a.y - b.y ||
+                        a.originalIndex - b.originalIndex
+                    )
+                    .map(({ originalIndex, centerY, ...icon }) => icon)
+                );
         }
 
         // 显示图标
@@ -727,8 +789,10 @@
             const minWidth = parseInt(minWidthInput.value) || 0;
             const minHeight = parseInt(minHeightInput.value) || 0;
 
-            const filteredIcons = extractedIcons.filter(icon =>
-                icon.width >= minWidth && icon.height >= minHeight
+            const filteredIcons = sortIconsByReadingOrder(
+                extractedIcons.filter(icon =>
+                    icon.width >= minWidth && icon.height >= minHeight
+                )
             );
 
             // 禁用下载按钮防止重复点击
