@@ -648,6 +648,26 @@
 
         <div class="controls-grid">
             <div class="form-group">
+                <label>同行垂直对齐</label>
+                <select id="rowAlign">
+                    <option value="start" selected>顶部对齐</option>
+                    <option value="center">居中对齐</option>
+                    <option value="end">底部对齐</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>同列水平对齐</label>
+                <select id="columnAlign">
+                    <option value="start" selected>左侧对齐</option>
+                    <option value="center">居中对齐</option>
+                    <option value="end">右侧对齐</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="controls-grid">
+            <div class="form-group">
                 <label>渐变方案</label>
                 <select id="gradientSelect">
                     <option value="transparent" selected>纯透明</option>
@@ -1098,7 +1118,7 @@
         }
 
         /* ---------- 通用监听 ---------- */
-        ['spacing', 'angle', 'gradientSelect', 'cols'].forEach(id => {
+        ['spacing', 'angle', 'gradientSelect', 'cols', 'rowAlign', 'columnAlign'].forEach(id => {
             const el = document.getElementById(id);
             const target = document.getElementById(id + 'Value');
             el.addEventListener('input', e => {
@@ -1237,6 +1257,8 @@
                 const spacing = +document.getElementById('spacing').value;
                 const angle = +document.getElementById('angle').value;
                 const cols = +document.getElementById('cols').value;
+                const rowAlign = document.getElementById('rowAlign').value;
+                const columnAlign = document.getElementById('columnAlign').value;
                 const selectedGradient = document.getElementById('gradientSelect').value;
 
                 // 计算网格布局
@@ -1297,8 +1319,16 @@
                         if (index >= imgs.length) break;
 
                         const img = imgs[index];
-                        const x = colPositions[c] + (maxWidthPerCol[c] - img.width) / 2;
-                        const y = currentY + (maxHeightPerRow[r] - img.height) / 2;
+                        const remainingWidth = maxWidthPerCol[c] - img.width;
+                        const remainingHeight = maxHeightPerRow[r] - img.height;
+                        const horizontalOffset = columnAlign === 'center'
+                            ? remainingWidth / 2
+                            : columnAlign === 'end' ? remainingWidth : 0;
+                        const verticalOffset = rowAlign === 'center'
+                            ? remainingHeight / 2
+                            : rowAlign === 'end' ? remainingHeight : 0;
+                        const x = colPositions[c] + horizontalOffset;
+                        const y = currentY + verticalOffset;
 
                         // 添加图片阴影效果
                         ctx.shadowColor = 'rgba(0,0,0,0.1)';
