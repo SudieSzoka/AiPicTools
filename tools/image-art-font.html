@@ -121,6 +121,20 @@
       cursor: pointer;
       color: #e53e3e;
     }
+    .export-size {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .size-hint {
+      margin-top: 6px;
+      color: #718096;
+      font-size: 12px;
+    }
+    .color-error {
+      border-color: #e53e3e;
+      box-shadow: 0 0 0 1px #e53e3e;
+    }
   </style>
 </head>
 <body>
@@ -231,6 +245,15 @@
           <input type="text" id="shadowColor" value="#000000">
         </div>
       </div>
+
+      <div class="control-group">
+        <label>导出图片大小 (px):</label>
+        <div class="export-size">
+          <input type="number" id="exportWidth" value="1000" min="1" max="8192" aria-label="导出宽度" placeholder="宽度">
+          <input type="number" id="exportHeight" value="500" min="1" max="8192" aria-label="导出高度" placeholder="高度">
+        </div>
+        <div class="size-hint">宽度 × 高度；透明背景，文本默认水平、垂直居中</div>
+      </div>
     </div>
     
     <div class="preview-area">
@@ -256,38 +279,13 @@
       document.getElementById('fontSize').addEventListener('input', updateTextStyle);
       document.getElementById('letterSpacing').addEventListener('input', updateTextStyle);
       document.getElementById('fontFamily').addEventListener('change', updateTextStyle);
-      document.getElementById('textColorPicker').addEventListener('input', e => {
-        document.getElementById('textColor').value = e.target.value;
-        updateTextStyle();
-      });
-      document.getElementById('textColor').addEventListener('change', e => {
-        document.getElementById('textColorPicker').value = e.target.value;
-        updateTextStyle();
-      });
-      document.getElementById('textColor').addEventListener('input', e => {
-        document.getElementById('textColorPicker').value = e.target.value;
-        updateTextStyle();
-      });
+      bindColorControls('textColorPicker', 'textColor');
       document.getElementById('strokeWidth').addEventListener('input', updateTextStyle);
-      document.getElementById('strokeColorPicker').addEventListener('input', e => {
-        document.getElementById('strokeColor').value = e.target.value;
-        updateTextStyle();
-      });
-      document.getElementById('strokeColor').addEventListener('input', e => {
-        document.getElementById('strokeColorPicker').value = e.target.value;
-        updateTextStyle();
-      });
+      bindColorControls('strokeColorPicker', 'strokeColor');
       document.getElementById('shadowOffsetX').addEventListener('input', updateTextStyle);
       document.getElementById('shadowOffsetY').addEventListener('input', updateTextStyle);
       document.getElementById('shadowBlur').addEventListener('input', updateTextStyle);
-      document.getElementById('shadowColorPicker').addEventListener('input', e => {
-        document.getElementById('shadowColor').value = e.target.value;
-        updateTextStyle();
-      });
-      document.getElementById('shadowColor').addEventListener('input', e => {
-        document.getElementById('shadowColorPicker').value = e.target.value;
-        updateTextStyle();
-      });
+      bindColorControls('shadowColorPicker', 'shadowColor');
       
       // 字体文件上传处理
       document.getElementById('fontFileInput').addEventListener('change', handleFontUpload);
@@ -296,25 +294,55 @@
       document.getElementById('downloadBtn').addEventListener('click', downloadAsPNG);
     });
 
+    // 绑定颜色选择器和文本输入框；仅让合法颜色参与渲染
+    function bindColorControls(pickerId, textId) {
+      const picker = document.getElementById(pickerId);
+      const textInput = document.getElementById(textId);
+
+      picker.addEventListener('input', () => {
+        textInput.value = picker.value;
+        textInput.classList.remove('color-error');
+        updateTextStyle();
+      });
+
+      textInput.addEventListener('input', () => {
+        const color = textInput.value.trim();
+        const isValid = CSS.supports('color', color);
+        textInput.classList.toggle('color-error', !isValid);
+
+        // 原生颜色选择器只接受 #RRGGBB，其他合法 CSS 颜色仍可正常预览和导出
+        if (/^#[0-9a-f]{6}$/i.test(color)) {
+          picker.value = color;
+        }
+        if (isValid) updateTextStyle();
+      });
+    }
+
+    function getValidColor(inputId, fallback) {
+      const value = document.getElementById(inputId).value.trim();
+      return CSS.supports('color', value) ? value : fallback;
+    }
+
     // 更新文本样式
     function updateTextStyle() {
       const textPreview = document.getElementById('textPreview');
       const text = document.getElementById('textInput').value || '签到';
       const fontSize = document.getElementById('fontSize').value + 'px';
       const fontFamily = document.getElementById('fontFamily').value;
-      const textColor = document.getElementById('textColor').value;
+      const textColor = getValidColor('textColor', '#ff0000');
       const strokeWidth = document.getElementById('strokeWidth').value + 'px';
-      const strokeColor = document.getElementById('strokeColor').value;
+      const strokeColor = getValidColor('strokeColor', '#000000');
       const shadowOffsetX = document.getElementById('shadowOffsetX').value + 'px';
       const shadowOffsetY = document.getElementById('shadowOffsetY').value + 'px';
       const shadowBlur = document.getElementById('shadowBlur').value + 'px';
-      const shadowColor = document.getElementById('shadowColor').value;
+      const shadowColor = getValidColor('shadowColor', '#000000');
       const letterSpacing = document.getElementById('letterSpacing').value + 'px';
       
       textPreview.textContent = text;
       textPreview.style.fontFamily = fontFamily;
       textPreview.style.fontSize = fontSize;
       textPreview.style.color = textColor;
+      textPreview.style.webkitTextFillColor = textColor;
       textPreview.style.letterSpacing = letterSpacing;
       textPreview.style.webkitTextStroke = `${strokeWidth} ${strokeColor}`;
       textPreview.style.textStroke = `${strokeWidth} ${strokeColor}`;
@@ -426,17 +454,22 @@
     }
 
     // 下载为PNG
-    function downloadAsPNG() {
+    async function downloadAsPNG() {
       const textPreview = document.getElementById('textPreview');
       const text = textPreview.textContent;
+
+      // 等待系统字体或刚上传的自定义字体加载完毕
+      await document.fonts.ready;
       
       // 创建临时canvas
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // 设置canvas初始尺寸
-      canvas.width = 1000;
-      canvas.height = 500;
+      // 使用用户指定的固定导出尺寸
+      const exportWidth = Math.min(8192, Math.max(1, parseInt(document.getElementById('exportWidth').value, 10) || 1000));
+      const exportHeight = Math.min(8192, Math.max(1, parseInt(document.getElementById('exportHeight').value, 10) || 500));
+      canvas.width = exportWidth;
+      canvas.height = exportHeight;
       
       // 清除背景
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -444,36 +477,15 @@
       // 应用文本样式
       const fontSize = parseInt(document.getElementById('fontSize').value);
       const fontFamily = document.getElementById('fontFamily').value;
-      const textColor = document.getElementById('textColor').value;
-      const strokeWidth = parseInt(document.getElementById('strokeWidth').value);
-      const strokeColor = document.getElementById('strokeColor').value;
-      const shadowOffsetX = parseInt(document.getElementById('shadowOffsetX').value);
-      const shadowOffsetY = parseInt(document.getElementById('shadowOffsetY').value);
-      const shadowBlur = parseInt(document.getElementById('shadowBlur').value);
-      const shadowColor = document.getElementById('shadowColor').value;
-      const letterSpacing = parseInt(document.getElementById('letterSpacing').value);
+      const textColor = getValidColor('textColor', '#ff0000');
+      const strokeWidth = parseFloat(document.getElementById('strokeWidth').value) || 0;
+      const strokeColor = getValidColor('strokeColor', '#000000');
+      const shadowOffsetX = parseFloat(document.getElementById('shadowOffsetX').value) || 0;
+      const shadowOffsetY = parseFloat(document.getElementById('shadowOffsetY').value) || 0;
+      const shadowBlur = parseFloat(document.getElementById('shadowBlur').value) || 0;
+      const shadowColor = getValidColor('shadowColor', '#000000');
+      const letterSpacing = parseFloat(document.getElementById('letterSpacing').value) || 0;
       
-      ctx.font = `${fontSize}px ${fontFamily}`;
-      ctx.fillStyle = textColor;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth;
-      ctx.shadowOffsetX = shadowOffsetX;
-      ctx.shadowOffsetY = shadowOffsetY;
-      ctx.shadowBlur = shadowBlur;
-      ctx.shadowColor = shadowColor;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // 先使用临时canvas测量文本尺寸
-      const textMetrics = ctx.measureText(text);
-      const textWidth = Math.ceil(textMetrics.width + strokeWidth * 2 + shadowBlur * 2 + Math.abs(shadowOffsetX) * 2);
-      const textHeight = Math.ceil(fontSize * 1.2 + strokeWidth * 2 + shadowBlur * 2 + Math.abs(shadowOffsetY) * 2);
-      
-      // 调整canvas尺寸到实际需要
-      canvas.width = textWidth;
-      canvas.height = textHeight;
-      
-      // 重新设置样式（因为改变canvas尺寸会重置上下文）
       ctx.font = `${fontSize}px ${fontFamily}`;
       ctx.fillStyle = textColor;
       ctx.strokeStyle = strokeColor;
@@ -515,68 +527,14 @@
         ctx.fillText(text, centerX, centerY);
       }
       
-      // 裁剪掉透明区域
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
-      
-      // 找到非透明像素的边界
-      for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-          const alpha = data[(y * canvas.width + x) * 4 + 3];
-          if (alpha > 0) {
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
-          }
-        }
-      }
-      
-      // 确保有非透明像素
-      if (minX <= maxX && minY <= maxY) {
-        // 添加一点边距
-        const padding = 10;
-        minX = Math.max(0, minX - padding);
-        minY = Math.max(0, minY - padding);
-        maxX = Math.min(canvas.width - 1, maxX + padding);
-        maxY = Math.min(canvas.height - 1, maxY + padding);
-        
-        // 裁剪图像
-        const croppedWidth = maxX - minX + 1;
-        const croppedHeight = maxY - minY + 1;
-        
-        const croppedCanvas = document.createElement('canvas');
-        croppedCanvas.width = croppedWidth;
-        croppedCanvas.height = croppedHeight;
-        
-        const croppedCtx = croppedCanvas.getContext('2d');
-        croppedCtx.drawImage(
-          canvas,
-          minX, minY, croppedWidth, croppedHeight,
-          0, 0, croppedWidth, croppedHeight
-        );
-        
-        // 导出为PNG
-        const dataURL = croppedCanvas.toDataURL('image/png');
-        
-        // 创建下载链接
-        const link = document.createElement('a');
-        link.href = dataURL;
-        link.download = `${text.substring(0, 20)}_text.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        // 如果没有可见内容，导出整个canvas
-        const dataURL = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = dataURL;
-        link.download = `${text.substring(0, 20)}_text.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      // 保留完整画布尺寸导出，文本位于画布水平、垂直中心
+      const dataURL = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = `${text.substring(0, 20)}_${canvas.width}x${canvas.height}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 <!-- COMMON_FOOTER -->
