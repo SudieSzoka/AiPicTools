@@ -205,5 +205,14 @@
     "category": "image",
     "icon": "image-crop-mid",
     "show": true
+  },
+  {
+    "id": 20,
+    "name": "Unity 富文本预览",
+    "description": "实时预览颜色、字号、样式标签与参数替换效果",
+    "path": "tools/rich-text-preview.html",
+    "category": "text",
+    "icon": "fuwenben",
+    "show": true
   }
 ]

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity 富文本预览</title>
+    <style>
+        :root {
+            --rt-brand: #0f766e;
+            --rt-brand-hover: #115e59;
+            --rt-brand-pressed: #134e4a;
+            --rt-text: #172033;
+            --rt-text-weak: #526079;
+            --rt-stroke: #64748b;
+            --rt-stroke-weak: #d8dee9;
+            --rt-fill: #f4f7fa;
+            --rt-bg: #eef2f6;
+            --rt-white: #ffffff;
+            --rt-danger: #b42318;
+            --rt-danger-fill: #fff2f0;
+            --rt-success: #147d64;
+            --rt-success-fill: #eaf8f4;
+            --rt-radius-sm: 8px;
+            --rt-radius-md: 16px;
+            --rt-space-xs: 8px;
+            --rt-space-sm: 16px;
+            --rt-space-md: 24px;
+            --rt-space-lg: 32px;
+            --rt-shadow: 0 12px 32px rgba(26, 39, 64, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--rt-bg);
+            color: var(--rt-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+
+        button, textarea, input, select { font: inherit; }
+
+        .rt-page {
+            width: min(1280px, calc(100% - 32px));
+            margin: 32px auto 48px;
+        }
+
+        .rt-hero {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: var(--rt-space-md);
+            margin-bottom: var(--rt-space-md);
+        }
+
+        .rt-eyebrow {
+            margin: 0 0 8px;
+            color: var(--rt-brand);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(28px, 4vw, 40px);
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        .rt-intro {
+            max-width: 720px;
+            margin: 12px 0 0;
+            color: var(--rt-text-weak);
+            font-size: 16px;
+            line-height: 1.65;
+        }
+
+        .rt-live-badge {
+            display: inline-flex;
+            min-height: 40px;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+            padding: 8px 12px;
+            border: 1px solid #81c7b5;
+            border-radius: 999px;
+            background: var(--rt-success-fill);
+            color: #0f624f;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .rt-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rt-success); }
+
+        .rt-workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: var(--rt-space-md);
+            align-items: start;
+        }
+
+        .rt-card {
+            overflow: hidden;
+            border: 1px solid var(--rt-stroke-weak);
+            border-radius: var(--rt-radius-md);
+            background: var(--rt-white);
+            box-shadow: var(--rt-shadow);
+        }
+
+        .rt-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--rt-space-sm);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--rt-stroke-weak);
+        }
+
+        .rt-card-header h2, .rt-section h3 {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.4;
+        }
+
+        .rt-card-header p, .rt-field-hint, .rt-empty {
+            margin: 5px 0 0;
+            color: var(--rt-text-weak);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .rt-card-body { padding: var(--rt-space-md); }
+
+        .rt-field-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .rt-field-hint { margin: 0 0 8px; }
+
+        #sourceInput {
+            display: block;
+            width: 100%;
+            min-height: 300px;
+            resize: vertical;
+            padding: 16px;
+            border: 1px solid var(--rt-stroke);
+            border-radius: var(--rt-radius-sm);
+            background: #fbfcfd;
+            color: var(--rt-text);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 14px;
+            line-height: 1.7;
+            tab-size: 2;
+        }
+
+        #sourceInput:hover { border-color: #334155; }
+        #sourceInput:focus, .rt-param-input:focus, .rt-select:focus {
+            border-color: var(--rt-brand);
+            outline: 3px solid rgba(15, 118, 110, 0.22);
+            outline-offset: 1px;
+        }
+
+        .rt-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: var(--rt-space-sm);
+        }
+
+        .rt-button {
+            min-height: 48px;
+            padding: 0 16px;
+            border: 1px solid var(--rt-stroke);
+            border-radius: var(--rt-radius-sm);
+            background: var(--rt-white);
+            color: #27364f;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+        }
+
+        .rt-button:hover { background: #eef4f6; border-color: #334155; }
+        .rt-button:active { transform: translateY(1px); background: #e3eaed; }
+        .rt-button:focus-visible { outline: 3px solid rgba(15, 118, 110, 0.28); outline-offset: 2px; }
+        .rt-button-primary { border-color: var(--rt-brand); background: var(--rt-brand); color: #fff; }
+        .rt-button-primary:hover { border-color: var(--rt-brand-hover); background: var(--rt-brand-hover); }
+        .rt-button-primary:active { background: var(--rt-brand-pressed); }
+        .rt-button-tertiary { border-color: transparent; background: transparent; color: var(--rt-brand-hover); text-decoration: underline; }
+
+        .rt-section {
+            margin-top: var(--rt-space-md);
+            padding-top: var(--rt-space-md);
+            border-top: 1px solid var(--rt-stroke-weak);
+        }
+
+        .rt-param-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .rt-param-field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+        .rt-param-input, .rt-select {
+            width: 100%;
+            min-height: 48px;
+            padding: 10px 12px;
+            border: 1px solid var(--rt-stroke);
+            border-radius: var(--rt-radius-sm);
+            background: var(--rt-white);
+            color: var(--rt-text);
+        }
+
+        .rt-preview-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rt-preview-controls label { font-size: 14px; font-weight: 700; }
+        .rt-select { width: auto; min-width: 132px; }
+
+        .rt-preview-stage {
+            display: flex;
+            min-height: 340px;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            padding: 40px 32px;
+            border: 1px solid var(--rt-stroke-weak);
+            border-radius: 12px;
+            background-color: #fff;
+            background-image: linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+            background-size: 20px 20px;
+            transition: background-color 150ms ease, color 150ms ease;
+        }
+
+        .rt-preview-stage[data-theme="dark"] {
+            border-color: #475569;
+            background-color: #152033;
+            background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+            color: #f8fafc;
+        }
+
+        #previewOutput {
+            width: 100%;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+            text-align: center;
+            font-size: 24px;
+            line-height: 1.65;
+        }
+
+        .rt-summary {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: var(--rt-space-sm);
+            padding: 12px 14px;
+            border: 1px solid #81c7b5;
+            border-radius: var(--rt-radius-sm);
+            background: var(--rt-success-fill);
+            color: #0f624f;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .rt-summary[data-state="warning"] { border-color: #e9a89f; background: var(--rt-danger-fill); color: #8f1f17; }
+        .rt-summary-icon { flex: 0 0 auto; font-weight: 800; }
+
+        .rt-diagnostics { margin: 10px 0 0 24px; color: #7f1d1d; font-size: 14px; line-height: 1.6; }
+
+        .rt-code-box {
+            max-height: 180px;
+            overflow: auto;
+            margin: 12px 0 0;
+            padding: 14px;
+            border-radius: var(--rt-radius-sm);
+            background: #172033;
+            color: #f4f7fa;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font: 13px/1.7 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        }
+
+        .rt-reference {
+            margin-top: var(--rt-space-md);
+            padding: 18px 20px;
+            border: 1px solid var(--rt-stroke-weak);
+            border-radius: 12px;
+            background: var(--rt-fill);
+        }
+
+        .rt-reference summary { min-height: 32px; cursor: pointer; font-weight: 700; }
+        .rt-reference p { margin: 12px 0 0; color: var(--rt-text-weak); font-size: 14px; line-height: 1.65; }
+        .rt-reference code { color: #0f5f58; font-family: "SFMono-Regular", Consolas, monospace; font-weight: 700; }
+        .rt-toast { min-height: 24px; margin: 8px 0 0; color: #0f624f; font-size: 14px; font-weight: 700; }
+
+        @media (max-width: 860px) {
+            .rt-page { width: min(100% - 24px, 720px); margin-top: 24px; }
+            .rt-hero { display: block; }
+            .rt-live-badge { margin-top: 16px; }
+            .rt-workspace { grid-template-columns: 1fr; }
+            .rt-param-grid { grid-template-columns: 1fr; }
+            .rt-preview-stage { min-height: 280px; padding: 32px 20px; }
+        }
+
+        @media (max-width: 520px) {
+            .rt-card-header, .rt-card-body { padding: 16px; }
+            .rt-card-header { display: block; }
+            .rt-preview-controls { margin-top: 12px; }
+            .rt-actions { display: grid; grid-template-columns: 1fr; }
+            .rt-button { width: 100%; }
+            #sourceInput { min-height: 260px; }
+            #previewOutput { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="rt-page">
+        <section class="rt-hero" aria-labelledby="pageTitle">
+            <div>
+                <p class="rt-eyebrow">TEXT TOOL</p>
+                <h1 id="pageTitle">Unity 富文本预览</h1>
+                <p class="rt-intro">粘贴带有 <code>&lt;color&gt;</code>、<code>&lt;size&gt;</code>、<code>&lt;b&gt;</code> 等标签的文本，即时查看替换参数后的显示效果。</p>
+            </div>
+            <div class="rt-live-badge"><span class="rt-live-dot" aria-hidden="true"></span>本地实时解析</div>
+        </section>
+
+        <div class="rt-workspace">
+            <section class="rt-card" aria-labelledby="editorTitle">
+                <div class="rt-card-header">
+                    <div>
+                        <h2 id="editorTitle">编辑富文本</h2>
+                        <p>输入内容不会上传，修改后会自动更新预览</p>
+                    </div>
+                </div>
+                <div class="rt-card-body">
+                    <label class="rt-field-label" for="sourceInput">富文本内容</label>
+                    <p class="rt-field-hint">兼容无 # 色值、标签空格、多余引号和反斜杠转义</p>
+                    <textarea id="sourceInput" spellcheck="false" autocomplete="off"></textarea>
+                    <div class="rt-actions" aria-label="文本操作">
+                        <button class="rt-button rt-button-primary" id="normalizeButton" type="button">整理标签</button>
+                        <button class="rt-button" id="copyButton" type="button">复制整理后文本</button>
+                        <button class="rt-button rt-button-tertiary" id="resetButton" type="button">恢复示例</button>
+                    </div>
+                    <p class="rt-toast" id="toast" role="status" aria-live="polite"></p>
+
+                    <section class="rt-section" aria-labelledby="paramTitle">
+                        <h3 id="paramTitle">替换参数</h3>
+                        <p class="rt-field-hint">自动识别 <code>{param1}</code> 这类占位符；留空时保留原占位符</p>
+                        <div class="rt-param-grid" id="paramFields"></div>
+                        <p class="rt-empty" id="paramEmpty" hidden>当前文本没有可替换参数</p>
+                    </section>
+                </div>
+            </section>
+
+            <section class="rt-card" aria-labelledby="previewTitle">
+                <div class="rt-card-header">
+                    <div>
+                        <h2 id="previewTitle">显示预览</h2>
+                        <p id="previewMeta">等待解析</p>
+                    </div>
+                    <div class="rt-preview-controls">
+                        <label for="backgroundSelect">背景</label>
+                        <select class="rt-select" id="backgroundSelect">
+                            <option value="light">浅色</option>
+                            <option value="dark">深色</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="rt-card-body">
+                    <div class="rt-preview-stage" id="previewStage" data-theme="light">
+                        <div id="previewOutput" aria-live="polite"></div>
+                    </div>
+                    <div class="rt-summary" id="summary" role="status">
+                        <span class="rt-summary-icon" id="summaryIcon" aria-hidden="true">✓</span>
+                        <span id="summaryText">标签结构正常</span>
+                    </div>
+                    <ul class="rt-diagnostics" id="diagnostics" hidden></ul>
+
+                    <section class="rt-section" aria-labelledby="normalizedTitle">
+                        <h3 id="normalizedTitle">整理后的文本</h3>
+                        <p class="rt-field-hint">仅修正常见格式问题，不改动参数名和文字内容</p>
+                        <pre class="rt-code-box" id="normalizedOutput"></pre>
+                    </section>
+
+                    <details class="rt-reference">
+                        <summary>查看支持的标签</summary>
+                        <p><code>&lt;color=#RRGGBB&gt;</code> 颜色、<code>&lt;size=24&gt;</code> 字号、<code>&lt;b&gt;</code> 粗体、<code>&lt;i&gt;</code> 斜体、<code>&lt;u&gt;</code> 下划线、<code>&lt;s&gt;</code> 删除线、<code>&lt;mark=#RRGGBB&gt;</code> 高亮和 <code>&lt;br&gt;</code> 换行。标签可以嵌套。</p>
+                    </details>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        (() => {
+            const EXAMPLE = String.raw`\<color=525252> 魂师 < color=f8a449>\({param1}\</color>使用\<color=#d62727">神级追猎令\</color>，收获传奇魂师\<color=e17032>\){param2}\</color>！\</color>`;
+            const DEFAULT_PARAMS = { param1: "唐三", param2: "小舞" };
+            const COLOR_NAMES = new Set(["aqua", "black", "blue", "brown", "cyan", "darkblue", "fuchsia", "green", "grey", "lightblue", "lime", "magenta", "maroon", "navy", "olive", "orange", "purple", "red", "silver", "teal", "white", "yellow"]);
+
+            const sourceInput = document.getElementById("sourceInput");
+            const paramFields = document.getElementById("paramFields");
+            const paramEmpty = document.getElementById("paramEmpty");
+            const previewOutput = document.getElementById("previewOutput");
+            const previewMeta = document.getElementById("previewMeta");
+            const previewStage = document.getElementById("previewStage");
+            const normalizedOutput = document.getElementById("normalizedOutput");
+            const diagnostics = document.getElementById("diagnostics");
+            const summary = document.getElementById("summary");
+            const summaryIcon = document.getElementById("summaryIcon");
+            const summaryText = document.getElementById("summaryText");
+            const toast = document.getElementById("toast");
+            const paramValues = new Map();
+
+            function cleanColor(value) {
+                let color = value.trim().replace(/^["']+|["']+$/g, "").replace(/\s+/g, "");
+                if (/^[0-9a-f]{3,4}$/i.test(color) || /^[0-9a-f]{6,8}$/i.test(color)) color = `#${color}`;
+                if (/^#[0-9a-f]{8}$/i.test(color)) {
+                    const alpha = parseInt(color.slice(7, 9), 16) / 255;
+                    const r = parseInt(color.slice(1, 3), 16);
+                    const g = parseInt(color.slice(3, 5), 16);
+                    const b = parseInt(color.slice(5, 7), 16);
+                    return { source: color.toUpperCase(), css: `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})` };
+                }
+                if (/^#[0-9a-f]{4}$/i.test(color)) {
+                    const chars = color.slice(1).split("");
+                    const r = parseInt(chars[0] + chars[0], 16);
+                    const g = parseInt(chars[1] + chars[1], 16);
+                    const b = parseInt(chars[2] + chars[2], 16);
+                    const alpha = parseInt(chars[3] + chars[3], 16) / 255;
+                    return { source: color.toUpperCase(), css: `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})` };
+                }
+                if (/^#[0-9a-f]{3}$/i.test(color) || /^#[0-9a-f]{6}$/i.test(color)) return { source: color.toUpperCase(), css: color };
+                if (COLOR_NAMES.has(color.toLowerCase())) return { source: color.toLowerCase(), css: color.toLowerCase() };
+                return null;
+            }
+
+            function normalizeRichText(input) {
+                let text = input
+                    .replace(/\\(?=<\/?\s*[a-z])/gi, "")
+                    .replace(/\\([(){}])/g, "$1")
+                    .replace(/<\s+(?=\/?\s*[a-z])/gi, "<")
+                    .replace(/<\s*\/\s*/g, "</");
+
+                text = text.replace(/<\s*(color|mark)\s*=\s*([^>]*?)\s*>/gi, (full, tag, rawValue) => {
+                    const cleaned = cleanColor(rawValue);
+                    return cleaned ? `<${tag.toLowerCase()}=${cleaned.source}>` : full;
+                });
+                text = text.replace(/<\s*size\s*=\s*["']?\s*([0-9]+(?:\.[0-9]+)?(?:px|em|%)?)\s*["']?\s*>/gi, (_, size) => `<size=${size}>`);
+                text = text.replace(/<\s*(b|i|u|s|strikethrough|br)\s*\/?\s*>/gi, (_, tag) => `<${tag.toLowerCase()}>`);
+                text = text.replace(/<\s*\/\s*(color|mark|size|b|i|u|s|strikethrough)\s*>/gi, (_, tag) => `</${tag.toLowerCase()}>`);
+                return text;
+            }
+
+            function getParameters(text) {
+                const result = [];
+                const seen = new Set();
+                for (const match of text.matchAll(/\{([a-zA-Z_][\w.]*)\}/g)) {
+                    if (!seen.has(match[1])) { seen.add(match[1]); result.push(match[1]); }
+                }
+                return result;
+            }
+
+            function replaceParameters(text) {
+                return text.replace(/\{([a-zA-Z_][\w.]*)\}/g, (full, key) => {
+                    const value = paramValues.get(key);
+                    return value === undefined || value === "" ? full : value;
+                });
+            }
+
+            function parseTag(token) {
+                const close = token.match(/^<\/\s*([a-z]+)\s*>$/i);
+                if (close) return { type: "close", name: close[1].toLowerCase() };
+                const color = token.match(/^<(color|mark)=([^>]+)>$/i);
+                if (color) return { type: "open", name: color[1].toLowerCase(), value: color[2] };
+                const size = token.match(/^<size=([^>]+)>$/i);
+                if (size) return { type: "open", name: "size", value: size[1] };
+                const simple = token.match(/^<(b|i|u|s|strikethrough)>$/i);
+                if (simple) return { type: "open", name: simple[1].toLowerCase() };
+                if (/^<br>$/i.test(token)) return { type: "break", name: "br" };
+                return { type: "unknown", name: token };
+            }
+
+            function currentStyle(stacks) {
+                const style = {};
+                const color = stacks.color.at(-1);
+                const mark = stacks.mark.at(-1);
+                const size = stacks.size.at(-1);
+                if (color) style.color = color;
+                if (mark) { style.backgroundColor = mark; style.padding = "0 0.08em"; }
+                if (size) style.fontSize = size;
+                if (stacks.b.length) style.fontWeight = "700";
+                if (stacks.i.length) style.fontStyle = "italic";
+                const decorations = [];
+                if (stacks.u.length) decorations.push("underline");
+                if (stacks.s.length || stacks.strikethrough.length) decorations.push("line-through");
+                if (decorations.length) style.textDecoration = decorations.join(" ");
+                return style;
+            }
+
+            function appendText(fragment, text, stacks) {
+                if (!text) return;
+                const span = document.createElement("span");
+                span.textContent = text;
+                Object.assign(span.style, currentStyle(stacks));
+                fragment.appendChild(span);
+            }
+
+            function renderRichText(text) {
+                const fragment = document.createDocumentFragment();
+                const warnings = [];
+                const stacks = { color: [], mark: [], size: [], b: [], i: [], u: [], s: [], strikethrough: [] };
+                const tokenPattern = /<[^>]*>/g;
+                let cursor = 0;
+                let tagCount = 0;
+                let match;
+
+                while ((match = tokenPattern.exec(text))) {
+                    appendText(fragment, text.slice(cursor, match.index), stacks);
+                    const token = match[0];
+                    const tag = parseTag(token);
+                    if (tag.type === "open") {
+                        if (tag.name === "color" || tag.name === "mark") {
+                            const color = cleanColor(tag.value);
+                            if (!color) {
+                                warnings.push(`无法识别色值：${tag.value}`);
+                                appendText(fragment, token, stacks);
+                                cursor = tokenPattern.lastIndex;
+                                continue;
+                            }
+                            stacks[tag.name].push(color.css);
+                        } else if (tag.name === "size") {
+                            const sizeMatch = tag.value.match(/^([0-9]+(?:\.[0-9]+)?)(px|em|%)?$/i);
+                            if (!sizeMatch) {
+                                warnings.push(`无法识别字号：${tag.value}`);
+                                appendText(fragment, token, stacks);
+                                cursor = tokenPattern.lastIndex;
+                                continue;
+                            }
+                            const number = Math.min(Math.max(Number(sizeMatch[1]), 8), 120);
+                            stacks.size.push(`${number}${sizeMatch[2] || "px"}`);
+                        } else {
+                            stacks[tag.name].push(true);
+                        }
+                        tagCount += 1;
+                    } else if (tag.type === "close") {
+                        const name = tag.name;
+                        if (!stacks[name]) {
+                            warnings.push(`不支持的结束标签：${token}`);
+                            appendText(fragment, token, stacks);
+                        } else if (!stacks[name].length) {
+                            warnings.push(`结束标签没有对应的开始标签：${token}`);
+                        } else {
+                            stacks[name].pop();
+                            tagCount += 1;
+                        }
+                    } else if (tag.type === "break") {
+                        fragment.appendChild(document.createElement("br"));
+                        tagCount += 1;
+                    } else {
+                        warnings.push(`不支持的标签：${token}`);
+                        appendText(fragment, token, stacks);
+                    }
+                    cursor = tokenPattern.lastIndex;
+                }
+
+                appendText(fragment, text.slice(cursor), stacks);
+                Object.entries(stacks).forEach(([name, values]) => {
+                    if (values.length) warnings.push(`${name} 标签缺少 ${values.length} 个结束标签`);
+                });
+                const leftoverAngles = text.replace(tokenPattern, "");
+                if (/[<>]/.test(leftoverAngles)) warnings.push("文本中存在未闭合的尖括号，已按普通文字显示");
+                return { fragment, warnings: [...new Set(warnings)], tagCount };
+            }
+
+            function syncParameterFields(normalized) {
+                const parameters = getParameters(normalized);
+                const active = new Set(parameters);
+                for (const key of paramValues.keys()) if (!active.has(key)) paramValues.delete(key);
+                parameters.forEach(key => {
+                    if (!paramValues.has(key)) paramValues.set(key, DEFAULT_PARAMS[key] || "");
+                });
+
+                paramFields.replaceChildren();
+                paramEmpty.hidden = parameters.length > 0;
+                parameters.forEach(key => {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "rt-param-field";
+                    const label = document.createElement("label");
+                    label.htmlFor = `param-${key.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+                    label.textContent = `{${key}}`;
+                    const input = document.createElement("input");
+                    input.className = "rt-param-input";
+                    input.id = label.htmlFor;
+                    input.type = "text";
+                    input.value = paramValues.get(key);
+                    input.placeholder = "保留原占位符";
+                    input.addEventListener("input", () => { paramValues.set(key, input.value); updatePreview(false); });
+                    wrapper.append(label, input);
+                    paramFields.appendChild(wrapper);
+                });
+            }
+
+            function updateStatus(warnings, tagCount, textLength) {
+                previewMeta.textContent = `${tagCount} 个标签 · ${textLength} 个字符`;
+                diagnostics.replaceChildren();
+                if (warnings.length) {
+                    summary.dataset.state = "warning";
+                    summaryIcon.textContent = "!";
+                    summaryText.textContent = `发现 ${warnings.length} 个需要检查的问题`;
+                    warnings.forEach(message => {
+                        const item = document.createElement("li");
+                        item.textContent = message;
+                        diagnostics.appendChild(item);
+                    });
+                    diagnostics.hidden = false;
+                } else {
+                    summary.dataset.state = "ok";
+                    summaryIcon.textContent = "✓";
+                    summaryText.textContent = "标签结构正常，预览已更新";
+                    diagnostics.hidden = true;
+                }
+            }
+
+            function updatePreview(rebuildParams = true) {
+                const normalized = normalizeRichText(sourceInput.value);
+                normalizedOutput.textContent = normalized;
+                if (rebuildParams) syncParameterFields(normalized);
+                const resolved = replaceParameters(normalized);
+                const result = renderRichText(resolved);
+                previewOutput.replaceChildren(result.fragment);
+                updateStatus(result.warnings, result.tagCount, resolved.replace(/<[^>]*>/g, "").length);
+            }
+
+            function showToast(message) {
+                toast.textContent = message;
+                window.clearTimeout(showToast.timer);
+                showToast.timer = window.setTimeout(() => { toast.textContent = ""; }, 2400);
+            }
+
+            async function copyNormalized() {
+                const value = normalizeRichText(sourceInput.value);
+                try {
+                    await navigator.clipboard.writeText(value);
+                    showToast("已复制整理后的文本");
+                } catch (_) {
+                    const helper = document.createElement("textarea");
+                    helper.value = value;
+                    helper.style.position = "fixed";
+                    helper.style.opacity = "0";
+                    document.body.appendChild(helper);
+                    helper.select();
+                    document.execCommand("copy");
+                    helper.remove();
+                    showToast("已复制整理后的文本");
+                }
+            }
+
+            sourceInput.addEventListener("input", () => updatePreview(true));
+            document.getElementById("normalizeButton").addEventListener("click", () => {
+                const normalized = normalizeRichText(sourceInput.value);
+                if (normalized === sourceInput.value) showToast("当前标签不需要整理");
+                else { sourceInput.value = normalized; showToast("常见格式问题已整理"); }
+                updatePreview(true);
+            });
+            document.getElementById("copyButton").addEventListener("click", copyNormalized);
+            document.getElementById("resetButton").addEventListener("click", () => {
+                paramValues.clear();
+                sourceInput.value = EXAMPLE;
+                updatePreview(true);
+                showToast("已恢复示例");
+            });
+            document.getElementById("backgroundSelect").addEventListener("change", event => {
+                previewStage.dataset.theme = event.target.value;
+            });
+
+            sourceInput.value = EXAMPLE;
+            updatePreview(true);
+        })();
+    </script>
+</body>
+</html>
