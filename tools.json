@@ -214,5 +214,14 @@
     "category": "text",
     "icon": "fuwenben",
     "show": true
+  },
+  {
+    "id": 21,
+    "name": "Spine图集拆分",
+    "description": "导入spine的png与atlas文件夹，导出各个小图标",
+    "path": "tools/spine-atlas-extract.html",
+    "category": "image",
+    "icon": "spine",
+    "show": true
   }
 ]
